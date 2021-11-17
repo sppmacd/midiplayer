@@ -254,7 +254,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
     {
         auto color = particle.color;
         color.a = particle.lifetime * 255 / particle.start_lifetime;
-        sf::CircleShape cs(m_particle_radius);
+        sf::RectangleShape cs({m_particle_radius * 2, m_particle_radius * 2});
         cs.setFillColor(color);
         cs.setPosition(particle.position);
         cs.setOrigin(m_particle_radius, m_particle_radius);
