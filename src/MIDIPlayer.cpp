@@ -142,6 +142,16 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             }
             m_particle_radius = c;
         }
+        else if(command == "particle_glow_size"sv)
+        {
+            float c;
+            if(!(config_file >> c))
+            {
+                std::cout << "ERROR: particle_glow_size requires arguments: <radius>" << std::endl;
+                exit(1);
+            }
+            m_particle_glow_size = c;
+        }
         else
         {
             // TODO: Help
@@ -209,7 +219,7 @@ void MIDIPlayer::update()
         particle.motion.y /= 1.01f;
         float dstx = particle.position.x - m_wind.pos.x;
         float dsty = particle.position.y - m_wind.pos.y;
-        particle.motion.x += std::min(1.0, m_wind.speed / (dstx*dstx+dsty*dsty));
+        particle.motion.x += std::min(0.1, m_wind.speed / (dstx*dstx+dsty*dsty));
         particle.lifetime--;
     }
 
