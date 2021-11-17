@@ -78,4 +78,5 @@ private:
     sf::Color m_fallback_channel_color { 128, 128, 128, 128 };
     int m_particle_count = 3;
     float m_particle_radius = 0.2;
+    float m_particle_glow_size = 0.2;
 };

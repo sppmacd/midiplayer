@@ -221,16 +221,16 @@ void MIDIPlayer::update()
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
     auto& shader = particle_shader();
-    float const radius = m_particle_radius;
-    shader.setUniform("uRadius", radius);
+    shader.setUniform("uRadius", m_particle_radius);
+    shader.setUniform("uGlowSize", m_particle_glow_size);
     for(auto const& particle: m_particles)
     {
         auto color = particle.color;
         color.a = particle.lifetime * 255 / particle.start_lifetime;
-        sf::CircleShape cs(radius);
+        sf::CircleShape cs(m_particle_radius);
         cs.setFillColor(color);
         cs.setPosition(particle.position);
-        cs.setOrigin(radius, radius);
+        cs.setOrigin(m_particle_radius, m_particle_radius);
         shader.setUniform("uCenter", particle.position);
         target.draw(cs, sf::RenderStates{&shader});
         //std::cout << center.x << ";" << center.y << std::endl;
