@@ -240,11 +240,12 @@ void MIDIPlayer::update()
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
-    sf::CircleShape cs(std::abs(m_wind.speed));
+    
+    /*sf::CircleShape cs(std::abs(m_wind.speed));
     cs.setOrigin(std::abs(m_wind.speed), std::abs(m_wind.speed));
     cs.setPosition(m_wind.pos);
     cs.setFillColor(m_wind.speed < 0 ? sf::Color::Red : sf::Color::Green);
-    target.draw(cs);
+    target.draw(cs);*/
     
     auto& shader = particle_shader();
     shader.setUniform("uRadius", m_particle_radius);
