@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
     font.loadFromFile("res/font.ttf");
 
     MIDIPlayer player{*midi, real_time ? MIDIPlayer::RealTime::Yes : MIDIPlayer::RealTime::No};
+    sf::Clock fps_clock;
     while(player.playing())
     {
         {
@@ -77,12 +78,6 @@ int main(int argc, char* argv[])
         auto view = sf::View{sf::FloatRect(0, -128.f / aspect, 128.f, 128.f / aspect)};
         window.setView(view);
 
-        {
-            sf::Text text{std::to_string(player.current_tick()), font, 30};
-            text.setScale(0.125, 0.125);
-            text.setPosition(0, -view.getSize().y);
-            window.draw(text);
-        }
         if(real_time)
         {
             midi->for_each_event_backwards([&](Event& event) {
@@ -96,6 +91,13 @@ int main(int argc, char* argv[])
             });
         }
         player.render_particles(window);
+        {
+            sf::Vector2f window_size {window.getSize()};
+            window.setView(sf::View({0, 0, window_size.x, window_size.y}));
+            sf::Text text{std::to_string(player.current_tick()) + "  " + std::to_string(1.f / fps_clock.restart().asSeconds()) + " fps", font, 10};
+            text.setPosition(5, 5);
+            window.draw(text);
+        }
         window.display();
     }
 
