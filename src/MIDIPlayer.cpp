@@ -203,14 +203,22 @@ void MIDIPlayer::update()
     static std::default_random_engine engine;
     if(rand() % 100 == 0)
     {
-        float rand_speed = std::uniform_real_distribution<float>(-1, 1)(engine);
-        float rand_speed_x = std::uniform_real_distribution<float>(0, 128)(engine);
-        float rand_speed_y = std::uniform_real_distribution<float>(0, -500)(engine);
-        int rand_time = std::uniform_int_distribution<int>(60, 100)(engine);
-        m_wind = {rand_speed, {rand_speed_x, rand_speed_y}, rand_time};
+        float rand_speed = std::uniform_real_distribution<float>(-5, 5)(engine);
+        float rand_pos_x = std::uniform_real_distribution<float>(0, 128)(engine);
+        float rand_pos_y = std::uniform_real_distribution<float>(-128, 0)(engine);
+        int rand_time = std::uniform_int_distribution<int>(30, 45)(engine);
+        m_wind = {0, rand_speed, {rand_pos_x, rand_pos_y}, rand_time, rand_time};
     }
     if(m_wind.time-- == 0)
         m_wind.speed = 0;
+    else
+    {
+        double change_factor = m_wind.speed / (m_wind.start_time / 2.f);
+        if((m_wind.time > m_wind.start_time / 2) ^ (m_wind.target_speed > 0))
+            m_wind.speed += change_factor;
+        else
+            m_wind.speed -= change_factor;
+    }
 
     for(auto& particle: m_particles)
     {
@@ -219,7 +227,8 @@ void MIDIPlayer::update()
         particle.motion.y /= 1.01f;
         float dstx = particle.position.x - m_wind.pos.x;
         float dsty = particle.position.y - m_wind.pos.y;
-        particle.motion.x += std::min(0.1, m_wind.speed / (dstx*dstx+dsty*dsty));
+        particle.motion.x += std::min(0.005, std::max(-0.005, m_wind.speed / dsty / dsty));
+        particle.motion.y += std::min(0.005, std::max(-0.005, m_wind.speed / dstx / dstx));
         particle.lifetime--;
     }
 
@@ -230,6 +239,12 @@ void MIDIPlayer::update()
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
+    sf::CircleShape cs(std::abs(m_wind.speed));
+    cs.setOrigin(std::abs(m_wind.speed), std::abs(m_wind.speed));
+    cs.setPosition(m_wind.pos);
+    cs.setFillColor(m_wind.speed < 0 ? sf::Color::Red : sf::Color::Green);
+    target.draw(cs);
+    
     auto& shader = particle_shader();
     shader.setUniform("uRadius", m_particle_radius);
     shader.setUniform("uGlowSize", m_particle_glow_size);

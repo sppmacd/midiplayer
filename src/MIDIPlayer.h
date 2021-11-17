@@ -66,8 +66,10 @@ private:
     bool m_playing { true };
     struct Wind {
         double speed = 0;
+        double target_speed = 0;
         sf::Vector2f pos;
         int time = 0;
+        int start_time = 0;
     } m_wind;
     RealTime m_real_time { RealTime::No };
     std::list<Particle> m_particles;
