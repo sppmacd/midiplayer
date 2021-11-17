@@ -5,8 +5,12 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <cassert>
+#include <climits>
 #include <cmath>
+#include <fstream>
 #include <random>
+
+using namespace std::literals;
 
 // https://github.com/MajicDesigns/MD_MusicTable/blob/master/src/MD_MusicTable_Data.cpp
 static float const s_frequency_lookup_table[] {
@@ -73,6 +77,78 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
         && m_particle_shader.loadFromFile("res/shaders/particle.vert", "res/shaders/particle.frag")
     )
         std::cout << "Shaders loaded" << std::endl;
+
+    std::ifstream config_file("config.cfg");
+    if(config_file.fail())
+    {
+        std::cout << "WARNING: config.cfg doesn't exist." << std::endl;
+        return;
+    }
+    while(true)
+    {
+        std::string command;
+        if(!(config_file >> command))
+            break;
+
+        if(command == "channel_color"sv)
+        {
+            int channel;
+            int r, g, b, a = 128;
+            if(!(config_file >> channel >> r >> g >> b))
+            {
+                std::cout << "ERROR: channel_color requires arguments: <channel> <r> <g> <b> [a]" << std::endl;
+                exit(1);
+            }
+            if(!(config_file >> a))
+            {
+                config_file.clear();
+                a = 128;
+            }
+            auto color = sf::Color{static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
+            m_channel_colors[channel] = color;
+        }
+        else if(command == "fallback_channel_color"sv)
+        {
+            int r, g, b, a = 128;
+            if(!(config_file >> r >> g >> b))
+            {
+                std::cout << "ERROR: fallback_channel_color requires arguments: <r> <g> <b> [a]" << std::endl;
+                exit(1);
+            }
+            if(!(config_file >> a))
+            {
+                config_file.clear();
+                a = 128;
+            }
+            m_fallback_channel_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
+        }
+        else if(command == "particle_count"sv)
+        {
+            int c;
+            if(!(config_file >> c))
+            {
+                std::cout << "ERROR: particle_count requires arguments: <count>" << std::endl;
+                exit(1);
+            }
+            m_particle_count = c;
+        }
+        else if(command == "particle_radius"sv)
+        {
+            float c;
+            if(!(config_file >> c))
+            {
+                std::cout << "ERROR: particle_radius requires arguments: <radius>" << std::endl;
+                exit(1);
+            }
+            m_particle_radius = c;
+        }
+        else
+        {
+            // TODO: Help
+            std::cout << "ERROR: Invalid config command: " << command << std::endl;
+            exit(1);
+        }
+    }
 }
 
 void MIDIPlayer::ensure_sounds_generated()
@@ -145,7 +221,7 @@ void MIDIPlayer::update()
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
     auto& shader = particle_shader();
-    float const radius = 0.2;
+    float const radius = m_particle_radius;
     shader.setUniform("uRadius", radius);
     for(auto const& particle: m_particles)
     {

@@ -52,16 +52,7 @@ static inline float key_to_piano_position(MIDIKey key)
 
 void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 {
-    static const sf::Color CHANNEL_COLORS[] {
-        {0, 220, 0, 128},
-        {128, 128, 220, 128},
-        {220, 0, 0, 128},
-        {220, 128, 0, 128},
-        {220, 0, 128, 128},
-        {0, 220, 220, 128},
-    };
-    
-    auto color = m_channel < 6 ? CHANNEL_COLORS[m_channel] : sf::Color(128, 128, 128);
+    auto color = player.channel_color(m_channel);
     auto size = target.getView().getSize();
     const float scale = player.real_time() == MIDIPlayer::RealTime::Yes ? 1 : 0.05;
 
@@ -86,7 +77,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 
     auto spawn_particles = [&]() {
         static std::default_random_engine engine;
-        for(int i = 0; i < 3; i++)
+        for(int i = 0; i < player.particle_count(); i++)
         {
             float rand_x_speed = std::uniform_real_distribution<float>(-0.4, 0.4)(engine);
             float rand_y_speed = std::uniform_real_distribution<float>(-0.1, -0.3)(engine);
@@ -127,9 +118,9 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
             if(end_note != s_ended_notes.end() && end_note->second.has_value())
                 note_size_y = std::min(static_cast<float>(end_note->second.value() - tick()), note_size_y);
             render_note(tick(), note_size_y, color);
-            s_ended_notes.erase(m_key);
-
-            if(player.current_tick() < end_note->second && player.current_tick() > tick())
+            if(end_note != s_ended_notes.end())
+                s_ended_notes.erase(end_note);
+            if(end_note == s_ended_notes.end() || !end_note->second.has_value())
                 spawn_particles();
         }
         else if(end_note == s_ended_notes.end())
