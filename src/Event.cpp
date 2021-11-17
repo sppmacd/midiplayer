@@ -66,9 +66,9 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
     const float scale = player.real_time() == MIDIPlayer::RealTime::Yes ? 1 : 0.05;
 
     auto render_note = [&](float y_start, float y_size, sf::Color const& color) {
-        float real_y_start = (y_start * scale + (player.real_time() == MIDIPlayer::RealTime::Yes
+        float real_y_start = (y_start + (player.real_time() == MIDIPlayer::RealTime::Yes
             ? -static_cast<int64_t>(player.current_tick())
-            : static_cast<int64_t>(player.current_tick()) * scale));
+            : static_cast<int64_t>(player.current_tick()))) * scale;
         
         if(real_y_start > 0 || real_y_start + y_size < -size.y)
             return;
@@ -126,7 +126,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
             auto note_size_y = static_cast<float>(player.current_tick() - tick());
             if(end_note != s_ended_notes.end() && end_note->second.has_value())
                 note_size_y = std::min(static_cast<float>(end_note->second.value() - tick()), note_size_y);
-            render_note(static_cast<float>(tick()) - size.y - note_size_y, note_size_y, color);
+            render_note(tick(), note_size_y, color);
             s_ended_notes.erase(m_key);
 
             if(player.current_tick() < end_note->second && player.current_tick() > tick())
