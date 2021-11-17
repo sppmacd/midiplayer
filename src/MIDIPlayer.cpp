@@ -209,15 +209,16 @@ void MIDIPlayer::update()
         int rand_time = std::uniform_int_distribution<int>(30, 45)(engine);
         m_wind = {0, rand_speed, {rand_pos_x, rand_pos_y}, rand_time, rand_time};
     }
-    if(m_wind.time-- == 0)
+    if(m_wind.time == 0)
         m_wind.speed = 0;
     else
     {
-        double change_factor = m_wind.speed / (m_wind.start_time / 2.f);
-        if((m_wind.time > m_wind.start_time / 2) ^ (m_wind.target_speed > 0))
+        double change_factor = m_wind.target_speed / (m_wind.start_time / 2.f);
+        if(m_wind.time > m_wind.start_time / 2)
             m_wind.speed += change_factor;
         else
             m_wind.speed -= change_factor;
+        m_wind.time--;
     }
 
     for(auto& particle: m_particles)
