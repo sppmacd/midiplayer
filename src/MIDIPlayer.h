@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Event.h"
+#include "Selector.h"
 #include <cstddef>
 #include <cstdint>
 #include <list>
@@ -47,13 +48,7 @@ public:
     sf::Shader& note_shader() const { return m_note_shader; }
     sf::Shader& particle_shader() const { return m_particle_shader; }
 
-    sf::Color channel_color(MIDIChannel channel) const
-    {
-        auto it = m_channel_colors.find(channel);
-        if(it == m_channel_colors.end())
-            return m_fallback_channel_color;
-        return it->second;
-    }
+    sf::Color resolve_color(NoteEvent& event) const;
     int particle_count() const { return m_particle_count; }
 
 private:
@@ -76,8 +71,8 @@ private:
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;
 
-    std::map<MIDIChannel, sf::Color> m_channel_colors;
-    sf::Color m_fallback_channel_color { 128, 128, 128, 128 };
+    std::unordered_map<std::unique_ptr<Selector>, sf::Color> m_channel_colors;
+    sf::Color m_default_color { 128, 128, 128, 128 };
     int m_particle_count = 3;
     float m_particle_radius = 0.2;
     float m_particle_glow_size = 0.2;

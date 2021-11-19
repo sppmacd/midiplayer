@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <optional>
 
 class MIDIPlayer;
 
@@ -119,7 +120,12 @@ public:
     virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
     virtual void execute(MIDIPlayer&) override;
 
+    MIDIChannel channel() const { return m_channel; }
+    MIDIKey key() const { return m_key; }
+    uint8_t velocity() const { return m_velocity; }
+
 private:
+    mutable std::optional<sf::Color> m_cached_color;
     Type m_type;
     MIDIChannel m_channel;
     MIDIKey m_key;

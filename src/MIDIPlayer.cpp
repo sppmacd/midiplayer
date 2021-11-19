@@ -84,43 +84,43 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
         std::cout << "WARNING: config.cfg doesn't exist." << std::endl;
         return;
     }
+
     while(true)
     {
         std::string command;
         if(!(config_file >> command))
             break;
 
-        if(command == "channel_color"sv)
+        if(command == "color"sv)
         {
-            int channel;
-            int r, g, b, a = 128;
-            if(!(config_file >> channel >> r >> g >> b))
+            std::unique_ptr<Selector> selector = Selector::read(config_file);
+            if(!selector)
             {
-                std::cout << "ERROR: channel_color requires arguments: <channel> <r> <g> <b> [a]" << std::endl;
+                std::cout << "ERROR: invalid selector for 'color'" << std::endl;
+                exit(1);
+            }
+            int r, g, b, a = 128;
+            if(!(config_file >> r >> g >> b))
+            {
+                std::cout << "ERROR: color requires arguments: <selector> <r> <g> <b> [a]" << std::endl;
                 exit(1);
             }
             if(!(config_file >> a))
-            {
                 config_file.clear();
-                a = 128;
-            }
-            auto color = sf::Color{static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
-            m_channel_colors[channel] = color;
+            m_channel_colors.insert(std::make_pair(std::move(selector),
+                                                   sf::Color{static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a)}));
         }
-        else if(command == "fallback_channel_color"sv)
+        else if(command == "default_color"sv)
         {
             int r, g, b, a = 128;
             if(!(config_file >> r >> g >> b))
             {
-                std::cout << "ERROR: fallback_channel_color requires arguments: <r> <g> <b> [a]" << std::endl;
+                std::cout << "ERROR: default_color requires arguments: <r> <g> <b> [a]" << std::endl;
                 exit(1);
             }
             if(!(config_file >> a))
-            {
                 config_file.clear();
-                a = 128;
-            }
-            m_fallback_channel_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
+            m_default_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
         }
         else if(command == "particle_count"sv)
         {
@@ -236,6 +236,16 @@ void MIDIPlayer::update()
     std::erase_if(m_particles, [](auto const& particle) { return particle.lifetime <= 0; });
 
     m_current_tick += ticks;
+}
+
+sf::Color MIDIPlayer::resolve_color(NoteEvent& event) const
+{
+    for(auto const& selector: m_channel_colors)
+    {
+        if(selector.first->matches(*this, event))
+            return selector.second;
+    }
+    return m_default_color;
 }
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const

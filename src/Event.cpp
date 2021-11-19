@@ -52,7 +52,9 @@ static inline float key_to_piano_position(MIDIKey key)
 
 void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 {
-    auto color = player.channel_color(m_channel);
+    if(!m_cached_color.has_value())
+        m_cached_color = player.resolve_color(*this);
+    auto color = m_cached_color.value();
     auto size = target.getView().getSize();
     const float scale = player.real_time() == MIDIPlayer::RealTime::Yes ? 0.5 : 0.05;
 

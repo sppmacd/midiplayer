@@ -9,6 +9,7 @@ add_executable(midi
     src/MIDIFile.cpp
     src/MIDI.cpp
     src/MIDIPlayer.cpp
+    src/Selector.cpp
     src/Track.cpp
 )
 target_link_libraries(midi pthread sfml-graphics sfml-audio)
