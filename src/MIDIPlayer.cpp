@@ -93,12 +93,17 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
 
         if(command == "color"sv)
         {
-            std::unique_ptr<Selector> selector = Selector::read(config_file);
-            if(!selector)
+            std::vector<std::unique_ptr<Selector>> selectors;
+            while(auto selector = Selector::read(config_file))
             {
-                std::cout << "ERROR: invalid selector for 'color'" << std::endl;
-                exit(1);
+                if(!selector && selectors.empty())
+                {
+                    std::cout << "ERROR: invalid selector for 'color'" << std::endl;
+                    exit(1);
+                }
+                selectors.push_back(std::move(selector));
             }
+
             int r, g, b, a = 128;
             if(!(config_file >> r >> g >> b))
             {
@@ -107,7 +112,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             }
             if(!(config_file >> a))
                 config_file.clear();
-            m_channel_colors.insert(std::make_pair(std::move(selector),
+            m_channel_colors.push_back(std::make_pair(std::move(selectors),
                                                    sf::Color{static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a)}));
         }
         else if(command == "default_color"sv)
@@ -240,10 +245,19 @@ void MIDIPlayer::update()
 
 sf::Color MIDIPlayer::resolve_color(NoteEvent& event) const
 {
-    for(auto const& selector: m_channel_colors)
+    for(auto const& pair: m_channel_colors)
     {
-        if(selector.first->matches(*this, event))
-            return selector.second;
+        bool matched = true;
+        for(auto const& selector: pair.first)
+        {
+            if(!selector->matches(*this, event))
+            {
+                matched = false;
+                break;
+            }
+        }
+        if(matched)
+            return pair.second;
     }
     return m_default_color;
 }
