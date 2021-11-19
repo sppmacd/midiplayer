@@ -28,12 +28,32 @@ static std::optional<std::string> read_identifier(std::istream& in)
     return out;
 }
 
-static std::optional<std::string> read_literal(std::istream& in)
+static std::string read_literal(std::istream& in)
 {
     std::string out;
     while(isalnum(in.peek()))
         out += in.get();
     return out;
+}
+
+static AttributeValue read_value(std::istream& in)
+{
+    int c = in.peek();
+    if(isdigit(c))
+    {
+        int v;
+        if(!(in >> v))
+            return {};
+
+        if(in.peek() != '-')
+            return v;
+        in.get(); // '-'
+        int max;
+        if(!(in >> max))
+            return {};
+        return Range{v, max};
+    }
+    return read_literal(in);
 }
 
 std::unique_ptr<Selector> Selector::read(std::istream& in)
@@ -64,8 +84,8 @@ std::unique_ptr<Selector> AttributeSelector::read(std::istream& in)
     }
 
     ignore_whitespace(in);
-    auto value = read_literal(in);
-    if(!value.has_value())
+    auto value = read_value(in);
+    if(value.is_empty())
     {
         parse_error("Expected value");
         return nullptr;
@@ -80,29 +100,9 @@ std::unique_ptr<Selector> AttributeSelector::read(std::istream& in)
     ignore_whitespace(in);
 
     if(attribute_name == "channel"sv)
-    {
-        try
-        {
-            return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Channel, std::stoi(value.value())} };
-        }
-        catch(...)
-        {
-            parse_error("Invalid number for 'channel' attribute");
-            return nullptr;
-        }
-    }
+        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Channel, value} };
     if(attribute_name == "note"sv)
-    {
-        try
-        {
-            return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Note, std::stoi(value.value())} };
-        }
-        catch(...)
-        {
-            parse_error("Invalid number for 'note' attribute");
-            return nullptr;
-        }
-    }
+        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Note, value} };
     parse_error("Unknown attribute");
     return nullptr;
 }
@@ -112,9 +112,9 @@ bool AttributeSelector::matches(MIDIPlayer const& player, NoteEvent const& event
     switch(m_attribute)
     {
         case Attribute::Channel:
-            return event.channel() == m_value.as_int();
+            return m_value.matches(event.channel());
         case Attribute::Note:
-            return event.key() == m_value.as_int();
+            return m_value.matches(event.key());
     }
     abort();
 }
