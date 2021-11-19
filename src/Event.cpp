@@ -70,7 +70,8 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         auto key_position = key_to_piano_position(m_key);
         rs.setPosition(key_position * size.x / 128, real_y_start);
         auto& shader = player.note_shader();
-        shader.setUniform("uKeySize", key_size * target.getSize().x / 128.f);
+        shader.setUniform("uKeySize", sf::Vector2f{key_size * target.getSize().x / 128.f, y_size * (target.getSize().y / size.y)});
+        shader.setUniform("uKeyPos", sf::Vector2f{key_position * target.getSize().x / 128.f, y_start * (target.getSize().y / size.y)});
         shader.setUniform("uIsBlack", black);
         target.draw(rs, sf::RenderStates{&shader});
     };
