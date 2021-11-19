@@ -157,12 +157,29 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             }
             m_particle_glow_size = c;
         }
+        else if(command == "max_events_per_track"sv)
+        {
+            size_t c;
+            if(!(config_file >> c))
+            {
+                std::cout << "ERROR: max_events_per_track requires arguments: <count>" << std::endl;
+                exit(1);
+            }
+            m_max_events_per_track = c;
+        }
         else
         {
             // TODO: Help
             std::cout << "ERROR: Invalid config command: " << command << std::endl;
             exit(1);
         }
+    }
+
+    if(m_real_time == RealTime::Yes)
+    {
+        m_midi.for_each_track([this](Track& trk) {
+            trk.set_max_events(m_max_events_per_track);
+        });
     }
 }
 

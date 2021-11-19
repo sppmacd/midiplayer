@@ -76,4 +76,5 @@ private:
     int m_particle_count = 3;
     float m_particle_radius = 0.2;
     float m_particle_glow_size = 0.2;
+    size_t m_max_events_per_track = 4096;
 };

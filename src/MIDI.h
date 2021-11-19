@@ -20,9 +20,9 @@ public:
     template<class Callback>
     void for_each_event(Callback callback)
     {
-        for(auto const& track: m_tracks)
+        for(auto& track: m_tracks)
         {
-            for(auto const& event: track.events())
+            for(auto& event: track.events())
                 callback(*event.second);
         }
     }
@@ -30,13 +30,21 @@ public:
     template<class Callback>
     void for_each_event_backwards(Callback callback)
     {
-        for(auto const& track: m_tracks)
+        for(auto& track: m_tracks)
         {
             auto& events = track.events();
             for(auto it = events.rbegin(); it != events.rend(); it++)
                 callback(*it->second);
         }
     }
+
+    template<class Callback>
+    void for_each_track(Callback callback)
+    {
+        for(auto& track: m_tracks)
+            callback(track);
+    }
+
     std::vector<Event*> find_events_in_range(size_t start_tick, size_t end_tick) const;
 
 protected:
