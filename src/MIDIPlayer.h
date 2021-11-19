@@ -71,7 +71,7 @@ private:
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;
 
-    std::unordered_map<std::unique_ptr<Selector>, sf::Color> m_channel_colors;
+    std::map<std::unique_ptr<Selector>, sf::Color> m_channel_colors;
     sf::Color m_default_color { 128, 128, 128, 128 };
     int m_particle_count = 3;
     float m_particle_radius = 0.2;
