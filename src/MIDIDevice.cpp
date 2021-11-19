@@ -45,6 +45,9 @@ void MIDIDevice::update()
 {
     while(auto event = read_event())
     {
+        // Do not store invalid events
+        if(dynamic_cast<InvalidEvent*>(event.get()))
+            continue;
         event->set_tick(m_tick);
         m_tracks[0].add_event(std::move(event));
     }
