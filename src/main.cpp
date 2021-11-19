@@ -80,12 +80,14 @@ int main(int argc, char* argv[])
 
         if(real_time)
         {
+            player.ended_notes().clear();
             midi->for_each_event_backwards([&](Event& event) {
                 event.render(player, window);
             });
         }
         else
         {
+            player.started_notes().clear();
             midi->for_each_event([&](Event& event) {
                 event.render(player, window);
             });

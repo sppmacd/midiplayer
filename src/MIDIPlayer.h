@@ -48,6 +48,9 @@ public:
     sf::Shader& note_shader() const { return m_note_shader; }
     sf::Shader& particle_shader() const { return m_particle_shader; }
 
+    std::map<MIDIKey, size_t>& started_notes() { return m_started_notes; }
+    std::map<MIDIKey, std::optional<size_t>>& ended_notes() { return m_ended_notes; }
+
     sf::Color resolve_color(NoteEvent& event) const;
     int particle_count() const { return m_particle_count; }
 
@@ -70,6 +73,9 @@ private:
     std::list<Particle> m_particles;
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;
+
+    std::map<MIDIKey, size_t> m_started_notes;
+    std::map<MIDIKey, std::optional<size_t>> m_ended_notes;
 
     std::vector<std::pair<std::vector<std::unique_ptr<Selector>>, sf::Color>> m_channel_colors;
     sf::Color m_default_color { 128, 128, 128, 128 };

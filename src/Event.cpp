@@ -23,8 +23,6 @@ void SetTempoEvent::execute(MIDIPlayer& player)
     player.set_tempo(m_microseconds_per_quarter_note);
 }
 
-static std::map<MIDIKey, std::optional<size_t>> s_ended_notes;
-
 static inline bool is_black(MIDIKey key)
 {
     int relative_key = key % 12;
@@ -95,39 +93,38 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 
     if(player.real_time() == MIDIPlayer::RealTime::No)
     {
-        static std::map<MIDIKey, size_t> s_started_notes;
-        auto start_note = s_started_notes.find(m_key);
+        auto start_note = player.started_notes().find(m_key);
 
         if(m_type == Type::Off)
         {
-            if(start_note != s_started_notes.end())
+            if(start_note != player.started_notes().end())
             {
                 int note_size_y = tick() - start_note->second;
                 if(player.current_tick() > start_note->second && player.current_tick() < tick())
                     spawn_particles();
                 render_note((size.y - static_cast<int>(tick())), note_size_y * scale, color);
-                s_started_notes.erase(start_note);
+                player.started_notes().erase(start_note);
             }
         }
-        else if(start_note == s_started_notes.end())
-            s_started_notes.insert({m_key, tick()});
+        else if(start_note == player.started_notes().end())
+            player.started_notes().insert({m_key, tick()});
     }
     else
     {
-        auto end_note = s_ended_notes.find(m_key);
+        auto end_note = player.ended_notes().find(m_key);
         if(m_type == Type::On)
         {
             auto note_size_y = static_cast<float>(player.current_tick() - tick());
-            if(end_note != s_ended_notes.end() && end_note->second.has_value())
+            if(end_note != player.ended_notes().end() && end_note->second.has_value())
                 note_size_y = std::min(static_cast<float>(end_note->second.value() - tick()), note_size_y);
             render_note(tick(), note_size_y * scale, color);
-            if(end_note != s_ended_notes.end())
-                s_ended_notes.erase(end_note);
-            if(end_note == s_ended_notes.end() || !end_note->second.has_value())
+            if(end_note != player.ended_notes().end())
+                player.ended_notes().erase(end_note);
+            if(end_note == player.ended_notes().end() || !end_note->second.has_value())
                 spawn_particles();
         }
-        else if(end_note == s_ended_notes.end())
-            s_ended_notes.insert({m_key, tick()});
+        else if(end_note == player.ended_notes().end())
+            player.ended_notes().insert({m_key, tick()});
     }
 }
 
