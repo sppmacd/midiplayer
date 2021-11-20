@@ -19,7 +19,13 @@ public:
     static std::unique_ptr<Selector> read(std::istream&);
 };
 
-class Range
+class MatchExpression
+{
+public:
+    virtual bool matches(int value) const = 0;
+};
+
+class Range : public MatchExpression
 {
 public:
     Range(int min, int max)
@@ -29,20 +35,34 @@ public:
             std::swap(m_min, m_max);
     }
 
-    bool contains(int value) const { return value >= m_min && value <= m_max; }
+    virtual bool matches(int value) const override { return value >= m_min && value <= m_max; }
 
 private:
     int m_min {};
     int m_max {};
 };
 
-using AttributeValueBase = std::variant<std::monostate, std::string, int, Range>;
+// an + b
+class LinearEquation : public MatchExpression
+{
+public:
+    LinearEquation(int a, int b)
+    : m_a(a), m_b(b) {}
+
+    virtual bool matches(int value) const override { return value - m_b >= 0 && (value - m_b) % m_a == 0; }
+
+private:
+    int m_a {};
+    int m_b {};
+};
+
+using AttributeValueBase = std::variant<std::monostate, std::string, int, std::unique_ptr<MatchExpression>>;
 struct AttributeValue : public AttributeValueBase
 {
     AttributeValue() : AttributeValueBase() {}
     AttributeValue(std::string const& value) : AttributeValueBase(value) {}
     AttributeValue(int value) : AttributeValueBase(value) {}
-    AttributeValue(Range value) : AttributeValueBase(value) {}
+    AttributeValue(std::unique_ptr<MatchExpression>&& value) : AttributeValueBase(std::move(value)) {}
 
     bool is_empty() const { return holds_alternative<std::monostate>(*this); }
 
@@ -50,10 +70,10 @@ struct AttributeValue : public AttributeValueBase
     bool is_string() const { return holds_alternative<std::string>(*this); }
     int as_int() const { return get<int>(*this); }
     bool is_int() const { return holds_alternative<int>(*this); }
-    Range as_range() const { return get<Range>(*this); }
-    bool is_range() const { return holds_alternative<Range>(*this); }
+    MatchExpression const& as_match_expression() const { return *get<std::unique_ptr<MatchExpression>>(*this); }
+    bool is_match_expression() const { return holds_alternative<std::unique_ptr<MatchExpression>>(*this); }
 
-    bool matches(int a) const { return is_int() && as_int() == a || is_range() && as_range().contains(a); }
+    bool matches(int a) const { return is_int() && as_int() == a || is_match_expression() && as_match_expression().matches(a); }
 };
 
 class AttributeSelector : public Selector
@@ -73,6 +93,6 @@ private:
     Attribute m_attribute {};
     AttributeValue m_value;
 
-    AttributeSelector(Attribute attr, AttributeValue const& value)
-    : m_attribute(attr), m_value(value) {}
+    AttributeSelector(Attribute attr, AttributeValue&& value)
+    : m_attribute(attr), m_value(std::move(value)) {}
 };

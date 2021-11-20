@@ -3,6 +3,7 @@
 #include "Event.h"
 
 #include <cctype>
+#include <memory>
 #include <optional>
 
 using namespace std::literals;
@@ -45,13 +46,38 @@ static AttributeValue read_value(std::istream& in)
         if(!(in >> v))
             return {};
 
-        if(in.peek() != '-')
-            return v;
-        in.get(); // '-'
-        int max;
-        if(!(in >> max))
-            return {};
-        return Range{v, max};
+        if(in.peek() == '-')
+        {
+            // Range
+            in.get(); // '-'
+            int max;
+            if(!(in >> max))
+                return {};
+            return {std::make_unique<Range>(v, max)};
+        }
+        if(in.peek() == 'n')
+        {
+            // LinearEquation
+            in.get(); // 'n'
+            // TODO: Support '-'
+            int next_c = in.peek();
+            if(next_c == '+')
+            {
+                int b;
+                if(!(in >> b))
+                    return {};
+                return {std::make_unique<LinearEquation>(v, b)};
+            }
+            if(next_c == '-')
+            {
+                int b;
+                if(!(in >> b))
+                    return {};
+                return {std::make_unique<LinearEquation>(v, -b)};
+            }
+            return {std::make_unique<LinearEquation>(v, 0)};
+        }
+        return v;
     }
     return read_literal(in);
 }
@@ -100,9 +126,9 @@ std::unique_ptr<Selector> AttributeSelector::read(std::istream& in)
     ignore_whitespace(in);
 
     if(attribute_name == "channel"sv)
-        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Channel, value} };
+        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Channel, std::move(value)} };
     if(attribute_name == "note"sv)
-        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Note, value} };
+        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Note, std::move(value)} };
     parse_error("Unknown attribute");
     return nullptr;
 }
