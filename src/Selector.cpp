@@ -59,7 +59,6 @@ static AttributeValue read_value(std::istream& in)
         {
             // LinearEquation
             in.get(); // 'n'
-            // TODO: Support '-'
             int next_c = in.peek();
             if(next_c == '+')
             {
