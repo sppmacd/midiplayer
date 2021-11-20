@@ -40,13 +40,13 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
             return;
         auto black = m_key.is_black();
         float key_size = black ? 0.5 : 1;
-        sf::RectangleShape rs({key_size * size.x / 128, y_size});
+        sf::RectangleShape rs({key_size * size.x / MIDIPlayer::view_size_x, y_size});
         rs.setFillColor(color);
         auto key_position = m_key.to_piano_position();
-        rs.setPosition(key_position * size.x / 128, real_y_start);
+        rs.setPosition(key_position * size.x / MIDIPlayer::view_size_x, real_y_start);
         auto& shader = player.note_shader();
-        shader.setUniform("uKeySize", sf::Vector2f{key_size * target.getSize().x / 128.f, y_size * (target.getSize().y / size.y)});
-        shader.setUniform("uKeyPos", sf::Vector2f{key_position * target.getSize().x / 128.f, y_start * (target.getSize().y / size.y)});
+        shader.setUniform("uKeySize", sf::Vector2f{key_size * target.getSize().x / MIDIPlayer::view_size_x, y_size * (target.getSize().y / size.y)});
+        shader.setUniform("uKeyPos", sf::Vector2f{key_position * target.getSize().x / MIDIPlayer::view_size_x, y_start * (target.getSize().y / size.y)});
         shader.setUniform("uIsBlack", black);
         target.draw(rs, sf::RenderStates{&shader});
     };
@@ -58,7 +58,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
             float rand_x_speed = std::uniform_real_distribution<float>(-0.4, 0.4)(engine);
             float rand_y_speed = std::uniform_real_distribution<float>(-0.1, -0.3)(engine);
             int lifetime = std::uniform_int_distribution<int>(90, 120)(engine);
-            player.spawn_particle(Particle{{m_key.to_piano_position() * size.x / 128 + 0.5f, 0}, {rand_x_speed, rand_y_speed}, sf::Color(
+            player.spawn_particle(Particle{{m_key.to_piano_position() * size.x / MIDIPlayer::view_size_x + 0.5f, 0}, {rand_x_speed, rand_y_speed}, sf::Color(
                 std::min(255, color.r + 50),
                 std::min(255, color.g + 50),
                 std::min(255, color.b + 50)),

@@ -306,7 +306,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 
 void MIDIPlayer::render_piano(sf::RenderTarget& target) const
 {
-    auto upper_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y - 100.f)}).y;
+    auto upper_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y - piano_size_px)}).y;
     auto lower_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y)}).y;
     // a0 -- c8
     for(size_t s = 21; s <= 108; s++)

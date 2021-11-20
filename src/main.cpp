@@ -171,9 +171,8 @@ int main(int argc, char* argv[])
             target.clear();
 
             float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
-            constexpr float piano_size_px = 100.f; // TODO: Make it configurable??
-            const float piano_size = piano_size_px * (128.f / aspect) / target.getSize().y;
-            auto view = sf::View{sf::FloatRect(0, -128.f / aspect + piano_size, 128.f, 128.f / aspect)};
+            const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
+            auto view = sf::View{sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect)};
             target.setView(view);
             if(mode == Mode::Realtime)
             {

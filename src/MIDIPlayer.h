@@ -27,6 +27,11 @@ public:
         No
     };
 
+     // TODO: Make these configurable??
+    static constexpr float view_offset_x = 12.0;
+    static constexpr float view_size_x = 52.0;
+    static constexpr float piano_size_px = 200.f;
+
     MIDIPlayer(MIDI& midi, RealTime real_time);
 
     void set_fps(unsigned fps) { m_fps = fps; }
