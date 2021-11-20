@@ -23,7 +23,7 @@ private:
 class EndOfTrackEvent : public Event
 {
 public:
-    virtual void dump() const override { std::cout << "End Of Track Event" << std::endl; }
+    virtual void dump() const override { std::cerr << "End Of Track Event" << std::endl; }
     virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
     virtual void execute(MIDIPlayer&) override;
 };
@@ -34,7 +34,7 @@ public:
     InvalidEvent(uint8_t type)
     : m_type(type) {}
 
-    virtual void dump() const override { std::cout << "Invalid Event " << std::hex << (int)m_type << std::dec << std::endl; }
+    virtual void dump() const override { std::cerr << "Invalid Event " << std::hex << (int)m_type << std::dec << std::endl; }
     virtual void execute(MIDIPlayer&) override {}
 
 private:
@@ -58,7 +58,7 @@ public:
     TextEvent(Type type, std::string const& text)
     : m_type(type), m_text(text) {}
 
-    virtual void dump() const override { std::cout << "Text Event " << static_cast<int>(m_type) << ": " << m_text << std::endl; }
+    virtual void dump() const override { std::cerr << "Text Event " << static_cast<int>(m_type) << ": " << m_text << std::endl; }
     virtual void execute(MIDIPlayer&) override { /* TODO */ }
 
 private:
@@ -72,7 +72,7 @@ public:
     SetTempoEvent(uint32_t microseconds_per_quarter_note)
     : m_microseconds_per_quarter_note(microseconds_per_quarter_note) {}
 
-    virtual void dump() const override { std::cout << "Set Tempo Event " << m_microseconds_per_quarter_note << std::endl; }
+    virtual void dump() const override { std::cerr << "Set Tempo Event " << m_microseconds_per_quarter_note << std::endl; }
     virtual void execute(MIDIPlayer&) override;
 
 private:
@@ -87,7 +87,7 @@ public:
 
     virtual void dump() const override
     {
-        std::cout << "Time Signature Event " << static_cast<int>(m_numerator) << "/" << static_cast<int>(m_denominator) << std::endl;
+        std::cerr << "Time Signature Event " << static_cast<int>(m_numerator) << "/" << static_cast<int>(m_denominator) << std::endl;
     }
     virtual void execute(MIDIPlayer&) override { /* TODO */ }
 
@@ -113,7 +113,7 @@ public:
 
     virtual void dump() const override
     {
-        std::cout << tick() << ": Note " << (m_type == Type::On ? "On" : "Off") << " Event channel=" << (int)m_channel
+        std::cerr << tick() << ": Note " << (m_type == Type::On ? "On" : "Off") << " Event channel=" << (int)m_channel
                     << ", key=" << (int)m_key << ", velocity=" << (int)m_velocity << std::endl;
     }
 
@@ -187,7 +187,7 @@ public:
 
     virtual void dump() const override
     {
-        std::cout << "Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec << ", value=" << (int)m_value << std::endl;
+        std::cerr << "Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec << ", value=" << (int)m_value << std::endl;
     }
 
     virtual void execute(MIDIPlayer&) override { /* TODO */ }
@@ -206,7 +206,7 @@ public:
 
     virtual void dump() const override
     {
-        std::cout << "Program Change Event channel=" << (int)m_channel << ", data=" << std::hex << (int)m_value << std::dec << std::endl;
+        std::cerr << "Program Change Event channel=" << (int)m_channel << ", data=" << std::hex << (int)m_value << std::dec << std::endl;
     }
 
     virtual void execute(MIDIPlayer&) override { /* TODO */ }
@@ -250,7 +250,7 @@ public:
 
     virtual void dump() const override
     {
-        std::cout << "Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec
+        std::cerr << "Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec
                     << "(" << (m_byte_index == ByteIndex::MSB ? "MSB" : "LSB") << "), value=" << (int)m_value << std::endl;
     }
 

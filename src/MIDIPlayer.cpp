@@ -39,7 +39,7 @@ static int proper_modulo(int a, int b)
     int result = a < 0 ? ((a + 1) % b + b - 1) : a % b;
     if(!(result < b))
     {
-        std::cout << "proper_mod " << a << "%" << b << "=" << result << std::endl;
+        std::cerr << "proper_mod " << a << "%" << b << "=" << result << std::endl;
         assert(false);
     }
     return result;
@@ -65,7 +65,7 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
         samples[s] = std::sin(static_cast<double>(s) * 6.28 / sample_count) * 32767;
 
     if(!buf.loadFromSamples(samples.data(), sample_count, 1, 48000))
-        std::cout << "loadFromSamples failed: " << sample_count << std::endl;
+        std::cerr << "loadFromSamples failed: " << sample_count << std::endl;
 }
 
 MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
@@ -76,12 +76,12 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
            m_note_shader.loadFromFile("res/shaders/note.vert", "res/shaders/note.frag")
         && m_particle_shader.loadFromFile("res/shaders/particle.vert", "res/shaders/particle.frag")
     )
-        std::cout << "Shaders loaded" << std::endl;
+        std::cerr << "Shaders loaded" << std::endl;
 
     std::ifstream config_file("config.cfg");
     if(config_file.fail())
     {
-        std::cout << "WARNING: config.cfg doesn't exist." << std::endl;
+        std::cerr << "WARNING: config.cfg doesn't exist." << std::endl;
         return;
     }
 
@@ -98,7 +98,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             {
                 if(!selector && selectors.empty())
                 {
-                    std::cout << "ERROR: invalid selector for 'color'" << std::endl;
+                    std::cerr << "ERROR: invalid selector for 'color'" << std::endl;
                     exit(1);
                 }
                 selectors.push_back(std::move(selector));
@@ -107,7 +107,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             int r, g, b, a = 128;
             if(!(config_file >> r >> g >> b))
             {
-                std::cout << "ERROR: color requires arguments: <selector> <r> <g> <b> [a]" << std::endl;
+                std::cerr << "ERROR: color requires arguments: <selector> <r> <g> <b> [a]" << std::endl;
                 exit(1);
             }
             if(!(config_file >> a))
@@ -120,7 +120,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             int r, g, b, a = 128;
             if(!(config_file >> r >> g >> b))
             {
-                std::cout << "ERROR: default_color requires arguments: <r> <g> <b> [a]" << std::endl;
+                std::cerr << "ERROR: default_color requires arguments: <r> <g> <b> [a]" << std::endl;
                 exit(1);
             }
             if(!(config_file >> a))
@@ -132,7 +132,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             int c;
             if(!(config_file >> c))
             {
-                std::cout << "ERROR: particle_count requires arguments: <count>" << std::endl;
+                std::cerr << "ERROR: particle_count requires arguments: <count>" << std::endl;
                 exit(1);
             }
             m_particle_count = c;
@@ -142,7 +142,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             float c;
             if(!(config_file >> c))
             {
-                std::cout << "ERROR: particle_radius requires arguments: <radius>" << std::endl;
+                std::cerr << "ERROR: particle_radius requires arguments: <radius>" << std::endl;
                 exit(1);
             }
             m_particle_radius = c;
@@ -152,7 +152,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             float c;
             if(!(config_file >> c))
             {
-                std::cout << "ERROR: particle_glow_size requires arguments: <radius>" << std::endl;
+                std::cerr << "ERROR: particle_glow_size requires arguments: <radius>" << std::endl;
                 exit(1);
             }
             m_particle_glow_size = c;
@@ -162,7 +162,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             size_t c;
             if(!(config_file >> c))
             {
-                std::cout << "ERROR: max_events_per_track requires arguments: <count>" << std::endl;
+                std::cerr << "ERROR: max_events_per_track requires arguments: <count>" << std::endl;
                 exit(1);
             }
             m_max_events_per_track = c;
@@ -170,7 +170,7 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
         else
         {
             // TODO: Help
-            std::cout << "ERROR: Invalid config command: " << command << std::endl;
+            std::cerr << "ERROR: Invalid config command: " << command << std::endl;
             exit(1);
         }
     }
@@ -301,6 +301,6 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
         cs.setOrigin(m_particle_radius, m_particle_radius);
         shader.setUniform("uCenter", particle.position);
         target.draw(cs, sf::RenderStates{&shader});
-        //std::cout << center.x << ";" << center.y << std::endl;
+        //std::cerr << center.x << ";" << center.y << std::endl;
     }
 }

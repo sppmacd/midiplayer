@@ -35,7 +35,7 @@ std::unique_ptr<Event> MIDI::read_channeled_event(std::istream& in, uint8_t type
                 return {};
             if(number >= (uint8_t)ControlChangeEvent::Number::Count)
             {
-                std::cout << "ERROR: Invalid Control Change Number" << std::endl;
+                std::cerr << "ERROR: Invalid Control Change Number" << std::endl;
                 return std::make_unique<InvalidEvent>(type);
             }
             if(number < 0x40)
@@ -70,7 +70,7 @@ std::unique_ptr<Event> MIDI::read_event(std::istream& in)
     if(status >= 0x80 && status <= 0xef)
         return read_channeled_event(in, status & 0xf0, status & 0x0f);
 
-    std::cout << "ERROR: Invalid status number: " << std::hex << (int)status << std::dec << std::endl;
+    std::cerr << "ERROR: Invalid status number: " << std::hex << (int)status << std::dec << std::endl;
     return std::make_unique<InvalidEvent>(status);
 }
 

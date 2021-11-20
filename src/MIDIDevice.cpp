@@ -12,7 +12,7 @@ MIDIDevice::MIDIDevice(std::string const& path)
         std::ifstream m_file(path);
         if(m_file.fail())
         {
-            std::cout << "Failed to open MIDI device " << path << ": " << strerror(errno) << std::endl;
+            std::cerr << "Failed to open MIDI device " << path << ": " << strerror(errno) << std::endl;
             return;
         }
         m_valid.store(true, std::memory_order_relaxed);
@@ -21,7 +21,7 @@ MIDIDevice::MIDIDevice(std::string const& path)
             auto event = MIDI::read_event(m_file);
             if(!event)
             {
-                std::cout << "Failed to read event" << std::endl;
+                std::cerr << "Failed to read event" << std::endl;
                 m_valid.store(false, std::memory_order_relaxed);
                 return;
             }

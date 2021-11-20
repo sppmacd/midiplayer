@@ -10,7 +10,7 @@ using namespace std::literals;
 
 inline void parse_error(std::string_view text)
 {
-    std::cout << "    ERROR: Syntax error in selector: " << text << std::endl;
+    std::cerr << "    ERROR: Syntax error in selector: " << text << std::endl;
 }
 
 static void ignore_whitespace(std::istream& in)

@@ -4,20 +4,20 @@ using namespace std::literals;
 
 void MIDIFile::dump() const
 {
-    std::cout << "MIDI file format=" << static_cast<int>(m_format) << ", smpte=" << m_is_smpte << std::endl;
+    std::cerr << "MIDI file format=" << static_cast<int>(m_format) << ", smpte=" << m_is_smpte << std::endl;
     if(m_is_smpte)
-        std::cout << "negative_smpte_format=" << m_negative_smpte_format << ", ticks_per_frame=" << m_ticks_per_frame << std::endl;
+        std::cerr << "negative_smpte_format=" << m_negative_smpte_format << ", ticks_per_frame=" << m_ticks_per_frame << std::endl;
 
     else
-        std::cout << "ticks_per_quarter_note=" << m_ticks_per_quarter_note << std::endl;
-    std::cout << "track count: " << m_tracks.size() << std::endl;
+        std::cerr << "ticks_per_quarter_note=" << m_ticks_per_quarter_note << std::endl;
+    std::cerr << "track count: " << m_tracks.size() << std::endl;
 }
 
 bool MIDIFile::read_midi(std::istream& in)
 {
     if(!in.good())
     {
-        std::cout << "ERROR: Empty or invalid stream" << std::endl;
+        std::cerr << "ERROR: Empty or invalid stream" << std::endl;
         return false;
     }
 
@@ -46,7 +46,7 @@ bool MIDIFile::read_chunk(std::istream& in)
     {
         if(m_header_encountered)
         {
-            std::cout << "ERROR: Header encountered twice" << std::endl;
+            std::cerr << "ERROR: Header encountered twice" << std::endl;
             return false;
         }
         m_header_encountered = true;
@@ -56,14 +56,14 @@ bool MIDIFile::read_chunk(std::istream& in)
     {
         if(!m_header_encountered)
         {
-            std::cout << "ERROR: MTrk without header" << std::endl;
+            std::cerr << "ERROR: MTrk without header" << std::endl;
             return false;
         }
         return read_track_data(in, length);
     }
 
     // Your programs should EXPECT alien chunks and treat them as if they weren't there
-    std::cout << "Ignoring alien chunk (" << length << " bytes)" << std::endl;
+    std::cerr << "Ignoring alien chunk (" << length << " bytes)" << std::endl;
     if(!in.ignore(length))
         return false;
 
@@ -87,13 +87,13 @@ bool MIDIFile::read_header(std::istream& in)
 
     if(format > 2)
     {
-        std::cout << "ERROR: Invalid format value" << std::endl;
+        std::cerr << "ERROR: Invalid format value" << std::endl;
         return false;
     }
     m_format = static_cast<Format>(format);
     if(m_format == Format::SingleMultichannelTrack && ntrks > 1)
     {
-        std::cout << "ERROR: Multiple tracks in single multichannel track format" << std::endl;
+        std::cerr << "ERROR: Multiple tracks in single multichannel track format" << std::endl;
         return false;
     }
     m_tracks.reserve(ntrks);
@@ -119,7 +119,7 @@ bool MIDIFile::read_track_data(std::istream& in, size_t length)
     // at least one MTrk event must be present
     if(length == 0)
     {
-        std::cout << "ERROR: No events in track" << std::endl;
+        std::cerr << "ERROR: No events in track" << std::endl;
         return false;
     }
     Track track;
@@ -150,7 +150,7 @@ bool MIDIFile::read_track_data(std::istream& in, size_t length)
             if(status >= 0x80 && status <= 0xef)
                 return read_channeled_event(in, status & 0xf0, status & 0x0f);
 
-            std::cout << "ERROR: Invalid status number: " << std::hex << (int)status << std::dec << std::endl;
+            std::cerr << "ERROR: Invalid status number: " << std::hex << (int)status << std::dec << std::endl;
             return std::make_unique<InvalidEvent>(status);
         }();
         if(!event)
@@ -196,13 +196,13 @@ std::unique_ptr<Event> MIDIFile::read_meta_event(std::istream& in, uint8_t type)
     if(!len.has_value())
         return {};
 
-    std::cout << "meta-event type=" << std::hex << (int)type << std::dec << " len=" << len.value() << std::endl;
+    std::cerr << "meta-event type=" << std::hex << (int)type << std::dec << " len=" << len.value() << std::endl;
     // 3.1 - Meta-Event Definitions
     switch(type)
     {
         case 0x00: // Sequence Number
             // "This optional event, which must occur at the beginning of a track"
-            std::cout << "Sequence Number" << std::endl;
+            std::cerr << "Sequence Number" << std::endl;
             in.ignore(1);
             return {};
         case 0x01: // Text Event
