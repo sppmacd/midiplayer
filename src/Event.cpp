@@ -23,31 +23,6 @@ void SetTempoEvent::execute(MIDIPlayer& player)
     player.set_tempo(m_microseconds_per_quarter_note);
 }
 
-static inline bool is_black(MIDIKey key)
-{
-    int relative_key = key % 12;
-    return (relative_key == 1 || relative_key == 3 || relative_key == 6 || relative_key == 8 || relative_key == 10);
-}
-
-static inline float key_to_piano_position(MIDIKey key)
-{
-    int relative_key = key % 12;
-    int octave = key / 12;
-    if(is_black(key))
-        return key_to_piano_position(key - 1) + 0.75f;
-    if(relative_key < 1)
-        return relative_key + octave * 7;
-    if(relative_key < 3)
-        return relative_key - 1 + octave * 7;
-    if(relative_key < 6)
-        return relative_key - 2 + octave * 7;
-    if(relative_key < 8)
-        return relative_key - 3 + octave * 7;
-    if(relative_key < 10)
-        return relative_key - 4 + octave * 7;
-    return relative_key - 5 + octave * 7;
-}
-
 void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 {
     if(!m_cached_color.has_value())
@@ -63,11 +38,11 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         
         if(real_y_start > 0 || real_y_start + y_size < -size.y)
             return;
-        auto black = is_black(m_key);
+        auto black = m_key.is_black();
         float key_size = black ? 0.5 : 1;
         sf::RectangleShape rs({key_size * size.x / 128, y_size});
         rs.setFillColor(color);
-        auto key_position = key_to_piano_position(m_key);
+        auto key_position = m_key.to_piano_position();
         rs.setPosition(key_position * size.x / 128, real_y_start);
         auto& shader = player.note_shader();
         shader.setUniform("uKeySize", sf::Vector2f{key_size * target.getSize().x / 128.f, y_size * (target.getSize().y / size.y)});
@@ -83,7 +58,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
             float rand_x_speed = std::uniform_real_distribution<float>(-0.4, 0.4)(engine);
             float rand_y_speed = std::uniform_real_distribution<float>(-0.1, -0.3)(engine);
             int lifetime = std::uniform_int_distribution<int>(90, 120)(engine);
-            player.spawn_particle(Particle{{key_to_piano_position(m_key) * size.x / 128 + 0.5f, 0}, {rand_x_speed, rand_y_speed}, sf::Color(
+            player.spawn_particle(Particle{{m_key.to_piano_position() * size.x / 128 + 0.5f, 0}, {rand_x_speed, rand_y_speed}, sf::Color(
                 std::min(255, color.r + 50),
                 std::min(255, color.g + 50),
                 std::min(255, color.b + 50)),

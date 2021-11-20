@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MIDIKey.h"
+
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <optional>
@@ -99,9 +101,6 @@ private:
 };
 
 using MIDIChannel = uint8_t;
-
-// TODO: Make it a class
-using MIDIKey = uint8_t;
 
 class NoteEvent : public Event
 {
