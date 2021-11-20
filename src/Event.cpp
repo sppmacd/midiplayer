@@ -102,7 +102,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
                 int note_size_y = tick() - start_note->second;
                 if(player.current_tick() > start_note->second && player.current_tick() < tick())
                     spawn_particles();
-                render_note((size.y - static_cast<int>(tick())), note_size_y * scale, color);
+                render_note((size.y * scale - static_cast<int>(tick())), note_size_y * scale, color);
                 player.started_notes().erase(start_note);
             }
         }
