@@ -44,6 +44,7 @@ public:
 
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
     void render_particles(sf::RenderTarget& target) const;
+    void render_piano(sf::RenderTarget& target) const;
 
     sf::Shader& note_shader() const { return m_note_shader; }
     sf::Shader& particle_shader() const { return m_particle_shader; }

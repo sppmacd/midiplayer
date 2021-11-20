@@ -281,7 +281,6 @@ sf::Color MIDIPlayer::resolve_color(NoteEvent& event) const
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
-    
     /*sf::CircleShape cs(std::abs(m_wind.speed));
     cs.setOrigin(std::abs(m_wind.speed), std::abs(m_wind.speed));
     cs.setPosition(m_wind.pos);
@@ -302,5 +301,38 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
         shader.setUniform("uCenter", particle.position);
         target.draw(cs, sf::RenderStates{&shader});
         //std::cerr << center.x << ";" << center.y << std::endl;
+    }
+}
+
+void MIDIPlayer::render_piano(sf::RenderTarget& target) const
+{
+    auto upper_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y - 100.f)}).y;
+    auto lower_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y)}).y;
+    // a0 -- c8
+    for(size_t s = 21; s <= 108; s++)
+    {
+        MIDIKey key{static_cast<uint8_t>(s)};
+        if(!key.is_black())
+        {
+            sf::RectangleShape rs{{1.f, (lower_y_to_view_pos-upper_y_to_view_pos)}};
+            rs.setPosition(key.to_piano_position(), 0.f);
+            rs.setFillColor(sf::Color(200, 200, 200));
+            rs.setOutlineColor(sf::Color(150, 150, 150));
+            rs.setOutlineThickness(0.1f);
+            target.draw(rs);
+        }
+    }
+    for(size_t s = 21; s <= 108; s++)
+    {
+        MIDIKey key{static_cast<uint8_t>(s)};
+        if(key.is_black())
+        {
+            sf::RectangleShape rs{{0.5f, (lower_y_to_view_pos-upper_y_to_view_pos) / 2.f}};
+            rs.setPosition(key.to_piano_position(), 0.f);
+            rs.setFillColor(sf::Color(50, 50, 50));
+            rs.setOutlineColor(sf::Color(70, 70, 70));
+            rs.setOutlineThickness(0.1f);
+            target.draw(rs);
+        }
     }
 }

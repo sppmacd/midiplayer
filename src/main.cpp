@@ -171,7 +171,9 @@ int main(int argc, char* argv[])
             target.clear();
 
             float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
-            auto view = sf::View{sf::FloatRect(0, -128.f / aspect, 128.f, 128.f / aspect)};
+            constexpr float piano_size_px = 100.f; // TODO: Make it configurable??
+            const float piano_size = piano_size_px * (128.f / aspect) / target.getSize().y;
+            auto view = sf::View{sf::FloatRect(0, -128.f / aspect + piano_size, 128.f, 128.f / aspect)};
             target.setView(view);
             if(mode == Mode::Realtime)
             {
@@ -188,6 +190,7 @@ int main(int argc, char* argv[])
                 });
             }
             player.render_particles(target);
+            player.render_piano(target);
             {
                 sf::Vector2f target_size {target.getSize()};
                 target.setView(sf::View({0, 0, target_size.x, target_size.y}));
