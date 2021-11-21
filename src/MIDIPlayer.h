@@ -85,8 +85,8 @@ private:
 
     std::vector<std::pair<std::vector<std::unique_ptr<Selector>>, sf::Color>> m_channel_colors;
     sf::Color m_default_color { 128, 128, 128, 128 };
-    int m_particle_count = 3;
-    float m_particle_radius = 0.2;
-    float m_particle_glow_size = 0.2;
+    int m_particle_count = 2;
+    float m_particle_radius = 0.5;
+    float m_particle_glow_size = 0.1;
     size_t m_max_events_per_track = 4096;
 };
