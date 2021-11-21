@@ -34,26 +34,9 @@ struct Note
     sf::Sound sound;
 } s_notes[128];
 
-static int proper_modulo(int a, int b)
-{
-    int result = a < 0 ? ((a + 1) % b + b - 1) : a % b;
-    if(!(result < b))
-    {
-        std::cerr << "proper_mod " << a << "%" << b << "=" << result << std::endl;
-        assert(false);
-    }
-    return result;
-}
-
-static int proper_division(int a, int b)
-{
-    return a < 0 ? a / b - 1 : a / b;
-}
-
 static float index_to_frequency(int index)
 {
-    int c4_relative_index = index - 60;
-    return s_frequency_lookup_table[proper_modulo(c4_relative_index, 12)] * std::pow(2, proper_division(c4_relative_index, 12));
+    return s_frequency_lookup_table[index % 12] * std::pow(2, index / 12 - 4);
 }
 
 void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
