@@ -29,7 +29,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         m_cached_color = player.resolve_color(*this);
     auto color = m_cached_color.value();
     auto size = target.getView().getSize();
-    const float scale = player.real_time() == MIDIPlayer::RealTime::Yes ? 0.5 : 0.05;
+    const float scale = player.scale();
 
     auto render_note = [&](float y_start, float y_size, sf::Color const& color) {
         float real_y_start = (y_start + (player.real_time() == MIDIPlayer::RealTime::Yes

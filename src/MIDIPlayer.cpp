@@ -151,6 +151,26 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             }
             m_max_events_per_track = c;
         }
+        else if(command == "real_time_scale"sv)
+        {
+            double c;
+            if(!(config_file >> c))
+            {
+                std::cerr << "ERROR: real_time_scale requires arguments: <factor>" << std::endl;
+                exit(1);
+            }
+            m_real_time_scale = c;
+        }
+        else if(command == "play_scale"sv)
+        {
+            double c;
+            if(!(config_file >> c))
+            {
+                std::cerr << "ERROR: play_scale requires arguments: <factor>" << std::endl;
+                exit(1);
+            }
+            m_play_scale = c;
+        }
         else
         {
             // TODO: Help

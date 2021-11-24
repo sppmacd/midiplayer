@@ -59,6 +59,7 @@ public:
 
     sf::Color resolve_color(NoteEvent& event) const;
     int particle_count() const { return m_particle_count; }
+    double scale() const { return real_time() == MIDIPlayer::RealTime::Yes ? m_real_time_scale : m_play_scale; }
 
 private:
     static void ensure_sounds_generated();
@@ -89,4 +90,6 @@ private:
     float m_particle_radius = 0.5;
     float m_particle_glow_size = 0.1;
     size_t m_max_events_per_track = 4096;
+    double m_real_time_scale = 0.5;
+    double m_play_scale = 0.05;
 };
