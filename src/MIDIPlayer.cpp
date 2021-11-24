@@ -32,6 +32,7 @@ struct Note
 {
     sf::SoundBuffer buffer;
     sf::Sound sound;
+    bool is_playing = false;
 } s_notes[128];
 
 static float index_to_frequency(int index)
@@ -185,6 +186,7 @@ void MIDIPlayer::ensure_sounds_generated()
 void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing)
 {
     s_notes[index].sound.setVolume((float)velocity / 1.27);
+    s_notes[index].is_playing = playing;
     if(playing)
         s_notes[index].sound.play();
     else
@@ -299,7 +301,7 @@ void MIDIPlayer::render_piano(sf::RenderTarget& target) const
         {
             sf::RectangleShape rs{{1.f, (lower_y_to_view_pos-upper_y_to_view_pos)}};
             rs.setPosition(key.to_piano_position(), 0.f);
-            rs.setFillColor(sf::Color(200, 200, 200));
+            rs.setFillColor(s_notes[key].is_playing ? sf::Color(200, 200, 200) : sf::Color(230, 230, 230));
             rs.setOutlineColor(sf::Color(150, 150, 150));
             rs.setOutlineThickness(0.1f);
             target.draw(rs);
@@ -312,7 +314,7 @@ void MIDIPlayer::render_piano(sf::RenderTarget& target) const
         {
             sf::RectangleShape rs{{0.5f, (lower_y_to_view_pos-upper_y_to_view_pos) / 2.f}};
             rs.setPosition(key.to_piano_position(), 0.f);
-            rs.setFillColor(sf::Color(50, 50, 50));
+            rs.setFillColor(s_notes[key].is_playing ? sf::Color(20, 20, 20) : sf::Color(50, 50, 50));
             rs.setOutlineColor(sf::Color(70, 70, 70));
             rs.setOutlineThickness(0.1f);
             target.draw(rs);
