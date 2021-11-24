@@ -55,10 +55,10 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         static std::default_random_engine engine;
         for(int i = 0; i < player.particle_count(); i++)
         {
-            float velocity_factor = ((int)m_velocity - 64) / 800.f + 0.04f;
-            float rand_x_speed = std::uniform_real_distribution<float>(-0.1, 0.1)(engine);
-            float rand_y_speed = std::uniform_real_distribution<float>(-0.025, -0.075)(engine) - velocity_factor;
-            int lifetime = std::uniform_int_distribution<int>(90, 120)(engine);
+            float velocity_factor = ((int)m_velocity - 64) / 800.f + 0.03f;
+            float rand_x_speed = std::uniform_real_distribution<float>(-0.05, 0.05)(engine);
+            float rand_y_speed = std::uniform_real_distribution<float>(-0.015, -0.035)(engine) - velocity_factor;
+            int lifetime = std::uniform_int_distribution<int>(120, 180)(engine);
             player.spawn_particle(Particle{{m_key.to_piano_position() * size.x / MIDIPlayer::view_size_x + 0.5f, 0}, {rand_x_speed, rand_y_speed}, sf::Color(
                 std::min(255, color.r + 50),
                 std::min(255, color.g + 50),
