@@ -163,6 +163,8 @@ int main(int argc, char* argv[])
             sf::Event event;
             while(window.pollEvent(event))
             {
+                if(event.type == sf::Event::Closed)
+                    player.set_playing(false);
             }
         }
         player.update();

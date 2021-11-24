@@ -43,6 +43,7 @@ public:
     void update();
 
     bool playing() const { return m_playing; }
+    void set_playing(bool playing) { m_playing = playing; }
     RealTime real_time() const { return m_real_time; }
     size_t current_tick() const { return m_current_tick; }
     size_t ticks_per_frame() const;
