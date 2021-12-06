@@ -87,7 +87,9 @@ private:
     enum class Attribute
     {
         Channel,
-        Note
+        Note,
+        WhiteKey,
+        BlackKey
     };
 
     Attribute m_attribute {};

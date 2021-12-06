@@ -19,12 +19,18 @@ static void ignore_whitespace(std::istream& in)
         in.get();
 }
 
+bool is_identifier_character(char ch)
+{
+    return isalnum(ch) || ch == '_';
+}
+
 static std::optional<std::string> read_identifier(std::istream& in)
 {
     std::string out;
-    if(!isalpha(in.peek()))
+
+    if(auto ch = in.peek(); !is_identifier_character(ch) || isdigit(ch))
         return {};
-    while(isalnum(in.peek()))
+    while(is_identifier_character(in.peek()))
         out += in.get();
     return out;
 }
@@ -128,7 +134,11 @@ std::unique_ptr<Selector> AttributeSelector::read(std::istream& in)
         return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Channel, std::move(value)} };
     if(attribute_name == "note"sv)
         return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Note, std::move(value)} };
-    parse_error("Unknown attribute");
+    if(attribute_name == "white_key"sv)
+        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::WhiteKey, std::move(value)} };
+    if(attribute_name == "black_key"sv)
+        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::BlackKey, std::move(value)} };
+    parse_error("Unknown attribute: " + attribute_name.value());
     return nullptr;
 }
 
@@ -140,6 +150,10 @@ bool AttributeSelector::matches(MIDIPlayer const& player, NoteEvent const& event
             return m_value.matches(event.channel());
         case Attribute::Note:
             return m_value.matches(event.key());
+        case Attribute::WhiteKey:
+            return m_value.matches(event.key().white_key_index());
+        case Attribute::BlackKey:
+            return m_value.matches(event.key().black_key_index());
     }
     abort();
 }

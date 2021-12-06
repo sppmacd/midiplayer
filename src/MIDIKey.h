@@ -10,6 +10,8 @@ public:
 
     bool is_black() const;
     float to_piano_position() const;
+    int white_key_index() const;
+    int black_key_index() const;
 
     operator uint8_t() const { return m_code; }
     MIDIKey operator-(int v) const { return MIDIKey{static_cast<uint8_t>(m_code - v)}; }
