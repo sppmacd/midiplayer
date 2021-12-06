@@ -53,8 +53,9 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
 }
 
 MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
-: m_midi(midi), m_real_time(real_time)
+: m_midi(midi), m_real_time(real_time), m_start_time{std::chrono::system_clock::now()}
 {
+    midi.on_player_attach(*this);
     ensure_sounds_generated();
     if(
            m_note_shader.loadFromFile("res/shaders/note.vert", "res/shaders/note.frag")
@@ -220,9 +221,17 @@ size_t MIDIPlayer::ticks_per_frame() const
 
 void MIDIPlayer::update()
 {
+    auto previous_current_tick = m_current_tick;
+    if(m_real_time == RealTime::No)
+        m_current_tick += ticks_per_frame();
+    else // T/qn   /   ms/qn = T/qn * qn/ms =  T/ms
+    {
+        auto time = (std::chrono::system_clock::now() - m_start_time);
+        m_current_tick = time / 1us * ((double)m_midi.ticks_per_quarter_note() / m_microseconds_per_quarter_note);
+    }
+
     m_midi.update();
-    auto ticks = ticks_per_frame();
-    auto events = m_midi.find_events_in_range(m_current_tick, m_current_tick + ticks);
+    auto events = m_midi.find_events_in_range(previous_current_tick, m_current_tick);
 
     for(auto const& it: events)
         it->execute(*this);
@@ -261,8 +270,6 @@ void MIDIPlayer::update()
     }
 
     std::erase_if(m_particles, [](auto const& particle) { return particle.lifetime <= 0; });
-
-    m_current_tick += ticks;
 }
 
 sf::Color MIDIPlayer::resolve_color(NoteEvent& event) const

@@ -1,8 +1,9 @@
 #include "MIDIDevice.h"
 
+#include "MIDIPlayer.h"
 #include <atomic>
+#include <cassert>
 #include <cstring>
-#include <ext/stdio_filebuf.h>
 #include <fcntl.h>
 
 MIDIDevice::MIDIDevice(std::string const& path)
@@ -43,13 +44,13 @@ std::unique_ptr<Event> MIDIDevice::read_event()
 
 void MIDIDevice::update()
 {
+    assert(m_player);
     while(auto event = read_event())
     {
         // Do not store invalid events
         if(dynamic_cast<InvalidEvent*>(event.get()))
             continue;
-        event->set_tick(m_tick);
+        event->set_tick(m_player->current_tick());
         m_tracks[0].add_event(std::move(event));
     }
-    m_tick++;
 }

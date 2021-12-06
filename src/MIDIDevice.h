@@ -17,13 +17,13 @@ public:
     std::unique_ptr<Event> read_event();
     virtual void update() override;
 
-    // TODO: Don't assume tempo 120 BPM with 60 ticks/s
-    virtual uint16_t ticks_per_quarter_note() const override { return 30; }
+    virtual uint16_t ticks_per_quarter_note() const override { return 192; }
+    virtual void on_player_attach(MIDIPlayer& player) override { m_player = &player; }
 
 private:
     std::jthread m_io_thread;
     std::queue<std::unique_ptr<Event>> m_event_queue;
     std::mutex m_event_queue_mutex;
     std::atomic<bool> m_valid;
-    size_t m_tick = 0;
+    MIDIPlayer* m_player {nullptr};
 };

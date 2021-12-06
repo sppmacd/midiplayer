@@ -2,6 +2,7 @@
 
 #include "Event.h"
 #include "Selector.h"
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <list>
@@ -91,6 +92,7 @@ private:
     float m_particle_radius = 0.5;
     float m_particle_glow_size = 0.1;
     size_t m_max_events_per_track = 4096;
-    double m_real_time_scale = 0.5;
+    double m_real_time_scale = 0.05;
     double m_play_scale = 0.05;
+    std::chrono::time_point<std::chrono::system_clock> m_start_time;
 };
