@@ -6,6 +6,8 @@
 #include <cstring>
 #include <fcntl.h>
 
+using namespace std::chrono_literals;
+
 MIDIDevice::MIDIDevice(std::string const& path)
 {
     m_tracks.resize(1);
@@ -26,6 +28,8 @@ MIDIDevice::MIDIDevice(std::string const& path)
                 m_valid.store(false, std::memory_order_relaxed);
                 return;
             }
+            if(m_player)
+                event->set_tick(current_tick(*m_player));
             std::lock_guard lock{m_event_queue_mutex};
             m_event_queue.push(std::move(event));
         }
@@ -42,15 +46,20 @@ std::unique_ptr<Event> MIDIDevice::read_event()
     return event;
 }
 
-void MIDIDevice::update()
+void MIDIDevice::update(MIDIPlayer& player)
 {
-    assert(m_player);
+    m_player = &player;
     while(auto event = read_event())
     {
         // Do not store invalid events
         if(dynamic_cast<InvalidEvent*>(event.get()))
             continue;
-        event->set_tick(m_player->current_tick());
         m_tracks[0].add_event(std::move(event));
     }
+}
+
+size_t MIDIDevice::current_tick(MIDIPlayer const& player) const
+{
+    auto time = (std::chrono::system_clock::now() - player.start_time());
+    return time / 1us * ((double)ticks_per_quarter_note() / player.microseconds_per_quarter_note());
 }

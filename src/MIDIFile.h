@@ -8,12 +8,15 @@ public:
 
     virtual uint16_t ticks_per_quarter_note() const override { return m_ticks_per_quarter_note; }
     virtual bool is_valid() const override { return m_valid; }
+    virtual void update(MIDIPlayer& player) override { m_tick += ticks_per_frame(player); }
+    virtual size_t current_tick(MIDIPlayer const&) const override { return m_tick; }
+
+    size_t ticks_per_frame(MIDIPlayer& player) const;
 
     void dump() const;
 
 private:
     bool m_valid { false };
-
     bool m_header_encountered { false };
 
     enum class Format
@@ -33,6 +36,8 @@ private:
 
     // For m_is_smpte = false
     uint16_t m_ticks_per_quarter_note;
+
+    size_t m_tick {};
 
     bool read_midi(std::istream& in);
     bool read_chunk(std::istream& in);

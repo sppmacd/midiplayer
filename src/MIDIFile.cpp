@@ -1,5 +1,7 @@
 #include "MIDIFile.h"
 
+#include "MIDIPlayer.h"
+
 using namespace std::literals;
 
 void MIDIFile::dump() const
@@ -28,6 +30,12 @@ bool MIDIFile::read_midi(std::istream& in)
     }
 
     return true;
+}
+
+size_t MIDIFile::ticks_per_frame(MIDIPlayer& player) const
+{
+    // TODO: Don't assume 60 FPS
+    return (static_cast<double>(ticks_per_quarter_note()) / player.microseconds_per_quarter_note()) / (60 / 1000000.0);
 }
 
 // 1.3 - Chunks

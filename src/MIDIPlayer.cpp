@@ -55,7 +55,6 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
 MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
 : m_midi(midi), m_real_time(real_time), m_start_time{std::chrono::system_clock::now()}
 {
-    midi.on_player_attach(*this);
     ensure_sounds_generated();
     if(
            m_note_shader.loadFromFile("res/shaders/note.vert", "res/shaders/note.frag")
@@ -214,23 +213,16 @@ void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing)
         s_notes[index].sound.stop();
 }
 
-size_t MIDIPlayer::ticks_per_frame() const
+size_t MIDIPlayer::current_tick() const
 {
-    return (static_cast<double>(m_midi.ticks_per_quarter_note()) / m_microseconds_per_quarter_note) / (m_fps / 1000000.0);
+    return m_midi.current_tick(*this);
 }
 
 void MIDIPlayer::update()
 {
     auto previous_current_tick = m_current_tick;
-    if(m_real_time == RealTime::No)
-        m_current_tick += ticks_per_frame();
-    else // T/qn   /   ms/qn = T/qn * qn/ms =  T/ms
-    {
-        auto time = (std::chrono::system_clock::now() - m_start_time);
-        m_current_tick = time / 1us * ((double)m_midi.ticks_per_quarter_note() / m_microseconds_per_quarter_note);
-    }
-
-    m_midi.update();
+    m_midi.update(*this);
+    m_current_tick = current_tick();
     auto events = m_midi.find_events_in_range(previous_current_tick, m_current_tick);
 
     for(auto const& it: events)

@@ -15,8 +15,8 @@ public:
     void dump() const;
     virtual bool is_valid() const = 0;
     virtual uint16_t ticks_per_quarter_note() const = 0;
-    virtual void update() {}
-    virtual void on_player_attach(MIDIPlayer&) {}
+    virtual size_t current_tick(MIDIPlayer const&) const = 0;
+    virtual void update(MIDIPlayer&) {}
 
     template<class Callback>
     void for_each_event(Callback callback)

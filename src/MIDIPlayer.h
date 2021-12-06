@@ -46,8 +46,9 @@ public:
     bool playing() const { return m_playing; }
     void set_playing(bool playing) { m_playing = playing; }
     RealTime real_time() const { return m_real_time; }
-    size_t current_tick() const { return m_current_tick; }
-    size_t ticks_per_frame() const;
+    size_t current_tick() const;
+    auto start_time() const { return m_start_time; }
+    auto microseconds_per_quarter_note() const { return m_microseconds_per_quarter_note; }
 
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
     void render_particles(sf::RenderTarget& target) const;
@@ -94,5 +95,6 @@ private:
     size_t m_max_events_per_track = 4096;
     double m_real_time_scale = 0.05;
     double m_play_scale = 0.05;
+    
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
 };
