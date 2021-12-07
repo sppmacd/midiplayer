@@ -54,6 +54,10 @@ public:
     void render_particles(sf::RenderTarget& target) const;
     void render_piano(sf::RenderTarget& target) const;
 
+    enum class Preview { Yes, No };
+
+    void render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const;
+
     sf::Shader& note_shader() const { return m_note_shader; }
     sf::Shader& particle_shader() const { return m_particle_shader; }
 
@@ -83,6 +87,7 @@ private:
     std::list<Particle> m_particles;
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;
+    sf::Font m_font;
 
     std::map<MIDIKey, size_t> m_started_notes;
     std::map<MIDIKey, std::optional<size_t>> m_ended_notes;

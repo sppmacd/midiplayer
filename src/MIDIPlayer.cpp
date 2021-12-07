@@ -9,6 +9,7 @@
 #include <cmath>
 #include <fstream>
 #include <random>
+#include <sstream>
 
 using namespace std::literals;
 
@@ -61,6 +62,9 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
         && m_particle_shader.loadFromFile("res/shaders/particle.vert", "res/shaders/particle.frag")
     )
         std::cerr << "Shaders loaded" << std::endl;
+
+    if(m_font.loadFromFile("res/font.ttf"))
+        std::cerr << "Font loaded" << std::endl;
 
     std::ifstream config_file("config.cfg");
     if(config_file.fail())
@@ -339,4 +343,17 @@ void MIDIPlayer::render_piano(sf::RenderTarget& target) const
             target.draw(rs);
         }
     }
+}
+
+void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const
+{
+    sf::Vector2f target_size {target.getSize()};
+    target.setView(sf::View({0, 0, target_size.x, target_size.y}));
+    std::ostringstream oss;
+    oss << current_tick();
+    if(preview == Preview::Yes)
+        oss << "  " + std::to_string(1.f / last_fps_time.asSeconds()) + " fps";
+    sf::Text text{oss.str(), m_font, 10};
+    text.setPosition(5, 5);
+    target.draw(text);
 }

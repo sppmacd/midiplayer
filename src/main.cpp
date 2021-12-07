@@ -5,7 +5,6 @@
 #include "MIDIFile.h"
 #include "MIDIPlayer.h"
 
-#include <sstream>
 #include <sys/stat.h>
 
 using namespace std::literals;
@@ -151,9 +150,6 @@ int main(int argc, char* argv[])
     if(!render_texture)
         window.setFramerateLimit(60);
 
-    sf::Font font;
-    font.loadFromFile("res/font.ttf");
-
     MIDIPlayer player{*midi, mode == Mode::Realtime ? MIDIPlayer::RealTime::Yes : MIDIPlayer::RealTime::No};
     sf::Clock fps_clock;
     sf::Time last_fps_time;
@@ -192,17 +188,7 @@ int main(int argc, char* argv[])
             }
             player.render_particles(target);
             player.render_piano(target);
-            {
-                sf::Vector2f target_size {target.getSize()};
-                target.setView(sf::View({0, 0, target_size.x, target_size.y}));
-                std::ostringstream oss;
-                oss << player.current_tick();
-                if(preview)
-                    oss << "  " + std::to_string(1.f / last_fps_time.asSeconds()) + " fps";
-                sf::Text text{oss.str(), font, 10};
-                text.setPosition(5, 5);
-                target.draw(text);
-            }
+            player.render_debug_info(target, preview ? MIDIPlayer::Preview::Yes : MIDIPlayer::Preview::No, last_fps_time);
         };
         render(window, true);
         window.display();
