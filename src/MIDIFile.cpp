@@ -40,7 +40,7 @@ size_t MIDIFileInput::ticks_per_frame(MIDIPlayer& player) const
     return (static_cast<double>(ticks_per_quarter_note()) / player.microseconds_per_quarter_note()) / (60 / 1000000.0);
 }
 
-#define ERROR(msg) do { std::cerr << "ERROR: Failed to " << msg << std::endl; return {}; } while(false)
+#define ERROR(msg) do { std::cerr << "ERROR: Failed to " << msg << " at offset " << std::hex << in.tellg() << std::dec << std::endl; return {}; } while(false)
 
 // 1.3 - Chunks
 bool MIDIFileInput::read_chunk(std::istream& in)
@@ -163,7 +163,7 @@ bool MIDIFileInput::read_track_data(std::istream& in, size_t length)
                 return read_channeled_event(in, status & 0xf0, status & 0x0f);
 
             std::cerr << "ERROR: Invalid status number: " << std::hex << (int)status << std::dec << std::endl;
-            return std::make_unique<InvalidEvent>(status);
+            ERROR("status number");
         }();
         if(!event)
             ERROR("read event");
@@ -284,15 +284,17 @@ MIDIFileOutput::MIDIFileOutput(std::string path)
     // Header
     m_output.write("MThd", 4); // Signature
     m_output.write("\0\0\0\6", 4); // Length
-    m_output.write("\0\0", 2); // Format
+    m_output.write("\0\1", 2); // Format
     m_output.write("\0\1", 2); // Track count
     uint16_t ticks_per_quarter_note = htobe16(192);
     m_output.write((char*)&ticks_per_quarter_note, 2);
 
-    // Track header
+    // Main track header
     m_output.write("MTrk", 4);
     m_track_length_offset = m_output.tellp();
     m_output.write("\0\0\0\0", 4); // Length (To be filled out later)
+    write_event(TimeSignatureEvent{4,4,0,0});
+    write_event(SetTempoEvent{500000});
     m_output.flush();
 }
 
@@ -307,6 +309,8 @@ MIDIFileOutput::~MIDIFileOutput()
 
 void MIDIFileOutput::write_event(Event const& event)
 {
+    if(!event.is_serializable())
+        return;
     size_t offset = m_output.tellp();
     write_variable_length_quantity(event.tick() - m_last_tick);
     event.serialize(m_output);

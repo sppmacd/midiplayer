@@ -3,6 +3,7 @@
 #include "MIDIKey.h"
 
 #include <SFML/Graphics.hpp>
+#include <bit>
 #include <iostream>
 #include <optional>
 
@@ -18,6 +19,7 @@ public:
     virtual void render(MIDIPlayer&, sf::RenderTarget&) {}
     virtual void execute(MIDIPlayer&) = 0;
 
+    virtual bool is_serializable() const { return false; }
     virtual void serialize(std::ostream&) const {}
 
 private:
@@ -31,6 +33,7 @@ public:
     virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
     virtual void execute(MIDIPlayer&) override;
 
+    virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
         std::cerr << "Writing EndOfTrack" << std::endl;
@@ -87,6 +90,18 @@ public:
     virtual void dump() const override { std::cerr << "Set Tempo Event " << m_microseconds_per_quarter_note << std::endl; }
     virtual void execute(MIDIPlayer&) override;
 
+    virtual bool is_serializable() const override { return true; }
+    virtual void serialize(std::ostream& stream) const override
+    {
+        std::cerr << "Writing SetTempo" << std::endl;
+        stream.put(-1); // Meta-event
+        stream.put(0x51); // Set Tempo
+        stream.put(3); // size: vlq 3
+        stream.put((m_microseconds_per_quarter_note >> 16) & 0xff);
+        stream.put((m_microseconds_per_quarter_note >> 8) & 0xff);
+        stream.put(m_microseconds_per_quarter_note & 0xff);
+    }
+
 private:
     uint32_t m_microseconds_per_quarter_note;
 };
@@ -102,6 +117,19 @@ public:
         std::cerr << "Time Signature Event " << static_cast<int>(m_numerator) << "/" << static_cast<int>(m_denominator) << std::endl;
     }
     virtual void execute(MIDIPlayer&) override { /* TODO */ }
+
+    virtual bool is_serializable() const override { return true; }
+    virtual void serialize(std::ostream& stream) const override
+    {
+        std::cerr << "Writing TimeSignature" << std::endl;
+        stream.put(-1); // Meta-event
+        stream.put(0x58); // Time Signature
+        stream.put(4); // size: vlq 4
+        stream.put(m_numerator);
+        stream.put(std::countr_zero(m_denominator));
+        stream.put(m_clocks_per_metronome_click);
+        stream.put(m_32s_in_quarter_note);
+    }
 
 private:
     unsigned m_numerator;
@@ -133,6 +161,7 @@ public:
     MIDIKey key() const { return m_key; }
     uint8_t velocity() const { return m_velocity; }
 
+    virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
         if(m_type == Type::On)
