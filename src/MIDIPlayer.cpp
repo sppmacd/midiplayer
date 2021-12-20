@@ -379,18 +379,19 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf
     sf::Vector2f target_size {target.getSize()};
     target.setView(sf::View({0, 0, target_size.x, target_size.y}));
     std::ostringstream oss;
-    oss << current_tick();
+    oss << (preview == Preview::Yes ? "Tick=" : "") << current_tick();
     if(preview == Preview::Yes)
     {
-        oss << "  " + std::to_string(1.f / last_fps_time.asSeconds()) + " fps\n";
+        oss << "\n\n";
+        oss << std::to_string(1.f / last_fps_time.asSeconds()) + " fps\n";
         if(!m_winds.empty())
         {
             oss << "WIND:\n";
             for(auto const& wind : m_winds)
                 oss << "    [" << wind.pos.x << "," << wind.pos.y << "] " << wind.speed << " " << wind.time << "\n";
         }
+        oss << m_particles.size() << " particles" << std::endl;
     }
-    oss << m_particles.size() << " particles" << std::endl;
 
     sf::Text text{oss.str(), m_font, 10};
     text.setPosition(5, 5);
