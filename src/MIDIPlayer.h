@@ -39,7 +39,7 @@ public:
     void set_tempo(uint32_t microseconds_per_quarter_note) { m_microseconds_per_quarter_note = microseconds_per_quarter_note; }
     void stop() { m_playing = false; }
 
-    void set_sound_playing(int index, int velocity, bool playing);
+    void set_sound_playing(int index, int velocity, bool playing, sf::Color color);
 
     void update();
 

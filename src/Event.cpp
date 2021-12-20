@@ -106,5 +106,5 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 
 void NoteEvent::execute(MIDIPlayer& player)
 {
-    player.set_sound_playing(m_key, m_velocity, m_type == Type::On ? true : false);
+    player.set_sound_playing(m_key, m_velocity, m_type == Type::On ? true : false, player.resolve_color(*this));
 }
