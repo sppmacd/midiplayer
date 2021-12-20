@@ -175,6 +175,22 @@ MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
             }
             m_play_scale = c;
         }
+        else if(command == "background_image"sv)
+        {
+            config_file >> std::ws;
+            std::string path;
+            if(!(std::getline(config_file, path)))
+            {
+                std::cerr << "ERROR: background_image requires arguments: <path...>" << std::endl;
+                exit(1);
+            }
+            if(!m_background_texture.loadFromFile(path))
+            {
+                std::cerr << "WARNING: Failed to load background image" << std::endl;
+                continue;
+            }
+            m_background_sprite.setTexture(m_background_texture);
+        }
         else
         {
             // TODO: Help
@@ -356,4 +372,13 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf
     sf::Text text{oss.str(), m_font, 10};
     text.setPosition(5, 5);
     target.draw(text);
+}
+
+void MIDIPlayer::render_background(sf::RenderTarget& target) const
+{
+    auto* texture = m_background_sprite.getTexture();
+    if(!texture)
+        return;
+    target.setView(sf::View{sf::FloatRect{{}, sf::Vector2f{texture->getSize()}}});
+    target.draw(m_background_sprite);
 }

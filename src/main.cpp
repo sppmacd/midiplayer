@@ -168,6 +168,8 @@ int main(int argc, char* argv[])
         auto render = [&](sf::RenderTarget& target, bool preview) {
             target.clear();
 
+            player.render_background(target);
+
             float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
             const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
             auto view = sf::View{sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect)};

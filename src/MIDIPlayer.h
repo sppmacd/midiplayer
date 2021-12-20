@@ -53,6 +53,7 @@ public:
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
     void render_particles(sf::RenderTarget& target) const;
     void render_piano(sf::RenderTarget& target) const;
+    void render_background(sf::RenderTarget& target) const;
 
     enum class Preview { Yes, No };
 
@@ -100,6 +101,8 @@ private:
     size_t m_max_events_per_track = 4096;
     double m_real_time_scale = 0.05;
     double m_play_scale = 0.05;
+    sf::Texture m_background_texture;
+    sf::Sprite m_background_sprite;
     
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
 };
