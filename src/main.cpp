@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    sf::RenderWindow window(sf::VideoMode(500, 500), "MIDI Player");
+    sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "MIDI Player");
 
     std::unique_ptr<sf::RenderTexture> render_texture = [&]()->std::unique_ptr<sf::RenderTexture> {
         if(render_to_stdout)
