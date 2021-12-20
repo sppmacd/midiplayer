@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MIDI.h"
+#include "MIDIInput.h"
 #include <atomic>
 #include <fstream>
 #include <memory>
@@ -8,7 +8,7 @@
 #include <thread>
 #include <mutex>
 
-class MIDIDevice : public MIDI
+class MIDIDevice : public MIDIInput
 {
 public:
     MIDIDevice(std::string const& path);

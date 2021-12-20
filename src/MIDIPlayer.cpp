@@ -54,7 +54,7 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
         std::cerr << "loadFromSamples failed: " << sample_count << std::endl;
 }
 
-MIDIPlayer::MIDIPlayer(MIDI& midi, RealTime real_time)
+MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
 : m_midi(midi), m_real_time(real_time), m_start_time{std::chrono::system_clock::now()}
 {
     ensure_sounds_generated();

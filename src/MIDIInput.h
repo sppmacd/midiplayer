@@ -9,7 +9,7 @@
 #include "Track.h"
 
 // Based on https://www.cs.cmu.edu/~music/cmsip/readings/Standard-MIDI-file-format-updated.pdf
-class MIDI
+class MIDIInput
 {
 public:
     void dump() const;

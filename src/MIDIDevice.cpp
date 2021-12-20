@@ -21,7 +21,7 @@ MIDIDevice::MIDIDevice(std::string const& path)
         m_valid.store(true, std::memory_order_relaxed);
         while(true)
         {
-            auto event = MIDI::read_event(m_file);
+            auto event = MIDIInput::read_event(m_file);
             if(!event)
             {
                 std::cerr << "Failed to read event" << std::endl;

@@ -1,7 +1,7 @@
-#include "MIDI.h"
+#include "MIDIInput.h"
 
 // Based on https://www.cs.cmu.edu/~music/cmsip/readings/Standard-MIDI-file-format-updated.pdf
-class MIDIFile : public MIDI
+class MIDIFile : public MIDIInput
 {
 public:
     MIDIFile(std::istream& in) { m_valid = read_midi(in); }

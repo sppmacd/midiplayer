@@ -8,8 +8,7 @@
 #include <list>
 #include <SFML/Graphics.hpp>
 
-class MIDI;
-
+class MIDIInput;
 struct Particle
 {
     sf::Vector2f position;
@@ -33,7 +32,7 @@ public:
     static constexpr float view_size_x = 52.0;
     static constexpr float piano_size_px = 200.f;
 
-    MIDIPlayer(MIDI& midi, RealTime real_time);
+    MIDIPlayer(MIDIInput& midi, RealTime real_time);
 
     void set_fps(unsigned fps) { m_fps = fps; }
     void set_tempo(uint32_t microseconds_per_quarter_note) { m_microseconds_per_quarter_note = microseconds_per_quarter_note; }
@@ -72,7 +71,7 @@ public:
 private:
     static void ensure_sounds_generated();
 
-    MIDI& m_midi;
+    MIDIInput& m_midi;
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
     unsigned m_fps { 60 };
     size_t m_current_tick { 0 };
