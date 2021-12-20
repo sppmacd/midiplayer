@@ -281,7 +281,7 @@ void MIDIPlayer::update()
 
     for(auto& particle: m_particles)
     {
-        particle.position += {particle.motion.x, (m_real_time == RealTime::Yes ? 1 : -1) * particle.motion.y};
+        particle.position += {particle.motion.x, particle.motion.y};
         particle.motion.x /= 1.05f;
         particle.motion.y /= 1.01f;
         for(auto const& wind: m_winds)
