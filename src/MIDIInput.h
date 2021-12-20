@@ -12,6 +12,8 @@
 class MIDIInput
 {
 public:
+    virtual ~MIDIInput() = default;
+
     void dump() const;
     virtual bool is_valid() const = 0;
     virtual uint16_t ticks_per_quarter_note() const = 0;

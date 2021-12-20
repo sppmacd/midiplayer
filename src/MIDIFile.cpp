@@ -1,10 +1,12 @@
 #include "MIDIFile.h"
 
+#include "Event.h"
 #include "MIDIPlayer.h"
+#include <bit>
 
 using namespace std::literals;
 
-void MIDIFile::dump() const
+void MIDIFileInput::dump() const
 {
     std::cerr << "MIDI file format=" << static_cast<int>(m_format) << ", smpte=" << m_is_smpte << std::endl;
     if(m_is_smpte)
@@ -15,7 +17,7 @@ void MIDIFile::dump() const
     std::cerr << "track count: " << m_tracks.size() << std::endl;
 }
 
-bool MIDIFile::read_midi(std::istream& in)
+bool MIDIFileInput::read_midi(std::istream& in)
 {
     if(!in.good())
     {
@@ -32,20 +34,22 @@ bool MIDIFile::read_midi(std::istream& in)
     return true;
 }
 
-size_t MIDIFile::ticks_per_frame(MIDIPlayer& player) const
+size_t MIDIFileInput::ticks_per_frame(MIDIPlayer& player) const
 {
     // TODO: Don't assume 60 FPS
     return (static_cast<double>(ticks_per_quarter_note()) / player.microseconds_per_quarter_note()) / (60 / 1000000.0);
 }
 
+#define ERROR(msg) do { std::cerr << "ERROR: Failed to " << msg << std::endl; return {}; } while(false)
+
 // 1.3 - Chunks
-bool MIDIFile::read_chunk(std::istream& in)
+bool MIDIFileInput::read_chunk(std::istream& in)
 {
     char type[4]; uint32_t length;
     if(!in.read(type, 4))
         return in.eof();
     if(!in.read((char*)&length, 4))
-        return false;
+        ERROR("read chunk length");
     
     length = htobe32(length);
 
@@ -73,21 +77,21 @@ bool MIDIFile::read_chunk(std::istream& in)
     // Your programs should EXPECT alien chunks and treat them as if they weren't there
     std::cerr << "Ignoring alien chunk (" << length << " bytes)" << std::endl;
     if(!in.ignore(length))
-        return false;
+        ERROR("ignore alien chunk");
 
     return true;
 }
 
 // 2.1 - Header Chunks
-bool MIDIFile::read_header(std::istream& in)
+bool MIDIFileInput::read_header(std::istream& in)
 {
     uint16_t format, ntrks, division;
     if(!in.read((char*)&format, 2))
-        return false;
+        ERROR("read format");
     if(!in.read((char*)&ntrks, 2))
-        return false;
+        ERROR("read ntrks");
     if(!in.read((char*)&division, 2))
-        return false;
+        ERROR("read division");
 
     format = htobe16(format);
     ntrks = htobe16(ntrks);
@@ -98,8 +102,8 @@ bool MIDIFile::read_header(std::istream& in)
         std::cerr << "ERROR: Invalid format value" << std::endl;
         return false;
     }
-    m_format = static_cast<Format>(format);
-    if(m_format == Format::SingleMultichannelTrack && ntrks > 1)
+    m_format = static_cast<MIDIFileFormat>(format);
+    if(m_format == MIDIFileFormat::SingleMultichannelTrack && ntrks > 1)
     {
         std::cerr << "ERROR: Multiple tracks in single multichannel track format" << std::endl;
         return false;
@@ -122,7 +126,7 @@ bool MIDIFile::read_header(std::istream& in)
 }
 
 // 2.3 - Track Chunks
-bool MIDIFile::read_track_data(std::istream& in, size_t length)
+bool MIDIFileInput::read_track_data(std::istream& in, size_t length)
 {
     // at least one MTrk event must be present
     if(length == 0)
@@ -138,13 +142,13 @@ bool MIDIFile::read_track_data(std::istream& in, size_t length)
     {
         auto delta_time = read_variable_length_quantity(in);
         if(!delta_time.has_value())
-            return false;
+            ERROR("read delta time");
         current_tick += delta_time.value();
 
         auto event = [&]()->std::unique_ptr<Event> {
             uint8_t status = 0;
             if(!(in.read((char*)&status, 1)))
-                return {};
+                ERROR("read status");
             // 3 - Meta-Events
             if(status == 0xff)
             {
@@ -162,7 +166,7 @@ bool MIDIFile::read_track_data(std::istream& in, size_t length)
             return std::make_unique<InvalidEvent>(status);
         }();
         if(!event)
-            return false;
+            ERROR("read event");
         event->set_tick(current_tick);
         event->dump();
         track.add_event(std::move(event));
@@ -173,14 +177,14 @@ bool MIDIFile::read_track_data(std::istream& in, size_t length)
 }
 
 // 1.1 - Variable Length Quantity
-std::optional<uint32_t> MIDIFile::read_variable_length_quantity(std::istream& in) const
+std::optional<uint32_t> MIDIFileInput::read_variable_length_quantity(std::istream& in) const
 {
     uint32_t value = 0;
     while(true)
     {
         uint8_t byte = 0;
         if(!(in.read((char*)&byte, 1)))
-            return {};
+            ERROR("read vlq");
 
         value <<= 7;
         value |= byte & 0x7f;
@@ -190,7 +194,7 @@ std::optional<uint32_t> MIDIFile::read_variable_length_quantity(std::istream& in
     return {};
 }
 
-std::unique_ptr<Event> MIDIFile::read_meta_event(std::istream& in, uint8_t type)
+std::unique_ptr<Event> MIDIFileInput::read_meta_event(std::istream& in, uint8_t type)
 {
     auto read_string = [](std::istream& in, uint8_t len)->std::optional<std::string> {
         std::string data;
@@ -261,4 +265,78 @@ std::unique_ptr<Event> MIDIFile::read_meta_event(std::istream& in, uint8_t type)
     if(!in.ignore(len.value()))
         return {};
     return std::make_unique<InvalidEvent>(type);
+}
+
+////////////
+// OUTPUT //
+////////////
+
+MIDIFileOutput::MIDIFileOutput(std::string path)
+: m_output{path}
+{
+    if(m_output.fail())
+    {
+        std::cerr << "ERROR: Failed to open MIDI output file" << std::endl;
+        return;
+    }
+    std::cerr << "INFO: Enabled MIDI output to " << path << std::endl;
+
+    // Header
+    m_output.write("MThd", 4); // Signature
+    m_output.write("\0\0\0\6", 4); // Length
+    m_output.write("\0\0", 2); // Format
+    m_output.write("\0\1", 2); // Track count
+    uint16_t ticks_per_quarter_note = htobe16(192);
+    m_output.write((char*)&ticks_per_quarter_note, 2);
+
+    // Track header
+    m_output.write("MTrk", 4);
+    m_track_length_offset = m_output.tellp();
+    m_output.write("\0\0\0\0", 4); // Length (To be filled out later)
+    m_output.flush();
+}
+
+MIDIFileOutput::~MIDIFileOutput()
+{
+    // Write End Of Track event
+    EndOfTrackEvent event;
+    event.set_tick(m_last_tick + 192);
+    write_event(event);
+    std::cerr << "MIDIFileOutput: Closed successfully" << std::endl;
+}
+
+void MIDIFileOutput::write_event(Event const& event)
+{
+    size_t offset = m_output.tellp();
+    write_variable_length_quantity(event.tick() - m_last_tick);
+    event.serialize(m_output);
+
+    // write length
+    size_t event_size = (size_t)m_output.tellp() - offset;
+    m_track_length += event_size;
+
+    uint32_t track_length_be = htobe32(m_track_length);
+
+    m_output.seekp(m_track_length_offset);
+    m_output.write((char*)&track_length_be, 4);
+    m_output.seekp(offset + event_size);
+
+    m_last_tick = event.tick();
+}
+
+void MIDIFileOutput::write_variable_length_quantity(uint32_t value)
+{
+    uint32_t reversed_value = 0;
+    while(value > 0)
+    {
+        reversed_value |= value & 0x7f;
+        value >>= 7;
+        reversed_value <<= 7;
+    }
+    while(reversed_value > 127)
+    {
+        m_output.put(0x80 | (reversed_value & 0x7f));
+        reversed_value >>= 7;
+    }
+    m_output.put(reversed_value & 0x7f);
 }

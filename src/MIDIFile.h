@@ -1,10 +1,23 @@
+#pragma once
+
 #include "MIDIInput.h"
+#include "MIDIOutput.h"
+
+#include <fstream>
 
 // Based on https://www.cs.cmu.edu/~music/cmsip/readings/Standard-MIDI-file-format-updated.pdf
-class MIDIFile : public MIDIInput
+
+enum class MIDIFileFormat
+{
+    SingleMultichannelTrack,
+    SimultaneousTracks,
+    SequentiallyIndependentTracks,
+    Invalid
+};
+class MIDIFileInput : public MIDIInput
 {
 public:
-    MIDIFile(std::istream& in) { m_valid = read_midi(in); }
+    MIDIFileInput(std::istream& in) { m_valid = read_midi(in); }
 
     virtual uint16_t ticks_per_quarter_note() const override { return m_ticks_per_quarter_note; }
     virtual bool is_valid() const override { return m_valid; }
@@ -19,15 +32,7 @@ private:
     bool m_valid { false };
     bool m_header_encountered { false };
 
-    enum class Format
-    {
-        SingleMultichannelTrack,
-        SimultaneousTracks,
-        SequentiallyIndependentTracks,
-        Invalid
-    };
-
-    Format m_format { Format::Invalid };
+    MIDIFileFormat m_format { MIDIFileFormat::Invalid };
     bool m_is_smpte = false;
 
     // For m_is_smpte = true
@@ -46,4 +51,21 @@ private:
 
     std::optional<uint32_t> read_variable_length_quantity(std::istream& in) const;
     std::unique_ptr<Event> read_meta_event(std::istream& in, uint8_t type);
+};
+
+class MIDIFileOutput : public MIDIOutput
+{
+public:
+    explicit MIDIFileOutput(std::string path);
+    ~MIDIFileOutput();
+
+    virtual void write_event(Event const&) override;
+
+private:
+    std::ofstream m_output;
+    size_t m_track_length_offset {};
+    size_t m_last_tick {};
+    uint32_t m_track_length {};
+
+    void write_variable_length_quantity(uint32_t);
 };

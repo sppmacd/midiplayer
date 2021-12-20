@@ -12,8 +12,8 @@ MIDIDevice::MIDIDevice(std::string const& path)
 {
     m_tracks.resize(1);
     m_io_thread = std::jthread([this, path]() {
-        std::ifstream m_file(path);
-        if(m_file.fail())
+        std::ifstream file(path);
+        if(file.fail())
         {
             std::cerr << "Failed to open MIDI device " << path << ": " << strerror(errno) << std::endl;
             return;
@@ -21,7 +21,7 @@ MIDIDevice::MIDIDevice(std::string const& path)
         m_valid.store(true, std::memory_order_relaxed);
         while(true)
         {
-            auto event = MIDIInput::read_event(m_file);
+            auto event = MIDIInput::read_event(file);
             if(!event)
             {
                 std::cerr << "Failed to read event" << std::endl;

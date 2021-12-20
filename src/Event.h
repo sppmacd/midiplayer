@@ -18,6 +18,8 @@ public:
     virtual void render(MIDIPlayer&, sf::RenderTarget&) {}
     virtual void execute(MIDIPlayer&) = 0;
 
+    virtual void serialize(std::ostream&) const {}
+
 private:
     size_t m_tick { 0 };
 };
@@ -28,6 +30,14 @@ public:
     virtual void dump() const override { std::cerr << "End Of Track Event" << std::endl; }
     virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
     virtual void execute(MIDIPlayer&) override;
+
+    virtual void serialize(std::ostream& stream) const override
+    {
+        std::cerr << "Writing EndOfTrack" << std::endl;
+        stream.put(-1); // Meta-event
+        stream.put(0x2f); // End Of Track
+        stream.put(0); // size: vlq 1
+    }
 };
 
 class InvalidEvent : public Event
@@ -122,6 +132,16 @@ public:
     MIDIChannel channel() const { return m_channel; }
     MIDIKey key() const { return m_key; }
     uint8_t velocity() const { return m_velocity; }
+
+    virtual void serialize(std::ostream& stream) const override
+    {
+        if(m_type == Type::On)
+            stream << (uint8_t)(0x90 + m_channel);
+        else
+            stream << (uint8_t)(0x80 + m_channel);
+
+        stream << m_key << m_velocity;
+    }
 
 private:
     mutable std::optional<sf::Color> m_cached_color;

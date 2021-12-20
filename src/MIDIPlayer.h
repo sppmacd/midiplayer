@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Event.h"
+#include "MIDIOutput.h"
 #include "Selector.h"
 #include <chrono>
 #include <cstddef>
@@ -34,11 +35,11 @@ public:
 
     MIDIPlayer(MIDIInput& midi, RealTime real_time);
 
+    void set_midi_output(std::unique_ptr<MIDIOutput>&& output) { m_midi_output = std::move(output); }
     void set_fps(unsigned fps) { m_fps = fps; }
     void set_tempo(uint32_t microseconds_per_quarter_note) { m_microseconds_per_quarter_note = microseconds_per_quarter_note; }
-    void stop() { m_playing = false; }
-
     void set_sound_playing(int index, int velocity, bool playing, sf::Color color);
+    void stop() { m_playing = false; }
 
     void update();
 
@@ -106,4 +107,5 @@ private:
     sf::Sprite m_background_sprite;
     
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
+    std::unique_ptr<MIDIOutput> m_midi_output;
 };

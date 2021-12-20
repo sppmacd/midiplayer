@@ -254,7 +254,11 @@ void MIDIPlayer::update()
     auto events = m_midi.find_events_in_range(previous_current_tick, m_current_tick);
 
     for(auto const& it: events)
+    {
         it->execute(*this);
+        if(m_midi_output)
+            m_midi_output->write_event(*it);
+    }
 
     static std::default_random_engine engine;
     if(rand() % 20 == 0)

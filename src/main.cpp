@@ -36,10 +36,11 @@ enum class Mode {
 int main(int argc, char* argv[])
 {
     g_exec_name = argv[0];
-    std::unique_ptr<MIDI> midi;
+    std::unique_ptr<MIDIInput> midi;
 
     Mode mode {};
     bool render_to_stdout = false;
+    std::string midi_output;
 
     if(argc < 2)
         print_usage_and_exit(BriefUsage::No);
@@ -53,6 +54,15 @@ int main(int argc, char* argv[])
                 std::string_view opt_sv = arg_sv.substr(1);
                 if(opt_sv == "o"sv)
                     render_to_stdout = true;
+                else if(opt_sv == "m"sv)
+                {
+                    if(++i == argc)
+                    {
+                        std::cerr << "ERROR: -m requires an argument" << std::endl;
+                        return 1;
+                    }
+                    midi_output = argv[i];
+                }
                 else
                     std::cerr << "WARNING: Ignoring invalid option: " << arg_sv << std::endl;
             }
@@ -101,7 +111,7 @@ int main(int argc, char* argv[])
                             std::cerr << "Failed to open file." << std::endl;
                             return 1;
                         }
-                        auto midi_file = std::make_unique<MIDIFile>(stream);
+                        auto midi_file = std::make_unique<MIDIFileInput>(stream);
                         if(!midi_file->is_valid())
                         {
                             std::cerr << "Failed to read MIDI" << std::endl;
@@ -151,6 +161,10 @@ int main(int argc, char* argv[])
         window.setFramerateLimit(60);
 
     MIDIPlayer player{*midi, mode == Mode::Realtime ? MIDIPlayer::RealTime::Yes : MIDIPlayer::RealTime::No};
+
+    if(!midi_output.empty())
+        player.set_midi_output(std::make_unique<MIDIFileOutput>(midi_output));
+
     sf::Clock fps_clock;
     sf::Time last_fps_time;
     while(player.playing())
