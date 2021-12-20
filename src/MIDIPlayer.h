@@ -83,7 +83,9 @@ private:
         sf::Vector2f pos;
         int time = 0;
         int start_time = 0;
-    } m_wind;
+    };
+    
+    std::list<Wind> m_winds;
     RealTime m_real_time { RealTime::No };
     std::list<Particle> m_particles;
     mutable sf::Shader m_note_shader;

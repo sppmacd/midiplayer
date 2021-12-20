@@ -249,24 +249,22 @@ void MIDIPlayer::update()
         it->execute(*this);
 
     static std::default_random_engine engine;
-    if(rand() % 100 == 0)
+    if(rand() % 20 == 0)
     {
         float rand_speed = std::uniform_real_distribution<float>(-2, 2)(engine);
         float rand_pos_x = std::uniform_real_distribution<float>(0, 128)(engine);
         float rand_pos_y = std::uniform_real_distribution<float>(-128, 0)(engine);
         int rand_time = std::uniform_int_distribution<int>(30, 45)(engine);
-        m_wind = {0, rand_speed, {rand_pos_x, rand_pos_y}, rand_time, rand_time};
+        m_winds.push_back({0, rand_speed, {rand_pos_x, rand_pos_y}, rand_time, rand_time});
     }
-    if(m_wind.time == 0)
-        m_wind.speed = 0;
-    else
+    for(auto& wind: m_winds)
     {
-        double change_factor = m_wind.target_speed / (m_wind.start_time / 2.f);
-        if(m_wind.time > m_wind.start_time / 2)
-            m_wind.speed += change_factor;
+        double change_factor = wind.target_speed / (wind.start_time / 2.f);
+        if(wind.time > wind.start_time / 2)
+            wind.speed += change_factor;
         else
-            m_wind.speed -= change_factor;
-        m_wind.time--;
+            wind.speed -= change_factor;
+        wind.time--;
     }
 
     for(auto& particle: m_particles)
@@ -274,14 +272,17 @@ void MIDIPlayer::update()
         particle.position += {particle.motion.x, (m_real_time == RealTime::Yes ? 1 : -1) * particle.motion.y};
         particle.motion.x /= 1.05f;
         particle.motion.y /= 1.01f;
-        float dstx = particle.position.x - m_wind.pos.x;
-        float dsty = particle.position.y - m_wind.pos.y;
-        particle.motion.x += std::min(0.00225, std::max(-0.00225, m_wind.speed / dsty / dsty));
-        particle.motion.y += std::min(0.00225, std::max(-0.00225, m_wind.speed / dstx / dstx));
+        for(auto const& wind: m_winds)
+        {
+            float dstx = particle.position.x - wind.pos.x;
+            float dsty = particle.position.y - wind.pos.y;
+            particle.motion.x -= std::min(0.00225, std::max(-0.00225, wind.speed / dsty / dsty));
+        }
         particle.lifetime--;
     }
 
     std::erase_if(m_particles, [](auto const& particle) { return particle.lifetime <= 0; });
+    std::erase_if(m_winds, [](auto const& wind) { return wind.time <= 0; });
 }
 
 sf::Color MIDIPlayer::resolve_color(NoteEvent& event) const
@@ -368,7 +369,17 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf
     std::ostringstream oss;
     oss << current_tick();
     if(preview == Preview::Yes)
-        oss << "  " + std::to_string(1.f / last_fps_time.asSeconds()) + " fps";
+    {
+        oss << "  " + std::to_string(1.f / last_fps_time.asSeconds()) + " fps\n";
+        if(!m_winds.empty())
+        {
+            oss << "WIND:\n";
+            for(auto const& wind : m_winds)
+                oss << "    [" << wind.pos.x << "," << wind.pos.y << "] " << wind.speed << " " << wind.time << "\n";
+        }
+    }
+    oss << m_particles.size() << " particles" << std::endl;
+
     sf::Text text{oss.str(), m_font, 10};
     text.setPosition(5, 5);
     target.draw(text);
