@@ -364,11 +364,9 @@ void MIDIPlayer::render_piano(sf::RenderTarget& target) const
         MIDIKey key{static_cast<uint8_t>(s)};
         if(key.is_black())
         {
-            sf::RectangleShape rs{{0.5f, (lower_y_to_view_pos-upper_y_to_view_pos) / 2.f}};
-            rs.setPosition(key.to_piano_position(), 0.f);
-            rs.setFillColor(s_notes[key].is_playing ? s_notes[key].color : sf::Color(50, 50, 50));
-            rs.setOutlineColor(sf::Color(70, 70, 70));
-            rs.setOutlineThickness(0.1f);
+            sf::RectangleShape rs{{0.7f, (lower_y_to_view_pos-upper_y_to_view_pos) * 3 / 5.f}};
+            rs.setPosition(key.to_piano_position() - 0.15f, -0.1f);
+            rs.setFillColor(s_notes[key].is_playing ? s_notes[key].color * sf::Color(200, 200, 200) : sf::Color(50, 50, 50));
             target.draw(rs);
         }
     }
