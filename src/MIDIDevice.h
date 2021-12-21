@@ -5,6 +5,7 @@
 #include <fstream>
 #include <memory>
 #include <queue>
+#include <stop_token>
 #include <thread>
 #include <mutex>
 
@@ -23,6 +24,7 @@ public:
 
 private:
     std::jthread m_io_thread;
+    std::stop_source m_io_thread_stop_source;
     std::queue<std::unique_ptr<Event>> m_event_queue;
     std::mutex m_event_queue_mutex;
     std::atomic<bool> m_valid;

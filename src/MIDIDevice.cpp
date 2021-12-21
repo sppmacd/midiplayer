@@ -21,6 +21,8 @@ MIDIDevice::MIDIDevice(std::string const& path)
         m_valid.store(true, std::memory_order_relaxed);
         while(true)
         {
+            if(m_io_thread_stop_source.stop_requested())
+                return;
             auto event = MIDIInput::read_event(file);
             if(!event)
             {
@@ -34,6 +36,7 @@ MIDIDevice::MIDIDevice(std::string const& path)
             m_event_queue.push(std::move(event));
         }
     });
+    m_io_thread_stop_source = m_io_thread.get_stop_source();
 }
 
 std::unique_ptr<Event> MIDIDevice::read_event()
