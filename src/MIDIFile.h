@@ -23,6 +23,7 @@ public:
     virtual bool is_valid() const override { return m_valid; }
     virtual void update(MIDIPlayer& player) override { m_tick += ticks_per_frame(player); }
     virtual size_t current_tick(MIDIPlayer const&) const override { return m_tick; }
+    virtual size_t end_tick() const override { return m_end_tick; }
 
     size_t ticks_per_frame(MIDIPlayer& player) const;
 
@@ -43,6 +44,7 @@ private:
     uint16_t m_ticks_per_quarter_note;
 
     size_t m_tick {};
+    size_t m_end_tick {};
 
     bool read_midi(std::istream& in);
     bool read_chunk(std::istream& in);

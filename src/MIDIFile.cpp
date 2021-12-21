@@ -168,6 +168,8 @@ bool MIDIFileInput::read_track_data(std::istream& in, size_t length)
         if(!event)
             ERROR("read event");
         event->set_tick(current_tick);
+        if(dynamic_cast<EndOfTrackEvent*>(event.get()) && current_tick > m_end_tick)
+            m_end_tick = current_tick;
         event->dump();
         track.add_event(std::move(event));
         offset = in.tellg();

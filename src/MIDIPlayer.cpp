@@ -378,8 +378,12 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf
 {
     sf::Vector2f target_size {target.getSize()};
     target.setView(sf::View({0, 0, target_size.x, target_size.y}));
+    auto tick = current_tick();
+    auto end_tick = m_midi.end_tick();
     std::ostringstream oss;
-    oss << (preview == Preview::Yes ? "Tick=" : "") << current_tick();
+    oss << (preview == Preview::Yes ? "Tick=" : "") << tick;
+    if(m_real_time == RealTime::No && end_tick != 0)
+        oss << "/" << end_tick << " (" << 100 * tick / end_tick << "%)";
     if(preview == Preview::Yes)
     {
         oss << "\n\n";
