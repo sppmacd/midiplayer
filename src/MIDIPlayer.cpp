@@ -55,7 +55,7 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
 }
 
 MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
-: m_midi(midi), m_real_time(real_time), m_start_time{std::chrono::system_clock::now()}
+: m_midi(midi), m_real_time(real_time == RealTime::Yes), m_start_time{std::chrono::system_clock::now()}
 {
     ensure_sounds_generated();
     if(
@@ -206,7 +206,7 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
         }
     }
 
-    if(m_real_time == RealTime::Yes)
+    if(m_real_time)
     {
         m_midi.for_each_track([this](Track& trk) {
             trk.set_max_events(m_max_events_per_track);
@@ -382,7 +382,7 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf
     auto end_tick = m_midi.end_tick();
     std::ostringstream oss;
     oss << (preview == Preview::Yes ? "Tick=" : "") << tick;
-    if(m_real_time == RealTime::No && end_tick != 0)
+    if(!m_real_time && end_tick != 0)
         oss << "/" << end_tick << " (" << 100 * tick / end_tick << "%)";
     if(preview == Preview::Yes)
     {

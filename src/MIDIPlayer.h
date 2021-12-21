@@ -22,11 +22,7 @@ struct Particle
 class MIDIPlayer
 {
 public:
-    enum class RealTime
-    {
-        Yes,
-        No
-    };
+    enum class RealTime { Yes, No };
 
      // TODO: Make these configurable??
     static constexpr float view_offset_x = 12.0;
@@ -45,7 +41,7 @@ public:
 
     bool playing() const { return m_playing; }
     void set_playing(bool playing) { m_playing = playing; }
-    RealTime real_time() const { return m_real_time; }
+    bool real_time() const { return m_real_time; }
     size_t current_tick() const;
     auto start_time() const { return m_start_time; }
     auto microseconds_per_quarter_note() const { return m_microseconds_per_quarter_note; }
@@ -67,7 +63,7 @@ public:
 
     sf::Color resolve_color(NoteEvent& event) const;
     int particle_count() const { return m_particle_count; }
-    double scale() const { return real_time() == MIDIPlayer::RealTime::Yes ? m_real_time_scale : m_play_scale; }
+    double scale() const { return real_time() ? m_real_time_scale : m_play_scale; }
 
 private:
     static void ensure_sounds_generated();
@@ -86,7 +82,7 @@ private:
     };
     
     std::list<Wind> m_winds;
-    RealTime m_real_time { RealTime::No };
+    bool m_real_time { false };
     std::list<Particle> m_particles;
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;

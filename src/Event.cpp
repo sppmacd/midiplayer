@@ -32,7 +32,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
     const float scale = player.scale();
 
     auto render_note = [&](float y_start, float y_size, sf::Color const& color) {
-        float real_y_start = (y_start + (player.real_time() == MIDIPlayer::RealTime::Yes
+        float real_y_start = (y_start + (player.real_time()
             ? -static_cast<int64_t>(player.current_tick())
             : static_cast<int64_t>(player.current_tick()))) * scale;
         
@@ -67,7 +67,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         }
     };
 
-    if(player.real_time() == MIDIPlayer::RealTime::No)
+    if(!player.real_time())
     {
         auto start_note = player.started_notes().find(m_key);
 
