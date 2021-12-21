@@ -47,13 +47,10 @@ public:
     auto microseconds_per_quarter_note() const { return m_microseconds_per_quarter_note; }
 
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
-    void render_particles(sf::RenderTarget& target) const;
-    void render_piano(sf::RenderTarget& target) const;
-    void render_background(sf::RenderTarget& target) const;
 
     enum class Preview { Yes, No };
 
-    void render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const;
+    void render(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time);
 
     sf::Shader& note_shader() const { return m_note_shader; }
     sf::Shader& particle_shader() const { return m_particle_shader; }
@@ -67,6 +64,11 @@ public:
 
 private:
     static void ensure_sounds_generated();
+
+    void render_particles(sf::RenderTarget& target) const;
+    void render_piano(sf::RenderTarget& target) const;
+    void render_background(sf::RenderTarget& target) const;
+    void render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const;
 
     MIDIInput& m_midi;
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM

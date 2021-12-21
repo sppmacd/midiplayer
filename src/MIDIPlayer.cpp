@@ -410,3 +410,32 @@ void MIDIPlayer::render_background(sf::RenderTarget& target) const
     target.setView(sf::View{sf::FloatRect{{}, sf::Vector2f{texture->getSize()}}});
     target.draw(m_background_sprite);
 }
+
+void MIDIPlayer::render(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time)
+{
+    target.clear();
+
+    render_background(target);
+
+    float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
+    const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
+    auto view = sf::View{sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect)};
+    target.setView(view);
+    if(m_real_time)
+    {
+        ended_notes().clear();
+        m_midi.for_each_event_backwards([&](Event& event) {
+            event.render(*this, target);
+        });
+    }
+    else
+    {
+        started_notes().clear();
+        m_midi.for_each_event([&](Event& event) {
+            event.render(*this, target);
+        });
+    }
+    render_particles(target);
+    render_piano(target);
+    render_debug_info(target, preview, last_fps_time);
+}

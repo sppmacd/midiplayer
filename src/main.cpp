@@ -178,39 +178,12 @@ int main(int argc, char* argv[])
             }
         }
         player.update();
-
-        auto render = [&](sf::RenderTarget& target, bool preview) {
-            target.clear();
-
-            player.render_background(target);
-
-            float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
-            const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
-            auto view = sf::View{sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect)};
-            target.setView(view);
-            if(mode == Mode::Realtime)
-            {
-                player.ended_notes().clear();
-                midi->for_each_event_backwards([&](Event& event) {
-                    event.render(player, target);
-                });
-            }
-            else
-            {
-                player.started_notes().clear();
-                midi->for_each_event([&](Event& event) {
-                    event.render(player, target);
-                });
-            }
-            player.render_particles(target);
-            player.render_piano(target);
-            player.render_debug_info(target, preview ? MIDIPlayer::Preview::Yes : MIDIPlayer::Preview::No, last_fps_time);
-        };
-        render(window, true);
+        // FIXME: Last FPS should be stored in MIDIPlayer somehow!
+        player.render(window, MIDIPlayer::Preview::Yes, last_fps_time);
         window.display();
         if(render_texture)
         {
-            render(*render_texture, false);
+            player.render(*render_texture, MIDIPlayer::Preview::No, last_fps_time);
             render_texture->display();
             auto image = render_texture->getTexture().copyToImage();
 
