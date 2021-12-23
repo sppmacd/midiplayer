@@ -3,6 +3,7 @@
 #include "MIDIFile.h"
 
 #include <SFML/Audio.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <cassert>
 #include <climits>
@@ -59,7 +60,8 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
 {
     ensure_sounds_generated();
     if(
-           m_note_shader.loadFromFile("res/shaders/note.vert", "res/shaders/note.frag")
+           m_gradient_shader.loadFromFile("res/shaders/gradient.vert", "res/shaders/gradient.frag")
+        && m_note_shader.loadFromFile("res/shaders/note.vert", "res/shaders/note.frag")
         && m_particle_shader.loadFromFile("res/shaders/particle.vert", "res/shaders/particle.frag")
     )
         std::cerr << "Shaders loaded" << std::endl;
@@ -336,13 +338,24 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
         cs.setPosition(particle.position);
         cs.setOrigin(m_particle_radius, m_particle_radius);
         shader.setUniform("uCenter", particle.position);
+        shader.setUniform("uFactor", color.a / 255.f);
         target.draw(cs, sf::RenderStates{&shader});
         //std::cerr << center.x << ";" << center.y << std::endl;
     }
 }
 
-void MIDIPlayer::render_piano(sf::RenderTarget& target) const
+void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
 {
+    // Gradient
+    {
+        sf::View old_view = target.getView();
+        target.setView(sf::View{sf::FloatRect(0, 0, target.getSize().x, target.getSize().y)});
+        sf::RectangleShape rs{sf::Vector2f{target.getSize()}};
+        target.draw(rs, sf::RenderStates{&m_gradient_shader});
+        target.setView(old_view);
+    }
+
+    // Piano
     auto upper_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y - piano_size_px)}).y;
     auto lower_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y)}).y;
     // a0 -- c8
@@ -434,6 +447,6 @@ void MIDIPlayer::render(sf::RenderTarget& target, Preview preview, sf::Time last
         });
     }
     render_particles(target);
-    render_piano(target);
+    render_overlay(target);
     render_debug_info(target, preview, last_fps_time);
 }

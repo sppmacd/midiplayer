@@ -66,7 +66,7 @@ private:
     static void ensure_sounds_generated();
 
     void render_particles(sf::RenderTarget& target) const;
-    void render_piano(sf::RenderTarget& target) const;
+    void render_overlay(sf::RenderTarget& target) const;
     void render_background(sf::RenderTarget& target) const;
     void render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const;
 
@@ -86,6 +86,7 @@ private:
     std::list<Wind> m_winds;
     bool m_real_time { false };
     std::list<Particle> m_particles;
+    mutable sf::Shader m_gradient_shader;
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;
     sf::Font m_font;
