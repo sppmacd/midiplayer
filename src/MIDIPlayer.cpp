@@ -124,6 +124,31 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
             }
             m_default_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
         }
+        else if(command == "background_color"sv)
+        {
+            int r, g, b;
+            if(!(config_file >> r >> g >> b))
+            {
+                std::cerr << "ERROR: background_color requires arguments: <r> <g> <b>" << std::endl;
+                exit(1);
+            }
+            m_background_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b)};
+        }
+        else if(command == "overlay_color"sv)
+        {
+            int r, g, b, a = 128;
+            if(!(config_file >> r >> g >> b))
+            {
+                std::cerr << "ERROR: overlay_color requires arguments: <r> <g> <b> [a]" << std::endl;
+                exit(1);
+            }
+            if(!(config_file >> a))
+            {
+                a = 255;
+                config_file.clear();
+            }
+            m_overlay_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
+        }
         else if(command == "particle_count"sv)
         {
             int c;
@@ -346,11 +371,12 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 
 void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
 {
-    // Gradient
+    // Gradient / Overlay
     {
         sf::View old_view = target.getView();
         target.setView(sf::View{sf::FloatRect(0, 0, target.getSize().x, target.getSize().y)});
         sf::RectangleShape rs{sf::Vector2f{target.getSize()}};
+        m_gradient_shader.setUniform("uColor", sf::Glsl::Vec4{m_overlay_color});
         target.draw(rs, sf::RenderStates{&m_gradient_shader});
         target.setView(old_view);
     }
@@ -424,8 +450,7 @@ void MIDIPlayer::render_background(sf::RenderTarget& target) const
 
 void MIDIPlayer::render(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time)
 {
-    target.clear();
-
+    target.clear(m_background_color);
     render_background(target);
 
     float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;

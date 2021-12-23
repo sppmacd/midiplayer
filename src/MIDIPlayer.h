@@ -95,7 +95,9 @@ private:
     std::map<MIDIKey, std::optional<size_t>> m_ended_notes;
 
     std::vector<std::pair<std::vector<std::unique_ptr<Selector>>, sf::Color>> m_channel_colors;
-    sf::Color m_default_color { 128, 128, 128, 128 };
+    sf::Color m_default_color { 128, 128, 128 };
+    sf::Color m_background_color { 10, 10, 10 };
+    sf::Color m_overlay_color { 5, 5, 5 };
     int m_particle_count = 2;
     float m_particle_radius = 0.5;
     float m_particle_glow_size = 0.1;
