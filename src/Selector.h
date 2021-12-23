@@ -49,7 +49,7 @@ public:
     LinearEquation(int a, int b)
     : m_a(a), m_b(b) {}
 
-    virtual bool matches(int value) const override { return value - m_b >= 0 && (value - m_b) % m_a == 0; }
+    virtual bool matches(int value) const override { return (m_a <= 1 && value > 0) || (value - m_b >= 0 && (value - m_b) % m_a == 0); }
 
 private:
     int m_a {};
