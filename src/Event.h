@@ -268,6 +268,13 @@ public:
 
     virtual void execute(MIDIPlayer&) override { /* TODO */ }
 
+    virtual bool is_serializable() const override { return true; }
+    virtual void serialize(std::ostream& stream) const override
+    {
+        stream.put((uint8_t)(0xc0 + m_channel)); // Program Change
+        stream.put(m_value);
+    }
+
 private:
     MIDIChannel m_channel;
     uint8_t m_value;
