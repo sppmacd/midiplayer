@@ -51,12 +51,12 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         target.draw(rs, sf::RenderStates { &shader });
     };
 
-    auto spawn_particles = [&]()
+    auto spawn_particles = [&](int velocity)
     {
         static std::default_random_engine engine;
         for(int i = 0; i < player.particle_count(); i++)
         {
-            float velocity_factor = ((int)m_velocity - 64) / 800.f + 0.03f;
+            float velocity_factor = (velocity - 64) / 800.f + 0.03f;
             float rand_x_speed = (std::binomial_distribution<int>(100, 0.5)(engine) - 50) / 250.0;
             float rand_y_speed = -std::binomial_distribution<int>(100, 0.1)(engine) / 500.0 - velocity_factor;
             float offset = std::uniform_real_distribution<float>(-0.2, 0.2)(engine);
@@ -80,15 +80,15 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         {
             if(start_note != player.started_notes().end())
             {
-                int note_size_y = tick() - start_note->second;
-                if(player.current_tick() > start_note->second && player.current_tick() < tick())
-                    spawn_particles();
+                int note_size_y = tick() - start_note->second.tick();
+                if(player.current_tick() > start_note->second.tick() && player.current_tick() < tick())
+                    spawn_particles(start_note->second.velocity());
                 render_note((size.y * scale - static_cast<int>(tick())), note_size_y * scale, color);
                 player.started_notes().erase(start_note);
             }
         }
         else if(start_note == player.started_notes().end())
-            player.started_notes().insert({ m_key, tick() });
+            player.started_notes().insert({ m_key, *this });
     }
     else
     {
@@ -97,15 +97,15 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         {
             auto note_size_y = static_cast<float>(player.current_tick() - tick());
             if(end_note != player.ended_notes().end() && end_note->second.has_value())
-                note_size_y = std::min(static_cast<float>(end_note->second.value() - tick()), note_size_y);
+                note_size_y = std::min(static_cast<float>(end_note->second.value().tick() - tick()), note_size_y);
             render_note(tick(), note_size_y * scale, color);
             if(end_note != player.ended_notes().end())
                 player.ended_notes().erase(end_note);
             if(end_note == player.ended_notes().end() || !end_note->second.has_value())
-                spawn_particles();
+                spawn_particles(velocity());
         }
         else if(end_note == player.ended_notes().end())
-            player.ended_notes().insert({ m_key, tick() });
+            player.ended_notes().insert({ m_key, *this });
     }
 }
 
