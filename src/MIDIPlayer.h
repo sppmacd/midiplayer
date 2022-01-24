@@ -19,6 +19,15 @@ struct Particle
     int start_lifetime;
 };
 
+template<>
+struct std::hash<sf::Color>
+{
+    std::size_t operator()(sf::Color const& s) const noexcept
+    {
+        return s.r ^ (s.g << 1) ^ (s.b << 2) ^ (s.a << 3);
+    }
+};
+
 class MIDIPlayer
 {
 public:
@@ -64,6 +73,7 @@ public:
 
 private:
     static void ensure_sounds_generated();
+    void generate_particle_texture();
 
     void render_particles(sf::RenderTarget& target) const;
     void render_overlay(sf::RenderTarget& target) const;
@@ -106,6 +116,7 @@ private:
     double m_play_scale = 0.05;
     sf::Texture m_background_texture;
     sf::Sprite m_background_sprite;
+    sf::Texture m_particle_texture;
     
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
     std::unique_ptr<MIDIOutput> m_midi_output;

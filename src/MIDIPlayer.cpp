@@ -5,6 +5,8 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -16,18 +18,18 @@ using namespace std::literals;
 
 // https://github.com/MajicDesigns/MD_MusicTable/blob/master/src/MD_MusicTable_Data.cpp
 static float const s_frequency_lookup_table[] {
-    261.63,  // C4 Middle C
-    277.18,  // C#4
-    293.66,  // D4
-    311.13,  // D#4
-    329.63,  // E4
-    349.23,  // F4
-    369.99,  // F#4
-    392.00,  // G4
-    415.30,  // G#4
-    440.00,  // A4 440Hz Standard Tuning
-    466.16,  // A#4
-    493.88,  // B4
+    261.63, // C4 Middle C
+    277.18, // C#4
+    293.66, // D4
+    311.13, // D#4
+    329.63, // E4
+    349.23, // F4
+    369.99, // F#4
+    392.00, // G4
+    415.30, // G#4
+    440.00, // A4 440Hz Standard Tuning
+    466.16, // A#4
+    493.88, // B4
 };
 
 struct Note
@@ -56,14 +58,13 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
 }
 
 MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
-: m_midi(midi), m_real_time(real_time == RealTime::Yes), m_start_time{std::chrono::system_clock::now()}
+: m_midi(midi), m_real_time(real_time == RealTime::Yes), m_start_time { std::chrono::system_clock::now() }
 {
     ensure_sounds_generated();
     if(
-           m_gradient_shader.loadFromFile("res/shaders/gradient.vert", "res/shaders/gradient.frag")
+        m_gradient_shader.loadFromFile("res/shaders/gradient.vert", "res/shaders/gradient.frag")
         && m_note_shader.loadFromFile("res/shaders/note.vert", "res/shaders/note.frag")
-        && m_particle_shader.loadFromFile("res/shaders/particle.vert", "res/shaders/particle.frag")
-    )
+        && m_particle_shader.loadFromFile("res/shaders/particle.vert", "res/shaders/particle.frag"))
         std::cerr << "Shaders loaded" << std::endl;
 
     if(m_font.loadFromFile("res/font.ttf"))
@@ -107,7 +108,7 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
                 config_file.clear();
             }
             m_channel_colors.push_back(std::make_pair(std::move(selectors),
-                                                   sf::Color{static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a)}));
+                sf::Color { static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a) }));
         }
         else if(command == "default_color"sv)
         {
@@ -122,7 +123,7 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
                 a = 255;
                 config_file.clear();
             }
-            m_default_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
+            m_default_color = { static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a) };
         }
         else if(command == "background_color"sv)
         {
@@ -132,7 +133,7 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
                 std::cerr << "ERROR: background_color requires arguments: <r> <g> <b>" << std::endl;
                 exit(1);
             }
-            m_background_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b)};
+            m_background_color = { static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b) };
         }
         else if(command == "overlay_color"sv)
         {
@@ -147,7 +148,7 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
                 a = 255;
                 config_file.clear();
             }
-            m_overlay_color = {static_cast<uint8_t>(r),static_cast<uint8_t>(g),static_cast<uint8_t>(b),static_cast<uint8_t>(a)};
+            m_overlay_color = { static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a) };
         }
         else if(command == "particle_count"sv)
         {
@@ -235,10 +236,11 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
 
     if(m_real_time)
     {
-        m_midi.for_each_track([this](Track& trk) {
-            trk.set_max_events(m_max_events_per_track);
-        });
+        m_midi.for_each_track([this](Track& trk)
+            { trk.set_max_events(m_max_events_per_track); });
     }
+
+    generate_particle_texture();
 }
 
 void MIDIPlayer::ensure_sounds_generated()
@@ -255,6 +257,25 @@ void MIDIPlayer::ensure_sounds_generated()
         s_notes[i].sound.setBuffer(s_notes[i].buffer);
         s_notes[i].sound.setLoop(true);
     }
+}
+void MIDIPlayer::generate_particle_texture()
+{
+    sf::RenderTexture target;
+    target.create(m_particle_radius * 256, m_particle_radius * 256);
+    target.setView(sf::View { {}, sf::Vector2f { target.getSize() } / 128.f });
+
+    auto& shader = particle_shader();
+    shader.setUniform("uRadius", m_particle_radius);
+    shader.setUniform("uGlowSize", m_particle_glow_size);
+    shader.setUniform("uCenter", sf::Vector2f {});
+    sf::RectangleShape rs(sf::Vector2f(target.getSize()));
+    rs.setOrigin(rs.getSize() / 2.f);
+    target.draw(rs, &shader);
+    target.display();
+
+    // NOTE: SFML doesn't use move semantics, so we need to COPY the texture :(
+    m_particle_texture = target.getTexture();
+    m_particle_texture.copyToImage().saveToFile("/tmp/particle.png");
 }
 
 void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing, sf::Color color)
@@ -280,7 +301,7 @@ void MIDIPlayer::update()
     m_current_tick = current_tick();
     auto events = m_midi.find_events_in_range(previous_current_tick, m_current_tick);
 
-    for(auto const& it: events)
+    for(auto const& it : events)
     {
         it->execute(*this);
         if(m_midi_output)
@@ -294,9 +315,9 @@ void MIDIPlayer::update()
         float rand_pos_x = std::uniform_real_distribution<float>(0, 128)(engine);
         float rand_pos_y = std::uniform_real_distribution<float>(-128, 0)(engine);
         int rand_time = std::uniform_int_distribution<int>(30, 45)(engine);
-        m_winds.push_back({0, rand_speed, {rand_pos_x, rand_pos_y}, rand_time, rand_time});
+        m_winds.push_back({ 0, rand_speed, { rand_pos_x, rand_pos_y }, rand_time, rand_time });
     }
-    for(auto& wind: m_winds)
+    for(auto& wind : m_winds)
     {
         double change_factor = wind.target_speed / (wind.start_time / 2.f);
         if(wind.time > wind.start_time / 2)
@@ -306,12 +327,12 @@ void MIDIPlayer::update()
         wind.time--;
     }
 
-    for(auto& particle: m_particles)
+    for(auto& particle : m_particles)
     {
-        particle.position += {particle.motion.x, particle.motion.y};
+        particle.position += { particle.motion.x, particle.motion.y };
         particle.motion.x /= 1.05f;
         particle.motion.y /= 1.01f;
-        for(auto const& wind: m_winds)
+        for(auto const& wind : m_winds)
         {
             float dstx = particle.position.x - wind.pos.x;
             float dsty = particle.position.y - wind.pos.y;
@@ -320,16 +341,18 @@ void MIDIPlayer::update()
         particle.lifetime--;
     }
 
-    std::erase_if(m_particles, [](auto const& particle) { return particle.lifetime <= 0; });
-    std::erase_if(m_winds, [](auto const& wind) { return wind.time <= 0; });
+    std::erase_if(m_particles, [](auto const& particle)
+        { return particle.lifetime <= 0; });
+    std::erase_if(m_winds, [](auto const& wind)
+        { return wind.time <= 0; });
 }
 
 sf::Color MIDIPlayer::resolve_color(NoteEvent& event) const
 {
-    for(auto const& pair: m_channel_colors)
+    for(auto const& pair : m_channel_colors)
     {
         bool matched = true;
-        for(auto const& selector: pair.first)
+        for(auto const& selector : pair.first)
         {
             if(!selector->matches(*this, event))
             {
@@ -345,28 +368,49 @@ sf::Color MIDIPlayer::resolve_color(NoteEvent& event) const
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
-    /*sf::CircleShape cs(std::abs(m_wind.speed));
-    cs.setOrigin(std::abs(m_wind.speed), std::abs(m_wind.speed));
-    cs.setPosition(m_wind.pos);
-    cs.setFillColor(m_wind.speed < 0 ? sf::Color::Red : sf::Color::Green);
-    target.draw(cs);*/
-    
-    auto& shader = particle_shader();
-    shader.setUniform("uRadius", m_particle_radius);
-    shader.setUniform("uGlowSize", m_particle_glow_size);
-    for(auto const& particle: m_particles)
+    if(m_particles.empty())
+        return;
+
+    // TODO: This probably can be further optimized
+    sf::VertexArray varr(sf::Triangles, m_particles.size() * 6);
+    size_t counter = 0;
+    for(auto const& particle : m_particles)
     {
         auto color = particle.color;
+        color.r = std::min(255, (int)color.r + 20);
+        color.g = std::min(255, (int)color.g + 20);
+        color.b = std::min(255, (int)color.b + 20);
         color.a = particle.lifetime * 255 / particle.start_lifetime;
-        sf::RectangleShape cs({m_particle_radius * 2, m_particle_radius * 2});
-        cs.setFillColor(color);
-        cs.setPosition(particle.position);
-        cs.setOrigin(m_particle_radius, m_particle_radius);
-        shader.setUniform("uCenter", particle.position);
-        shader.setUniform("uFactor", color.a / 255.f);
-        target.draw(cs, sf::RenderStates{&shader});
-        //std::cerr << center.x << ";" << center.y << std::endl;
+
+        float size = m_particle_radius * 2;
+        float tex_size = m_particle_texture.getSize().x;
+
+        varr[counter * 6 + 0] = sf::Vertex(
+            { particle.position.x, particle.position.y },
+            color, { 0, 0 });
+        varr[counter * 6 + 1] = sf::Vertex(
+            { particle.position.x, particle.position.y + size },
+            color, { 0, tex_size });
+        varr[counter * 6 + 2] = sf::Vertex(
+            { particle.position.x + size, particle.position.y },
+            color, { tex_size, 0 });
+        varr[counter * 6 + 3] = sf::Vertex(
+            { particle.position.x, particle.position.y + size },
+            color, { 0, tex_size });
+        varr[counter * 6 + 4] = sf::Vertex(
+            { particle.position.x + size, particle.position.y + size },
+            color, { tex_size, tex_size });
+        varr[counter * 6 + 5] = sf::Vertex(
+            { particle.position.x + size, particle.position.y },
+            color, { tex_size, 0 });
+        counter++;
     }
+    sf::RenderStates states { &m_particle_texture };
+    states.blendMode = {
+        sf::BlendMode::SrcAlpha, sf::BlendMode::DstAlpha, sf::BlendMode::Add,
+        sf::BlendMode::One, sf::BlendMode::DstAlpha, sf::BlendMode::Add
+    };
+    target.draw(varr, states);
 }
 
 void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
@@ -374,23 +418,23 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
     // Gradient / Overlay
     {
         sf::View old_view = target.getView();
-        target.setView(sf::View{sf::FloatRect(0, 0, target.getSize().x, target.getSize().y)});
-        sf::RectangleShape rs{sf::Vector2f{target.getSize()}};
-        m_gradient_shader.setUniform("uColor", sf::Glsl::Vec4{m_overlay_color});
-        target.draw(rs, sf::RenderStates{&m_gradient_shader});
+        target.setView(sf::View { sf::FloatRect(0, 0, target.getSize().x, target.getSize().y) });
+        sf::RectangleShape rs { sf::Vector2f { target.getSize() } };
+        m_gradient_shader.setUniform("uColor", sf::Glsl::Vec4 { m_overlay_color });
+        target.draw(rs, sf::RenderStates { &m_gradient_shader });
         target.setView(old_view);
     }
 
     // Piano
-    auto upper_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y - piano_size_px)}).y;
-    auto lower_y_to_view_pos = target.mapPixelToCoords({0, static_cast<int>(target.getSize().y)}).y;
+    auto upper_y_to_view_pos = target.mapPixelToCoords({ 0, static_cast<int>(target.getSize().y - piano_size_px) }).y;
+    auto lower_y_to_view_pos = target.mapPixelToCoords({ 0, static_cast<int>(target.getSize().y) }).y;
     // a0 -- c8
     for(size_t s = 21; s <= 108; s++)
     {
-        MIDIKey key{static_cast<uint8_t>(s)};
+        MIDIKey key { static_cast<uint8_t>(s) };
         if(!key.is_black())
         {
-            sf::RectangleShape rs{{1.f, (lower_y_to_view_pos-upper_y_to_view_pos)}};
+            sf::RectangleShape rs { { 1.f, (lower_y_to_view_pos - upper_y_to_view_pos) } };
             rs.setPosition(key.to_piano_position(), 0.f);
             rs.setFillColor(s_notes[key].is_playing ? s_notes[key].color : sf::Color(230, 230, 230));
             rs.setOutlineColor(sf::Color(150, 150, 150));
@@ -400,10 +444,10 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
     }
     for(size_t s = 21; s <= 108; s++)
     {
-        MIDIKey key{static_cast<uint8_t>(s)};
+        MIDIKey key { static_cast<uint8_t>(s) };
         if(key.is_black())
         {
-            sf::RectangleShape rs{{0.7f, (lower_y_to_view_pos-upper_y_to_view_pos) * 3 / 5.f}};
+            sf::RectangleShape rs { { 0.7f, (lower_y_to_view_pos - upper_y_to_view_pos) * 3 / 5.f } };
             rs.setPosition(key.to_piano_position() - 0.15f, -0.1f);
             rs.setFillColor(s_notes[key].is_playing ? s_notes[key].color * sf::Color(200, 200, 200) : sf::Color(50, 50, 50));
             target.draw(rs);
@@ -413,8 +457,8 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
 
 void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const
 {
-    sf::Vector2f target_size {target.getSize()};
-    target.setView(sf::View({0, 0, target_size.x, target_size.y}));
+    sf::Vector2f target_size { target.getSize() };
+    target.setView(sf::View({ 0, 0, target_size.x, target_size.y }));
     auto tick = current_tick();
     auto end_tick = m_midi.end_tick();
     std::ostringstream oss;
@@ -434,7 +478,7 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf
         oss << m_particles.size() << " particles" << std::endl;
     }
 
-    sf::Text text{oss.str(), m_font, 10};
+    sf::Text text { oss.str(), m_font, 10 };
     text.setPosition(5, 5);
     target.draw(text);
 }
@@ -444,7 +488,7 @@ void MIDIPlayer::render_background(sf::RenderTarget& target) const
     auto* texture = m_background_sprite.getTexture();
     if(!texture)
         return;
-    target.setView(sf::View{sf::FloatRect{{}, sf::Vector2f{texture->getSize()}}});
+    target.setView(sf::View { sf::FloatRect { {}, sf::Vector2f { texture->getSize() } } });
     target.draw(m_background_sprite);
 }
 
@@ -455,21 +499,19 @@ void MIDIPlayer::render(sf::RenderTarget& target, Preview preview, sf::Time last
 
     float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
     const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
-    auto view = sf::View{sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect)};
+    auto view = sf::View { sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect) };
     target.setView(view);
     if(m_real_time)
     {
         ended_notes().clear();
-        m_midi.for_each_event_backwards([&](Event& event) {
-            event.render(*this, target);
-        });
+        m_midi.for_each_event_backwards([&](Event& event)
+            { event.render(*this, target); });
     }
     else
     {
         started_notes().clear();
-        m_midi.for_each_event([&](Event& event) {
-            event.render(*this, target);
-        });
+        m_midi.for_each_event([&](Event& event)
+            { event.render(*this, target); });
     }
     render_particles(target);
     render_overlay(target);
