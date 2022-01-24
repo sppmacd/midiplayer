@@ -316,9 +316,9 @@ public:
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
-        stream << (uint8_t)(0xb0 + m_channel); // Control Change
-        stream << ((uint8_t)m_number | (m_byte_index == ByteIndex::MSB ? 0x20 : 0x0));
-        stream << m_value;
+        stream.put((uint8_t)(0xb0 + m_channel)); // Control Change
+        stream.put((uint8_t)m_number | (m_byte_index == ByteIndex::MSB ? 0x20 : 0x0));
+        stream.put(m_value);
     }
 
 private:
