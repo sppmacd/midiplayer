@@ -10,6 +10,7 @@ add_executable(midi
     src/MIDIInput.cpp
     src/MIDIKey.cpp
     src/MIDIPlayer.cpp
+    src/RoundedEdgeRectangleShape.cpp
     src/Selector.cpp
     src/Track.cpp
 )
