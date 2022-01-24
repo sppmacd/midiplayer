@@ -382,26 +382,26 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
         color.b = std::min(255, (int)color.b + 20);
         color.a = particle.lifetime * 255 / particle.start_lifetime;
 
-        float size = m_particle_radius * 2;
+        float size = m_particle_radius;
         float tex_size = m_particle_texture.getSize().x;
 
         varr[counter * 6 + 0] = sf::Vertex(
-            { particle.position.x, particle.position.y },
+            { particle.position.x - size, particle.position.y - size },
             color, { 0, 0 });
         varr[counter * 6 + 1] = sf::Vertex(
-            { particle.position.x, particle.position.y + size },
+            { particle.position.x - size, particle.position.y + size },
             color, { 0, tex_size });
         varr[counter * 6 + 2] = sf::Vertex(
-            { particle.position.x + size, particle.position.y },
+            { particle.position.x + size, particle.position.y - size },
             color, { tex_size, 0 });
         varr[counter * 6 + 3] = sf::Vertex(
-            { particle.position.x, particle.position.y + size },
+            { particle.position.x - size, particle.position.y + size },
             color, { 0, tex_size });
         varr[counter * 6 + 4] = sf::Vertex(
             { particle.position.x + size, particle.position.y + size },
             color, { tex_size, tex_size });
         varr[counter * 6 + 5] = sf::Vertex(
-            { particle.position.x + size, particle.position.y },
+            { particle.position.x + size, particle.position.y - size },
             color, { tex_size, 0 });
         counter++;
     }
