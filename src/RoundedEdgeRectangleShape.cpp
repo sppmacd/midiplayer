@@ -14,7 +14,9 @@ sf::Vector2f RoundedEdgeRectangleShape::getPoint(std::size_t index) const
 {
     size_t side = index / ROUNDED_EDGE_RESOLUTION;
 
-    float angle = M_PI_2 * index / ROUNDED_EDGE_RESOLUTION;
+    float subangle = (float)(index % ROUNDED_EDGE_RESOLUTION) / (ROUNDED_EDGE_RESOLUTION - 1) * M_PI_2;
+    float angle = subangle + side * M_PI_2;
+
     sf::Vector2f offset { std::cos(angle) * m_borderRadius, std::sin(angle) * m_borderRadius };
     sf::Vector2f base;
     switch(side)
