@@ -275,7 +275,7 @@ void MIDIPlayer::generate_particle_texture()
 
     // NOTE: SFML doesn't use move semantics, so we need to COPY the texture :(
     m_particle_texture = target.getTexture();
-    m_particle_texture.copyToImage().saveToFile("/tmp/particle.png");
+    m_particle_texture.setSmooth(true);
 }
 
 void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing, sf::Color color)
