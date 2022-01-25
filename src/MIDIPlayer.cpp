@@ -377,9 +377,6 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
     for(auto const& particle : m_particles)
     {
         auto color = particle.color;
-        color.r = std::min(255, (int)color.r + 20);
-        color.g = std::min(255, (int)color.g + 20);
-        color.b = std::min(255, (int)color.b + 20);
         color.a = particle.lifetime * 255 / particle.start_lifetime;
 
         float size = m_particle_radius;
