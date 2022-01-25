@@ -28,7 +28,8 @@ static void print_usage_and_exit(BriefUsage brief_usage = BriefUsage::Yes)
     exit(1);
 }
 
-enum class Mode {
+enum class Mode
+{
     Realtime,
     Play
 };
@@ -95,7 +96,7 @@ int main(int argc, char* argv[])
                             std::cerr << "ERROR: Expected character device (e.g /dev/midi3), got " << filename_sv << std::endl;
                             return 1;
                         }
-                        midi = std::make_unique<MIDIDevice>(std::string{filename_sv});
+                        midi = std::make_unique<MIDIDevice>(std::string { filename_sv });
                         mode = Mode::Realtime;
                     }
                     else if(arg_sv == "play"sv)
@@ -105,7 +106,7 @@ int main(int argc, char* argv[])
                             std::cerr << "ERROR: Expected regular file, got " << filename_sv << std::endl;
                             return 1;
                         }
-                        std::ifstream stream(std::string{filename_sv}, std::ios::binary);
+                        std::ifstream stream(std::string { filename_sv }, std::ios::binary);
                         if(stream.fail())
                         {
                             std::cerr << "Failed to open file." << std::endl;
@@ -116,7 +117,7 @@ int main(int argc, char* argv[])
                         {
                             std::cerr << "Failed to read MIDI" << std::endl;
                             return 1;
-                        }    
+                        }
                         midi_file->dump();
                         mode = Mode::Play;
                         midi = std::move(midi_file);
@@ -131,9 +132,10 @@ int main(int argc, char* argv[])
         }
     }
 
-    sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings{0,0,0,3,2});
+    sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings { 0, 0, 1, 3, 2 });
 
-    std::unique_ptr<sf::RenderTexture> render_texture = [&]()->std::unique_ptr<sf::RenderTexture> {
+    std::unique_ptr<sf::RenderTexture> render_texture = [&]() -> std::unique_ptr<sf::RenderTexture>
+    {
         if(render_to_stdout)
         {
             if(isatty(STDOUT_FILENO))
@@ -160,7 +162,7 @@ int main(int argc, char* argv[])
     if(!render_texture)
         window.setFramerateLimit(60);
 
-    MIDIPlayer player{*midi, mode == Mode::Realtime ? MIDIPlayer::RealTime::Yes : MIDIPlayer::RealTime::No};
+    MIDIPlayer player { *midi, mode == Mode::Realtime ? MIDIPlayer::RealTime::Yes : MIDIPlayer::RealTime::No };
 
     if(!midi_output.empty())
         player.set_midi_output(std::make_unique<MIDIFileOutput>(midi_output));
