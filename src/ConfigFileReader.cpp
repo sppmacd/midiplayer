@@ -182,7 +182,6 @@ bool ConfigFileReader::load(std::string const& file_name)
             display_help();
             return false;
         }
-        std::cerr << property_name << std::endl;
         PropertyParser parser { config_file };
         if(!property->second.handler(parser))
         {
