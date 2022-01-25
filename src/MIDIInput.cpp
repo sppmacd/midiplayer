@@ -70,7 +70,8 @@ std::unique_ptr<Event> MIDIInput::read_event(std::istream& in)
     if(status >= 0x80 && status <= 0xef)
         return read_channeled_event(in, status & 0xf0, status & 0x0f);
 
-    std::cerr << "ERROR: Invalid status number: " << std::hex << (int)status << std::dec << std::endl;
+    if(status != 0xfe)
+        std::cerr << "ERROR: Invalid status number: " << std::hex << (int)status << std::dec << std::endl;
     return std::make_unique<InvalidEvent>(status);
 }
 
