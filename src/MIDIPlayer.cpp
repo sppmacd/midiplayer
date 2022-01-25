@@ -1,12 +1,11 @@
 #include "MIDIPlayer.h"
 
+#include "ConfigFileReader.h"
 #include "MIDIFile.h"
+#include "Try.h"
 
 #include <SFML/Audio.hpp>
-#include <SFML/Graphics/RectangleShape.hpp>
-#include <SFML/Graphics/RenderStates.hpp>
-#include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics.hpp>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -70,177 +69,68 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
     if(m_font.loadFromFile("res/font.ttf"))
         std::cerr << "Font loaded" << std::endl;
 
-    std::ifstream config_file("config.cfg");
-    if(config_file.fail())
-    {
-        std::cerr << "WARNING: config.cfg doesn't exist." << std::endl;
-        return;
-    }
+    ConfigFileReader config_file;
+    config_file.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool { 
+        auto selectors = TRY_OPTIONAL(parser.read_selector_list());
+        auto color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::Allow));
+        m_channel_colors.push_back(std::make_pair(std::move(selectors), color));
+        return true;
+    });
+    config_file.register_property("default_color", "Default key tile color", "<color(rgb[a])>", [&](PropertyParser& parser) -> bool { 
+        m_default_color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::Allow));
+        return true;
+    });
+    config_file.register_property("background_color", "Background color", "<color(rgb)>", [&](PropertyParser& parser) -> bool { 
+        m_background_color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::DontAllow));
+        return true;
+    });
+    config_file.register_property("overlay_color", "Overlay (fade out) color", "<color(rgb[a])>", [&](PropertyParser& parser) -> bool { 
+        m_overlay_color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::Allow));
+        return true;
+    });
+    config_file.register_property("particle_count", "Particle count (per tick)", "<count(int)>", [&](PropertyParser& parser) -> bool { 
+        m_particle_count = TRY_OPTIONAL(parser.read_int());
+        return true;
+    });
+    config_file.register_property("particle_radius", "Particle radius (in keys)", "<radius(float)>", [&](PropertyParser& parser) -> bool { 
+        m_particle_radius = TRY_OPTIONAL(parser.read_float());
+        return true;
+    });
+    config_file.register_property("particle_glow_size", "Particle glow size (in keys)", "<radius(float)>", [&](PropertyParser& parser) -> bool { 
+        m_particle_glow_size = TRY_OPTIONAL(parser.read_float());
+        return true;
+    });
+    config_file.register_property("max_events_per_track", "Maximum events that are stored in track. Applicable only for realtime mode.", "<count(int)>", [&](PropertyParser& parser) -> bool { 
+        m_max_events_per_track = TRY_OPTIONAL(parser.read_int_in_range(0, 65536));
+        return true;
+    });
+    config_file.register_property("real_time_scale", "Y scale (tile falling speed) for realtime mode", "<value(float)>", [&](PropertyParser& parser) -> bool { 
+        m_real_time_scale = TRY_OPTIONAL(parser.read_float());
+        return true;
+    });
+    config_file.register_property("play_scale", "Y scale (tile falling speed) for play mode", "<value(float)>", [&](PropertyParser& parser) -> bool { 
+        m_play_scale = TRY_OPTIONAL(parser.read_float());
+        return true;
+    });
+    config_file.register_property("background_image", "Path to background image", "<path(string)>", [&](PropertyParser& parser) -> bool { 
+        auto path = TRY_OPTIONAL(parser.read_string());
+        if(!m_background_texture.loadFromFile(path))
+        {
+            std::cerr << "WARNING: Failed to load background image" << std::endl;
+            return true; // don't fail because of warning
+        }
+        m_background_sprite.setTexture(m_background_texture);
+        return true;
+    });
+    if(!config_file.load("config.cfg"))
+        exit(1);
 
-    while(true)
-    {
-        std::string command;
-        if(!(config_file >> command))
-            break;
-
-        if(command == "color"sv)
-        {
-            std::vector<std::unique_ptr<Selector>> selectors;
-            while(auto selector = Selector::read(config_file))
-            {
-                if(!selector && selectors.empty())
-                {
-                    std::cerr << "ERROR: invalid selector for 'color'" << std::endl;
-                    exit(1);
-                }
-                selectors.push_back(std::move(selector));
-            }
-
-            int r, g, b, a = 128;
-            if(!(config_file >> r >> g >> b))
-            {
-                std::cerr << "ERROR: color requires arguments: <selector> <r> <g> <b> [a]" << std::endl;
-                exit(1);
-            }
-            if(!(config_file >> a))
-            {
-                a = 255;
-                config_file.clear();
-            }
-            m_channel_colors.push_back(std::make_pair(std::move(selectors),
-                sf::Color { static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a) }));
-        }
-        else if(command == "default_color"sv)
-        {
-            int r, g, b, a = 128;
-            if(!(config_file >> r >> g >> b))
-            {
-                std::cerr << "ERROR: default_color requires arguments: <r> <g> <b> [a]" << std::endl;
-                exit(1);
-            }
-            if(!(config_file >> a))
-            {
-                a = 255;
-                config_file.clear();
-            }
-            m_default_color = { static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a) };
-        }
-        else if(command == "background_color"sv)
-        {
-            int r, g, b;
-            if(!(config_file >> r >> g >> b))
-            {
-                std::cerr << "ERROR: background_color requires arguments: <r> <g> <b>" << std::endl;
-                exit(1);
-            }
-            m_background_color = { static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b) };
-        }
-        else if(command == "overlay_color"sv)
-        {
-            int r, g, b, a = 128;
-            if(!(config_file >> r >> g >> b))
-            {
-                std::cerr << "ERROR: overlay_color requires arguments: <r> <g> <b> [a]" << std::endl;
-                exit(1);
-            }
-            if(!(config_file >> a))
-            {
-                a = 255;
-                config_file.clear();
-            }
-            m_overlay_color = { static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(a) };
-        }
-        else if(command == "particle_count"sv)
-        {
-            int c;
-            if(!(config_file >> c))
-            {
-                std::cerr << "ERROR: particle_count requires arguments: <count>" << std::endl;
-                exit(1);
-            }
-            m_particle_count = c;
-        }
-        else if(command == "particle_radius"sv)
-        {
-            float c;
-            if(!(config_file >> c))
-            {
-                std::cerr << "ERROR: particle_radius requires arguments: <radius>" << std::endl;
-                exit(1);
-            }
-            m_particle_radius = c;
-        }
-        else if(command == "particle_glow_size"sv)
-        {
-            float c;
-            if(!(config_file >> c))
-            {
-                std::cerr << "ERROR: particle_glow_size requires arguments: <radius>" << std::endl;
-                exit(1);
-            }
-            m_particle_glow_size = c;
-        }
-        else if(command == "max_events_per_track"sv)
-        {
-            size_t c;
-            if(!(config_file >> c))
-            {
-                std::cerr << "ERROR: max_events_per_track requires arguments: <count>" << std::endl;
-                exit(1);
-            }
-            m_max_events_per_track = c;
-        }
-        else if(command == "real_time_scale"sv)
-        {
-            double c;
-            if(!(config_file >> c))
-            {
-                std::cerr << "ERROR: real_time_scale requires arguments: <factor>" << std::endl;
-                exit(1);
-            }
-            m_real_time_scale = c;
-        }
-        else if(command == "play_scale"sv)
-        {
-            double c;
-            if(!(config_file >> c))
-            {
-                std::cerr << "ERROR: play_scale requires arguments: <factor>" << std::endl;
-                exit(1);
-            }
-            m_play_scale = c;
-        }
-        else if(command == "background_image"sv)
-        {
-            config_file >> std::ws;
-            std::string path;
-            if(!(std::getline(config_file, path)))
-            {
-                std::cerr << "ERROR: background_image requires arguments: <path...>" << std::endl;
-                exit(1);
-            }
-            if(!m_background_texture.loadFromFile(path))
-            {
-                std::cerr << "WARNING: Failed to load background image" << std::endl;
-                continue;
-            }
-            m_background_sprite.setTexture(m_background_texture);
-        }
-        else
-        {
-            // TODO: Help
-            std::cerr << "ERROR: Invalid config command: " << command << std::endl;
-            exit(1);
-        }
-    }
-
+    generate_particle_texture();
     if(m_real_time)
     {
         m_midi.for_each_track([this](Track& trk)
             { trk.set_max_events(m_max_events_per_track); });
     }
-
-    generate_particle_texture();
 }
 
 void MIDIPlayer::ensure_sounds_generated()
