@@ -1,13 +1,15 @@
 #pragma once
 
+#include "ConfigFileReader.h"
 #include "Event.h"
+#include "FileWatcher.h"
 #include "MIDIOutput.h"
 #include "Selector.h"
+#include <SFML/Graphics.hpp>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <list>
-#include <SFML/Graphics.hpp>
 
 class MIDIInput;
 struct Particle
@@ -31,9 +33,13 @@ struct std::hash<sf::Color>
 class MIDIPlayer
 {
 public:
-    enum class RealTime { Yes, No };
+    enum class RealTime
+    {
+        Yes,
+        No
+    };
 
-     // TODO: Make these configurable??
+    // TODO: Make these configurable??
     static constexpr float view_offset_x = 12.0;
     static constexpr float view_size_x = 52.0;
     static constexpr float piano_size_px = 200.f;
@@ -57,7 +63,11 @@ public:
 
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
 
-    enum class Preview { Yes, No };
+    enum class Preview
+    {
+        Yes,
+        No
+    };
 
     void render(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time);
 
@@ -80,19 +90,22 @@ private:
     void render_background(sf::RenderTarget& target) const;
     void render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const;
 
+    bool reload_config_file();
+
     MIDIInput& m_midi;
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
     unsigned m_fps { 60 };
     size_t m_current_tick { 0 };
     bool m_playing { true };
-    struct Wind {
+    struct Wind
+    {
         double speed = 0;
         double target_speed = 0;
         sf::Vector2f pos;
         int time = 0;
         int start_time = 0;
     };
-    
+
     std::list<Wind> m_winds;
     bool m_real_time { false };
     std::list<Particle> m_particles;
@@ -100,6 +113,8 @@ private:
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;
     sf::Font m_font;
+    ConfigFileReader m_config_file_reader;
+    FileWatcher m_config_file_watcher;
 
     std::map<MIDIKey, NoteEvent> m_started_notes;
     std::map<MIDIKey, std::optional<NoteEvent>> m_ended_notes;
@@ -117,7 +132,7 @@ private:
     sf::Texture m_background_texture;
     sf::Sprite m_background_sprite;
     sf::Texture m_particle_texture;
-    
+
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
     std::unique_ptr<MIDIOutput> m_midi_output;
 };

@@ -1,6 +1,5 @@
 #include "MIDIPlayer.h"
 
-#include "ConfigFileReader.h"
 #include "MIDIFile.h"
 #include "Try.h"
 
@@ -57,7 +56,7 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
 }
 
 MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
-: m_midi(midi), m_real_time(real_time == RealTime::Yes), m_start_time { std::chrono::system_clock::now() }
+: m_midi(midi), m_real_time(real_time == RealTime::Yes), m_start_time { std::chrono::system_clock::now() }, m_config_file_watcher("config.cfg")
 {
     ensure_sounds_generated();
     if(
@@ -69,50 +68,50 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
     if(m_font.loadFromFile("res/font.ttf"))
         std::cerr << "Font loaded" << std::endl;
 
-    ConfigFileReader config_file;
-    config_file.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool { 
+    m_config_file_reader.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool
+        { 
         auto selectors = TRY_OPTIONAL(parser.read_selector_list());
         auto color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::Allow));
         m_channel_colors.push_back(std::make_pair(std::move(selectors), color));
-        return true;
-    });
-    config_file.register_property("default_color", "Default key tile color", "<color(rgb[a])>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("default_color", "Default key tile color", "<color(rgb[a])>", [&](PropertyParser& parser) -> bool
+        { 
         m_default_color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::Allow));
-        return true;
-    });
-    config_file.register_property("background_color", "Background color", "<color(rgb)>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("background_color", "Background color", "<color(rgb)>", [&](PropertyParser& parser) -> bool
+        { 
         m_background_color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::DontAllow));
-        return true;
-    });
-    config_file.register_property("overlay_color", "Overlay (fade out) color", "<color(rgb[a])>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("overlay_color", "Overlay (fade out) color", "<color(rgb[a])>", [&](PropertyParser& parser) -> bool
+        { 
         m_overlay_color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::Allow));
-        return true;
-    });
-    config_file.register_property("particle_count", "Particle count (per tick)", "<count(int)>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("particle_count", "Particle count (per tick)", "<count(int)>", [&](PropertyParser& parser) -> bool
+        { 
         m_particle_count = TRY_OPTIONAL(parser.read_int());
-        return true;
-    });
-    config_file.register_property("particle_radius", "Particle radius (in keys)", "<radius(float)>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("particle_radius", "Particle radius (in keys)", "<radius(float)>", [&](PropertyParser& parser) -> bool
+        { 
         m_particle_radius = TRY_OPTIONAL(parser.read_float());
-        return true;
-    });
-    config_file.register_property("particle_glow_size", "Particle glow size (in keys)", "<radius(float)>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("particle_glow_size", "Particle glow size (in keys)", "<radius(float)>", [&](PropertyParser& parser) -> bool
+        { 
         m_particle_glow_size = TRY_OPTIONAL(parser.read_float());
-        return true;
-    });
-    config_file.register_property("max_events_per_track", "Maximum events that are stored in track. Applicable only for realtime mode.", "<count(int)>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("max_events_per_track", "Maximum events that are stored in track. Applicable only for realtime mode.", "<count(int)>", [&](PropertyParser& parser) -> bool
+        { 
         m_max_events_per_track = TRY_OPTIONAL(parser.read_int_in_range(0, 65536));
-        return true;
-    });
-    config_file.register_property("real_time_scale", "Y scale (tile falling speed) for realtime mode", "<value(float)>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("real_time_scale", "Y scale (tile falling speed) for realtime mode", "<value(float)>", [&](PropertyParser& parser) -> bool
+        { 
         m_real_time_scale = TRY_OPTIONAL(parser.read_float());
-        return true;
-    });
-    config_file.register_property("play_scale", "Y scale (tile falling speed) for play mode", "<value(float)>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("play_scale", "Y scale (tile falling speed) for play mode", "<value(float)>", [&](PropertyParser& parser) -> bool
+        { 
         m_play_scale = TRY_OPTIONAL(parser.read_float());
-        return true;
-    });
-    config_file.register_property("background_image", "Path to background image", "<path(string)>", [&](PropertyParser& parser) -> bool { 
+        return true; });
+    m_config_file_reader.register_property("background_image", "Path to background image", "<path(string)>", [&](PropertyParser& parser) -> bool
+        { 
         auto path = TRY_OPTIONAL(parser.read_string());
         if(!m_background_texture.loadFromFile(path))
         {
@@ -120,17 +119,24 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
             return true; // don't fail because of warning
         }
         m_background_sprite.setTexture(m_background_texture);
-        return true;
-    });
-    if(!config_file.load("config.cfg"))
-        exit(1);
+        return true; });
+    reload_config_file();
+}
 
+bool MIDIPlayer::reload_config_file()
+{
+    m_background_texture = sf::Texture();
+    m_channel_colors.clear();
+    if(!m_config_file_reader.load("config.cfg"))
+        return false;
     generate_particle_texture();
     if(m_real_time)
     {
         m_midi.for_each_track([this](Track& trk)
             { trk.set_max_events(m_max_events_per_track); });
     }
+    std::cerr << "Config file successfully reloaded from config.cfg" << std::endl;
+    return true;
 }
 
 void MIDIPlayer::ensure_sounds_generated()
@@ -186,6 +192,8 @@ size_t MIDIPlayer::current_tick() const
 
 void MIDIPlayer::update()
 {
+    if(m_config_file_watcher.file_was_modified())
+        reload_config_file();
     auto previous_current_tick = m_current_tick;
     m_midi.update(*this);
     m_current_tick = current_tick();

@@ -5,7 +5,7 @@ find_package(SFML 2.5.1 COMPONENTS graphics audio REQUIRED)
 add_executable(midi
     src/ConfigFileReader.cpp
     src/Event.cpp 
-    src/main.cpp
+    src/FileWatcher.cpp
     src/MIDIDevice.cpp
     src/MIDIFile.cpp
     src/MIDIInput.cpp
@@ -14,5 +14,6 @@ add_executable(midi
     src/RoundedEdgeRectangleShape.cpp
     src/Selector.cpp
     src/Track.cpp
+    src/main.cpp
 )
 target_link_libraries(midi pthread sfml-graphics sfml-audio)
