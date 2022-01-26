@@ -48,6 +48,7 @@ public:
 
     void set_midi_output(std::unique_ptr<MIDIOutput>&& output) { m_midi_output = std::move(output); }
     void set_fps(unsigned fps) { m_fps = fps; }
+    unsigned fps() const { return m_fps; }
     void set_tempo(uint32_t microseconds_per_quarter_note) { m_microseconds_per_quarter_note = microseconds_per_quarter_note; }
     void set_sound_playing(int index, int velocity, bool playing, sf::Color color);
     void stop() { m_playing = false; }
@@ -58,6 +59,7 @@ public:
     void set_playing(bool playing) { m_playing = playing; }
     bool real_time() const { return m_real_time; }
     size_t current_tick() const;
+    size_t current_frame() const { return m_current_frame; }
     auto start_time() const { return m_start_time; }
     auto microseconds_per_quarter_note() const { return m_microseconds_per_quarter_note; }
 
@@ -96,6 +98,7 @@ private:
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
     unsigned m_fps { 60 };
     size_t m_current_tick { 0 };
+    size_t m_current_frame { 0 };
     bool m_playing { true };
     struct Wind
     {

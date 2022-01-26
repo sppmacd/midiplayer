@@ -243,6 +243,8 @@ void MIDIPlayer::update()
         { return particle.lifetime <= 0; });
     std::erase_if(m_winds, [](auto const& wind)
         { return wind.time <= 0; });
+
+    m_current_frame++;
 }
 
 sf::Color MIDIPlayer::resolve_color(NoteEvent& event) const

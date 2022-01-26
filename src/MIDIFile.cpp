@@ -34,10 +34,9 @@ bool MIDIFileInput::read_midi(std::istream& in)
     return true;
 }
 
-size_t MIDIFileInput::ticks_per_frame(MIDIPlayer& player) const
+size_t MIDIFileInput::current_tick_for_current_frame(MIDIPlayer& player) const
 {
-    // TODO: Don't assume 60 FPS
-    return (static_cast<double>(ticks_per_quarter_note()) / player.microseconds_per_quarter_note()) / (60 / 1000000.0);
+    return (ticks_per_quarter_note() * 1000000.0) / (player.microseconds_per_quarter_note() * player.fps()) * player.current_frame();
 }
 
 #define ERROR(msg) do { std::cerr << "ERROR: Failed to " << msg << " at offset " << std::hex << in.tellg() << std::dec << std::endl; return {}; } while(false)

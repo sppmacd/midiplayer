@@ -21,11 +21,11 @@ public:
 
     virtual uint16_t ticks_per_quarter_note() const override { return m_ticks_per_quarter_note; }
     virtual bool is_valid() const override { return m_valid; }
-    virtual void update(MIDIPlayer& player) override { m_tick += ticks_per_frame(player); }
+    virtual void update(MIDIPlayer& player) override { m_tick = current_tick_for_current_frame(player); }
     virtual size_t current_tick(MIDIPlayer const&) const override { return m_tick; }
     virtual size_t end_tick() const override { return m_end_tick; }
 
-    size_t ticks_per_frame(MIDIPlayer& player) const;
+    size_t current_tick_for_current_frame(MIDIPlayer& player) const;
 
     void dump() const;
 
