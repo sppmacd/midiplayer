@@ -17,21 +17,23 @@ sf::Vector2f RoundedEdgeRectangleShape::getPoint(std::size_t index) const
     float subangle = (float)(index % ROUNDED_EDGE_RESOLUTION) / (ROUNDED_EDGE_RESOLUTION - 1) * M_PI_2;
     float angle = subangle + side * M_PI_2;
 
-    sf::Vector2f offset { std::cos(angle) * m_borderRadius, std::sin(angle) * m_borderRadius };
+    float radius = std::min(std::min(m_borderRadius, m_size.x / 2), m_size.y / 2);
+
+    sf::Vector2f offset { std::cos(angle) * radius, std::sin(angle) * radius };
     sf::Vector2f base;
     switch(side)
     {
         case 0:
-            base = { m_size.x - m_borderRadius, m_size.y - m_borderRadius };
+            base = { m_size.x - radius, m_size.y - radius };
             break;
         case 1:
-            base = { m_borderRadius, m_size.y - m_borderRadius };
+            base = { radius, m_size.y - radius };
             break;
         case 2:
-            base = { m_borderRadius, m_borderRadius };
+            base = { radius, radius };
             break;
         case 3:
-            base = { m_size.x - m_borderRadius, m_borderRadius };
+            base = { m_size.x - radius, radius };
             break;
         default:
             break;
