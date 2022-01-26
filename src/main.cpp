@@ -132,8 +132,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings { 0, 0, 1, 3, 2 });
-
     std::unique_ptr<sf::RenderTexture> render_texture = [&]() -> std::unique_ptr<sf::RenderTexture>
     {
         if(render_to_stdout)
@@ -159,8 +157,25 @@ int main(int argc, char* argv[])
         return nullptr;
     }();
 
-    if(!render_texture)
-        window.setFramerateLimit(60);
+    bool is_fullscreen = false;
+    sf::RenderWindow window;
+    auto create_windowed = [&]()
+    {
+        is_fullscreen = false;
+        window.create(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings { 0, 0, 1 });
+        if(!render_texture)
+            window.setFramerateLimit(60);
+        window.setMouseCursorVisible(true);
+    };
+    auto create_fullscreen = [&]()
+    {
+        is_fullscreen = true;
+        window.create(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Fullscreen, sf::ContextSettings { 0, 0, 1 });
+        if(!render_texture)
+            window.setFramerateLimit(60);
+        window.setMouseCursorVisible(false);
+    };
+    create_windowed();
 
     MIDIPlayer player { *midi, mode == Mode::Realtime ? MIDIPlayer::RealTime::Yes : MIDIPlayer::RealTime::No };
 
@@ -177,6 +192,13 @@ int main(int argc, char* argv[])
             {
                 if(event.type == sf::Event::Closed)
                     player.set_playing(false);
+                else if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F11)
+                {
+                    if(is_fullscreen)
+                        create_windowed();
+                    else
+                        create_fullscreen();
+                }
             }
         }
         player.update();
