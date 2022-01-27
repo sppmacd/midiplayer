@@ -12,16 +12,16 @@ using namespace std::literals;
 
 std::string_view g_exec_name;
 
-enum class BriefUsage
+enum class Brief
 {
     Yes,
     No
 };
 
-static void print_usage_and_exit(BriefUsage brief_usage = BriefUsage::Yes)
+static void print_usage_and_exit(Brief brief = Brief::Yes)
 {
     std::cerr << "Usage: " << g_exec_name << " [options...] [<realtime <MIDI device>>|<play <MIDI file>>]" << std::endl;
-    if(brief_usage == BriefUsage::No)
+    if(brief == Brief::No)
     {
         std::cerr << "Options:" << std::endl;
         std::cerr << "    -m [file]       Save input to specified MIDI file (applicable only in realtime mode)" << std::endl;
@@ -29,8 +29,19 @@ static void print_usage_and_exit(BriefUsage brief_usage = BriefUsage::Yes)
         std::cerr << "    --config-help   Print help for Config Files" << std::endl;
         std::cerr << "    --debug         Enable debug info rendering" << std::endl;
         std::cerr << "    --help          Print this message" << std::endl;
+        std::cerr << "    --version       Print MIDIPlayer version" << std::endl;
     }
     exit(1);
+}
+
+const char* VERSION_STRING = "dev";
+
+static void print_version(Brief brief = Brief::Yes)
+{
+    // This is based on gcc's --version output
+    std::cout << "\e[1m" << g_exec_name << " (MIDIEditor) " << VERSION_STRING << "\e[0m" << std::endl;
+    if(brief == Brief::No)
+        std::cout << "Copyright (C) 2021-2022 sppmacd" << std::endl;
 }
 
 enum class Mode
@@ -42,6 +53,7 @@ enum class Mode
 int main(int argc, char* argv[])
 {
     g_exec_name = argv[0];
+    print_version();
     std::unique_ptr<MIDIInput> midi;
 
     Mode mode {};
@@ -51,7 +63,7 @@ int main(int argc, char* argv[])
     std::string midi_output;
 
     if(argc < 2)
-        print_usage_and_exit(BriefUsage::No);
+        print_usage_and_exit(Brief::No);
     else
     {
         for(int i = 1; i < argc; i++)
@@ -76,7 +88,7 @@ int main(int argc, char* argv[])
                 else if(opt_sv == "-debug")
                     should_render_debug_info_in_preview = true;
                 else if(opt_sv == "-help")
-                    print_usage_and_exit(BriefUsage::No);
+                    print_usage_and_exit(Brief::No);
                 else
                     std::cerr << "WARNING: Ignoring invalid option: " << arg_sv << std::endl;
             }
@@ -143,6 +155,11 @@ int main(int argc, char* argv[])
                 }
             }
         }
+    }
+    if(!midi)
+    {
+        std::cerr << "ERROR: No MIDI input was specified. See --help." << std::endl;
+        return 1;
     }
 
     std::unique_ptr<sf::RenderTexture> render_texture = [&]() -> std::unique_ptr<sf::RenderTexture>
