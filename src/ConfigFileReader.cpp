@@ -8,6 +8,7 @@
 
 std::optional<int> PropertyParser::read_int()
 {
+    m_in >> std::ws;
     int value;
     if(m_in >> value)
         return value;
@@ -27,6 +28,7 @@ std::optional<int> PropertyParser::read_int_in_range(int min, int max)
 
 std::optional<float> PropertyParser::read_float()
 {
+    m_in >> std::ws;
     float value;
     if(m_in >> value)
         return value;
@@ -36,6 +38,7 @@ std::optional<float> PropertyParser::read_float()
 
 std::optional<std::string> PropertyParser::read_string()
 {
+    m_in >> std::ws;
     char maybe_quot = m_in.peek();
 
     auto read_quotted = [&](char q) -> std::optional<std::string>
@@ -76,6 +79,8 @@ std::optional<std::string> PropertyParser::read_string()
 
 std::optional<sf::Color> PropertyParser::read_color(ColorAlphaMode alpha_mode)
 {
+    m_in >> std::ws;
+
     // TODO: Support hex (HTML) colors
     int r, g, b, a = 255;
     if(!(m_in >> r >> g >> b))
