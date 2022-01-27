@@ -19,6 +19,24 @@ void EndOfTrackEvent::render(MIDIPlayer&, sf::RenderTarget& target)
     target.draw(rs);
 }
 
+void TextEvent::execute(MIDIPlayer& player)
+{
+    switch(m_type)
+    {
+        case Type::TrackName:
+            player.display_label(MIDIPlayer::LabelType::TrackName, m_text, 180);
+            break;
+        case Type::Lyric:
+        case Type::Text:
+        case Type::Copyright:
+        case Type::Instrument:
+        case Type::Marker:
+        case Type::CuePoint:
+            // TODO
+            break;
+    }
+}
+
 void SetTempoEvent::execute(MIDIPlayer& player)
 {
     player.set_tempo(m_microseconds_per_quarter_note);

@@ -74,7 +74,7 @@ public:
     : m_type(type), m_text(text) {}
 
     virtual void dump() const override { std::cerr << "Text Event " << static_cast<int>(m_type) << ": " << m_text << std::endl; }
-    virtual void execute(MIDIPlayer&) override { /* TODO */ }
+    virtual void execute(MIDIPlayer&) override;
 
 private:
     Type m_type;

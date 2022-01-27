@@ -65,6 +65,12 @@ public:
 
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
 
+    enum class LabelType
+    {
+        TrackName
+    };
+    void display_label(LabelType, std::string text, int duration);
+
     enum class Preview
     {
         Yes,
@@ -100,6 +106,7 @@ private:
     size_t m_current_tick { 0 };
     size_t m_current_frame { 0 };
     bool m_playing { true };
+
     struct Wind
     {
         double speed = 0;
@@ -112,10 +119,22 @@ private:
     std::list<Wind> m_winds;
     bool m_real_time { false };
     std::list<Particle> m_particles;
+
+    struct Label
+    {
+        LabelType type;
+        std::string text;
+        int remaining_duration;
+        int total_duration;
+    };
+
+    std::list<Label> m_labels;
+
     mutable sf::Shader m_gradient_shader;
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;
-    sf::Font m_font;
+    sf::Font m_debug_font;
+    sf::Font m_display_font;
     ConfigFileReader m_config_file_reader;
     FileWatcher m_config_file_watcher;
 
@@ -132,6 +151,8 @@ private:
     size_t m_max_events_per_track = 4096;
     double m_real_time_scale = 0.05;
     double m_play_scale = 0.05;
+    int m_label_font_size = 50;
+    int m_label_fade_time = 30;
     sf::Texture m_background_texture;
     sf::Sprite m_background_sprite;
     sf::Texture m_particle_texture;

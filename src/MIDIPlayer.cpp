@@ -1,6 +1,7 @@
 #include "MIDIPlayer.h"
 
 #include "MIDIFile.h"
+#include "RoundedEdgeRectangleShape.hpp"
 #include "Try.h"
 
 #include <SFML/Audio.hpp>
@@ -65,7 +66,7 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
         && m_particle_shader.loadFromFile("res/shaders/particle.vert", "res/shaders/particle.frag"))
         std::cerr << "Shaders loaded" << std::endl;
 
-    if(m_font.loadFromFile("res/font.ttf"))
+    if(m_debug_font.loadFromFile("res/font.ttf"))
         std::cerr << "Font loaded" << std::endl;
 
     m_config_file_reader.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool
@@ -119,6 +120,24 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
             return true; // don't fail because of warning
         }
         m_background_sprite.setTexture(m_background_texture);
+        return true; });
+    m_config_file_reader.register_property("display_font", "Font used for displaying e.g. labels", "<path(string)>", [&](PropertyParser& parser) -> bool
+        {
+        auto path = TRY_OPTIONAL(parser.read_string());
+        if(!m_display_font.loadFromFile(path))
+        {
+            std::cerr << "WARNING: Failed to load display font (" << path << ") Using debug font." << std::endl;
+            m_display_font = m_debug_font;
+            return true; // don't fail because of warning
+        }
+        return true; });
+    m_config_file_reader.register_property("label_font_size", "Font size for labels (in pt)", "<size(int)>", [&](PropertyParser& parser) -> bool
+        {
+        m_label_font_size = TRY_OPTIONAL(parser.read_int_in_range(1, 1000));
+        return true; });
+    m_config_file_reader.register_property("label_fade_time", "Label fade time (in frames)", "<time(int)>", [&](PropertyParser& parser) -> bool
+        {
+        m_label_fade_time = TRY_OPTIONAL(parser.read_int_in_range(1, 1000));
         return true; });
     reload_config_file();
 }
@@ -239,10 +258,15 @@ void MIDIPlayer::update()
         particle.lifetime--;
     }
 
+    for(auto& label : m_labels)
+        label.remaining_duration--;
+
     std::erase_if(m_particles, [](auto const& particle)
         { return particle.lifetime <= 0; });
     std::erase_if(m_winds, [](auto const& wind)
         { return wind.time <= 0; });
+    std::erase_if(m_labels, [](auto const& label)
+        { return label.remaining_duration <= 0; });
 
     m_current_frame++;
 }
@@ -312,13 +336,46 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 
 void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
 {
-    // Gradient / Overlay
+    // Screen view things
     {
+        auto target_size = target.getSize();
         sf::View old_view = target.getView();
-        target.setView(sf::View { sf::FloatRect(0, 0, target.getSize().x, target.getSize().y) });
-        sf::RectangleShape rs { sf::Vector2f { target.getSize() } };
+        target.setView(sf::View { sf::FloatRect(0, 0, target_size.x, target_size.y) });
+
+        // Gradient / Overlay
+        sf::RectangleShape rs { sf::Vector2f { target_size } };
         m_gradient_shader.setUniform("uColor", sf::Glsl::Vec4 { m_overlay_color });
         target.draw(rs, sf::RenderStates { &m_gradient_shader });
+
+        // Labels
+        for(auto const& label : m_labels)
+        {
+            sf::Text text(label.text, m_display_font, m_label_font_size);
+            auto bounds = text.getLocalBounds();
+            float padding_left_right = m_label_font_size * 100.f / 45.f;
+            float padding_top_bottom = m_label_font_size * 40.f / 45.f;
+            RoundedEdgeRectangleShape rs { { bounds.width + padding_left_right, bounds.height + padding_top_bottom }, 10.f };
+            rs.setPosition({ target_size.x / 2.f, target_size.y / 2.f + m_label_font_size / 4.6f });
+            rs.setOrigin(rs.getSize() / 2.f);
+            auto calculate_alpha = [&](uint8_t max_alpha) -> uint8_t
+            {
+                if(label.remaining_duration < m_label_fade_time)
+                    return label.remaining_duration * max_alpha / m_label_fade_time;
+                if(label.remaining_duration > label.total_duration - m_label_fade_time)
+                    return (label.total_duration - label.remaining_duration) * max_alpha / m_label_fade_time;
+                return max_alpha;
+            };
+            auto bgcolor = m_background_color;
+            bgcolor = m_background_color + sf::Color(50, 50, 50);
+            bgcolor.a = calculate_alpha(100);
+            rs.setFillColor(bgcolor);
+            target.draw(rs);
+            text.setPosition(sf::Vector2f(target_size) / 2.f);
+            text.setOrigin({ bounds.width / 2.f, bounds.height / 2.f });
+            text.setFillColor(sf::Color(255, 255, 255, calculate_alpha(255)));
+            target.draw(text);
+        }
+
         target.setView(old_view);
     }
 
@@ -375,7 +432,7 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf
         oss << m_particles.size() << " particles" << std::endl;
     }
 
-    sf::Text text { oss.str(), m_font, 10 };
+    sf::Text text { oss.str(), m_debug_font, 10 };
     text.setPosition(5, 5);
     target.draw(text);
 }
@@ -387,6 +444,11 @@ void MIDIPlayer::render_background(sf::RenderTarget& target) const
         return;
     target.setView(sf::View { sf::FloatRect { {}, sf::Vector2f { texture->getSize() } } });
     target.draw(m_background_sprite);
+}
+
+void MIDIPlayer::display_label(LabelType label, std::string text, int duration)
+{
+    m_labels.push_back({ label, std::move(text), duration, duration });
 }
 
 void MIDIPlayer::render(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time)
