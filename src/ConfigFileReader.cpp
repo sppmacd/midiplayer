@@ -2,8 +2,10 @@
 
 #include "Try.h"
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <string>
 
 std::optional<int> PropertyParser::read_int()
@@ -203,10 +205,13 @@ bool ConfigFileReader::load(std::string const& file_name)
 void ConfigFileReader::display_help() const
 {
     // TODO: Check for escape sequence support
-    std::cerr << "\e[1;33m-- Config File Help --\e[0m" << std::endl << std::endl;
+    std::cerr << "\e[1;33m-- Config File Help --\e[0m" << std::endl
+              << std::endl;
     for(auto& it : m_properties)
     {
-        std::cerr << "- \e[1;32m" << it.first << "\e[0m - " << it.second.description << std::endl;
-        std::cerr << "   Usage: \e[32m" << it.first << "\e[0;3m " << it.second.usage << "\e[0m" << std::endl;
+        std::ostringstream oss;
+        oss << "- \e[1;32m" << it.first << "\e[0;3m " << it.second.usage << "\e[0m"
+            << "\e[0m";
+        std::cerr << std::left << std::setw(75) << oss.str() << " " << it.second.description << std::endl;
     }
 }
