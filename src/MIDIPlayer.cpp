@@ -69,7 +69,7 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
         && m_particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
         std::cerr << "Shaders loaded" << std::endl;
 
-    if(m_debug_font.loadFromFile(resource_path + "/font.ttf"))
+    if(m_debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
         std::cerr << "Font loaded" << std::endl;
 
     m_config_file_reader.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool
