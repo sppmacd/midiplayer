@@ -71,13 +71,13 @@ public:
     };
     void display_label(LabelType, std::string text, int duration);
 
-    enum class Preview
+    struct DebugInfo
     {
-        Yes,
-        No
+        bool full_info;
+        sf::Time last_fps_time;
     };
 
-    void render(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time);
+    void render(sf::RenderTarget& target, DebugInfo const& debug_info);
 
     sf::Shader& note_shader() const { return m_note_shader; }
     sf::Shader& particle_shader() const { return m_particle_shader; }
@@ -96,7 +96,7 @@ private:
     void render_particles(sf::RenderTarget& target) const;
     void render_overlay(sf::RenderTarget& target) const;
     void render_background(sf::RenderTarget& target) const;
-    void render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const;
+    void render_debug_info(sf::RenderTarget& target, DebugInfo const& debug_info) const;
 
     bool reload_config_file();
 

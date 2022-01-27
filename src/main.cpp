@@ -23,7 +23,9 @@ static void print_usage_and_exit(BriefUsage brief_usage = BriefUsage::Yes)
     if(brief_usage == BriefUsage::No)
     {
         std::cerr << "Options:" << std::endl;
-        std::cerr << "    -o    Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
+        std::cerr << "    -m [file]   Save input to specified MIDI file (applicable only in realtime mode)" << std::endl;
+        std::cerr << "    -o          Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
+        std::cerr << "    --debug     Enables debug info rendering" << std::endl;
     }
     exit(1);
 }
@@ -41,6 +43,7 @@ int main(int argc, char* argv[])
 
     Mode mode {};
     bool render_to_stdout = false;
+    bool should_render_debug_info_in_preview = false;
     std::string midi_output;
 
     if(argc < 2)
@@ -64,6 +67,8 @@ int main(int argc, char* argv[])
                     }
                     midi_output = argv[i];
                 }
+                else if(opt_sv == "-debug")
+                    should_render_debug_info_in_preview = true;
                 else
                     std::cerr << "WARNING: Ignoring invalid option: " << arg_sv << std::endl;
             }
@@ -203,11 +208,11 @@ int main(int argc, char* argv[])
         }
         player.update();
         // FIXME: Last FPS should be stored in MIDIPlayer somehow!
-        player.render(window, MIDIPlayer::Preview::Yes, last_fps_time);
+        player.render(window, {.full_info = should_render_debug_info_in_preview, .last_fps_time = last_fps_time});
         window.display();
         if(render_texture)
         {
-            player.render(*render_texture, MIDIPlayer::Preview::No, last_fps_time);
+            player.render(*render_texture, {.full_info = false, .last_fps_time = last_fps_time});
             render_texture->display();
             auto image = render_texture->getTexture().copyToImage();
 

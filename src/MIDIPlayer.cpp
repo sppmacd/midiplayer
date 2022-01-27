@@ -409,20 +409,20 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
     }
 }
 
-void MIDIPlayer::render_debug_info(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time) const
+void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& debug_info) const
 {
     sf::Vector2f target_size { target.getSize() };
     target.setView(sf::View({ 0, 0, target_size.x, target_size.y }));
     auto tick = current_tick();
     auto end_tick = m_midi.end_tick();
     std::ostringstream oss;
-    oss << (preview == Preview::Yes ? "Tick=" : "") << tick;
+    oss << (debug_info.full_info ? "Tick=" : "") << tick;
     if(!m_real_time && end_tick != 0)
         oss << "/" << end_tick << " (" << 100 * tick / end_tick << "%)";
-    if(preview == Preview::Yes)
+    if(debug_info.full_info)
     {
         oss << "\n\n";
-        oss << std::to_string(1.f / last_fps_time.asSeconds()) + " fps\n";
+        oss << std::to_string(1.f / debug_info.last_fps_time.asSeconds()) + " fps\n";
         if(!m_winds.empty())
         {
             oss << "WIND:\n";
@@ -451,7 +451,7 @@ void MIDIPlayer::display_label(LabelType label, std::string text, int duration)
     m_labels.push_back({ label, std::move(text), duration, duration });
 }
 
-void MIDIPlayer::render(sf::RenderTarget& target, Preview preview, sf::Time last_fps_time)
+void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
 {
     target.clear(m_background_color);
     render_background(target);
@@ -474,5 +474,5 @@ void MIDIPlayer::render(sf::RenderTarget& target, Preview preview, sf::Time last
     }
     render_particles(target);
     render_overlay(target);
-    render_debug_info(target, preview, last_fps_time);
+    render_debug_info(target, debug_info);
 }
