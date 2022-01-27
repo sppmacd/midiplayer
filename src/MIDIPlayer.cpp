@@ -1,6 +1,7 @@
 #include "MIDIPlayer.h"
 
 #include "MIDIFile.h"
+#include "Resources.h"
 #include "RoundedEdgeRectangleShape.hpp"
 #include "Try.h"
 
@@ -59,14 +60,16 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
 MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
 : m_midi(midi), m_real_time(real_time == RealTime::Yes), m_start_time { std::chrono::system_clock::now() }, m_config_file_watcher("config.cfg")
 {
+    auto resource_path = find_resource_path();
+    std::cerr << "Resource path: " << resource_path << std::endl;
     ensure_sounds_generated();
     if(
-        m_gradient_shader.loadFromFile("res/shaders/gradient.vert", "res/shaders/gradient.frag")
-        && m_note_shader.loadFromFile("res/shaders/note.vert", "res/shaders/note.frag")
-        && m_particle_shader.loadFromFile("res/shaders/particle.vert", "res/shaders/particle.frag"))
+        m_gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
+        && m_note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
+        && m_particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
         std::cerr << "Shaders loaded" << std::endl;
 
-    if(m_debug_font.loadFromFile("res/font.ttf"))
+    if(m_debug_font.loadFromFile(resource_path + "/font.ttf"))
         std::cerr << "Font loaded" << std::endl;
 
     m_config_file_reader.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool

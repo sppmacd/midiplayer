@@ -1,0 +1,3 @@
+#pragma once
+
+static inline constexpr const char* GLOBAL_RESOURCE_DIR = "@MIDIEDITOR_RESOURCE_DIR@";
