@@ -10,6 +10,7 @@ public:
 
     virtual std::size_t getPointCount() const override;
     virtual sf::Vector2f getPoint(std::size_t index) const override;
+    sf::Vector2f getSize() const { return m_size; }
 
 private:
     sf::Vector2f m_size;
