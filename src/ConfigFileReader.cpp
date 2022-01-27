@@ -202,11 +202,11 @@ bool ConfigFileReader::load(std::string const& file_name)
 
 void ConfigFileReader::display_help() const
 {
-    std::cerr << "Config File Help:" << std::endl;
+    // TODO: Check for escape sequence support
+    std::cerr << "\e[1;33m-- Config File Help --\e[0m" << std::endl << std::endl;
     for(auto& it : m_properties)
     {
-        std::cerr << " " << it.first << std::endl;
-        std::cerr << "  " << it.second.description << std::endl;
-        std::cerr << "  Usage: " << it.first << " " << it.second.usage << std::endl;
+        std::cerr << "- \e[1;32m" << it.first << "\e[0m - " << it.second.description << std::endl;
+        std::cerr << "   Usage: \e[32m" << it.first << "\e[0;3m " << it.second.usage << "\e[0m" << std::endl;
     }
 }
