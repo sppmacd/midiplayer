@@ -200,7 +200,7 @@ bool ConfigFileReader::load(std::string const& file_name)
     return true;
 }
 
-void ConfigFileReader::display_help()
+void ConfigFileReader::display_help() const
 {
     std::cerr << "Config File Help:" << std::endl;
     for(auto& it : m_properties)

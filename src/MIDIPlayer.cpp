@@ -476,3 +476,8 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     render_overlay(target);
     render_debug_info(target, debug_info);
 }
+
+void MIDIPlayer::print_config_help() const
+{
+    m_config_file_reader.display_help();
+}

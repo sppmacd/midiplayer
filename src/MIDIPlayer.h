@@ -89,6 +89,8 @@ public:
     int particle_count() const { return m_particle_count; }
     double scale() const { return real_time() ? m_real_time_scale : m_play_scale; }
 
+    void print_config_help() const;
+
 private:
     static void ensure_sounds_generated();
     void generate_particle_texture();

@@ -1,6 +1,7 @@
 #include <cstring>
 #include <fstream>
 
+#include "ConfigFileReader.h"
 #include "MIDIDevice.h"
 #include "MIDIFile.h"
 #include "MIDIPlayer.h"
@@ -23,9 +24,11 @@ static void print_usage_and_exit(BriefUsage brief_usage = BriefUsage::Yes)
     if(brief_usage == BriefUsage::No)
     {
         std::cerr << "Options:" << std::endl;
-        std::cerr << "    -m [file]   Save input to specified MIDI file (applicable only in realtime mode)" << std::endl;
-        std::cerr << "    -o          Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
-        std::cerr << "    --debug     Enables debug info rendering" << std::endl;
+        std::cerr << "    -m [file]       Save input to specified MIDI file (applicable only in realtime mode)" << std::endl;
+        std::cerr << "    -o              Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
+        std::cerr << "    --config-help   Print help for Config Files" << std::endl;
+        std::cerr << "    --debug         Enable debug info rendering" << std::endl;
+        std::cerr << "    --help          Print this message" << std::endl;
     }
     exit(1);
 }
@@ -42,6 +45,7 @@ int main(int argc, char* argv[])
     std::unique_ptr<MIDIInput> midi;
 
     Mode mode {};
+    bool print_config_help = false;
     bool render_to_stdout = false;
     bool should_render_debug_info_in_preview = false;
     std::string midi_output;
@@ -67,8 +71,12 @@ int main(int argc, char* argv[])
                     }
                     midi_output = argv[i];
                 }
+                else if(opt_sv == "-config-help")
+                    print_config_help = true;
                 else if(opt_sv == "-debug")
                     should_render_debug_info_in_preview = true;
+                else if(opt_sv == "-help")
+                    print_usage_and_exit(BriefUsage::No);
                 else
                     std::cerr << "WARNING: Ignoring invalid option: " << arg_sv << std::endl;
             }
@@ -183,6 +191,12 @@ int main(int argc, char* argv[])
     create_windowed();
 
     MIDIPlayer player { *midi, mode == Mode::Realtime ? MIDIPlayer::RealTime::Yes : MIDIPlayer::RealTime::No };
+    if(print_config_help)
+    {
+        // FIXME: This should be handled in argument parser but only MIDIPlayer initializes it.
+        player.print_config_help();
+        return 0;
+    }
 
     if(!midi_output.empty())
         player.set_midi_output(std::make_unique<MIDIFileOutput>(midi_output));

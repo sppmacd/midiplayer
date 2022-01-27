@@ -43,10 +43,9 @@ public:
 
     void register_property(std::string name, std::string description, std::string usage, PropertyHandler handler);
     bool load(std::string const& file_name);
+    void display_help() const;
 
 private:
-    void display_help();
-
     struct Property
     {
         std::string description;
