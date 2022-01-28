@@ -10,6 +10,7 @@ if(MIDIPLAYER_PORTABLE_INSTALL)
     set(CMAKE_INSTALL_PREFIX root)
 endif()
 
+find_package(fmt 8.0.0 REQUIRED)
 find_package(SFML 2.5.1 COMPONENTS graphics audio REQUIRED)
 
 add_executable(midiplayer
@@ -27,7 +28,7 @@ add_executable(midiplayer
     src/Track.cpp
     src/main.cpp
 )
-target_link_libraries(midiplayer pthread sfml-graphics sfml-audio)
+target_link_libraries(midiplayer pthread sfml-graphics sfml-audio fmt)
 target_include_directories(midiplayer PUBLIC ${CMAKE_BINARY_DIR}/src)
 install(TARGETS midiplayer DESTINATION bin)
 if(MIDIPLAYER_PORTABLE_INSTALL)

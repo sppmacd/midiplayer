@@ -7,10 +7,11 @@ The dependencies required are:
 - GNU Make / Ninja
 - CMake 3.13+
 - SFML 2.5.1+
+- fmtlib 8.0.0+
 
 Arch Linux:
 ```
-# pacman -S base-devel cmake sfml
+# pacman -S base-devel cmake sfml fmt
 ```
 
 ## 2. Download the project
