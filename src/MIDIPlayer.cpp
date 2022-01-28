@@ -145,12 +145,11 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
     reload_config_file();
 }
 
-bool MIDIPlayer::reload_config_file()
+void MIDIPlayer::reload_config_file()
 {
     m_background_texture = sf::Texture();
     m_channel_colors.clear();
-    if(!m_config_file_reader.load("config.cfg"))
-        return false;
+    m_config_file_reader.load("config.cfg");
     generate_particle_texture();
     if(m_real_time)
     {
@@ -158,7 +157,6 @@ bool MIDIPlayer::reload_config_file()
             { trk.set_max_events(m_max_events_per_track); });
     }
     std::cerr << "Config file successfully reloaded from config.cfg" << std::endl;
-    return true;
 }
 
 void MIDIPlayer::ensure_sounds_generated()

@@ -12,6 +12,6 @@ public:
     bool file_was_modified() const;
 
 private:
-    int m_watcher_fd {};
-    int m_watcher_wd {};
+    int m_watcher_fd {-1};
+    int m_watcher_wd {-1};
 };

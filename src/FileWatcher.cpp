@@ -12,14 +12,14 @@ FileWatcher::FileWatcher(std::string const& path)
     if(m_watcher_fd < 0)
     {
         std::cerr << "WARNING: Failed to setup watcher: " << strerror(errno) << std::endl;
-        m_watcher_fd = 0;
+        m_watcher_fd = -1;
         return;
     }
 
-    if(fcntl(m_watcher_fd, F_SETFL, fcntl(m_watcher_wd, F_GETFL) | O_NONBLOCK) < 0)
+    if(fcntl(m_watcher_fd, F_SETFL, fcntl(m_watcher_fd, F_GETFL) | O_NONBLOCK) < 0)
     {
         std::cerr << "WARNING: Failed to set watcher non-blocking: " << strerror(errno) << std::endl;
-        m_watcher_fd = 0;
+        m_watcher_fd = -1;
         return;
     }
 
@@ -27,13 +27,15 @@ FileWatcher::FileWatcher(std::string const& path)
     if(m_watcher_wd < 0)
     {
         std::cerr << "WARNING: Failed to setup watch for " << path << ": " << strerror(errno) << std::endl;
-        m_watcher_fd = 0;
+        m_watcher_fd = -1;
         return;
     }
 }
 
 bool FileWatcher::file_was_modified() const
 {
+    if(m_watcher_fd == -1)
+        return false;
     std::vector<char> buffer;
     buffer.resize(sizeof(inotify_event) + NAME_MAX + 1);
     if(read(m_watcher_fd, buffer.data(), buffer.size()) < 0)

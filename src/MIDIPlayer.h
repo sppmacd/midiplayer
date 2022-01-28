@@ -100,7 +100,7 @@ private:
     void render_background(sf::RenderTarget& target) const;
     void render_debug_info(sf::RenderTarget& target, DebugInfo const& debug_info) const;
 
-    bool reload_config_file();
+    void reload_config_file();
 
     MIDIInput& m_midi;
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
@@ -144,7 +144,7 @@ private:
     std::map<MIDIKey, std::optional<NoteEvent>> m_ended_notes;
 
     std::vector<std::pair<std::vector<std::unique_ptr<Selector>>, sf::Color>> m_channel_colors;
-    sf::Color m_default_color { 128, 128, 128 };
+    sf::Color m_default_color { 100, 100, 255 };
     sf::Color m_background_color { 10, 10, 10 };
     sf::Color m_overlay_color { 5, 5, 5 };
     int m_particle_count = 2;
