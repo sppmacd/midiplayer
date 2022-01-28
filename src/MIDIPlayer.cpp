@@ -78,7 +78,7 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
         auto color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::Allow));
         m_channel_colors.push_back(std::make_pair(std::move(selectors), color));
         return true; });
-    m_config_file_reader.register_property("default_color", "Default key tile color", "<color(rgb[a])>", [&](PropertyParser& parser) -> bool
+    m_config_file_reader.register_property("default_color", "Default key tile color. Used when no selector matches a tile.", "<color(rgb[a])>", [&](PropertyParser& parser) -> bool
         { 
         m_default_color = TRY_OPTIONAL(parser.read_color(PropertyParser::ColorAlphaMode::Allow));
         return true; });
