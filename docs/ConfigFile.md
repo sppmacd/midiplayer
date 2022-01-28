@@ -115,4 +115,4 @@ Available selector attributes:
 * `channel` - A MIDI channel that event is stored on
 * `note` - Note value, as stored in MIDI
 * `white_key` - Index of white key (A0 key is `0`, B0 is `1` etc.). `-1` if key is black.
-* `black_key` - Index of black key, A♯0 key is `0`
+* `black_key` - Index of black key, (A♯0 key is `0`, C♯1 is `1` etc.). `-1` if key is white.
