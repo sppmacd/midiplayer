@@ -54,7 +54,6 @@ int main(int argc, char* argv[])
 {
     g_exec_name = argv[0];
     print_version();
-    std::unique_ptr<MIDIInput> midi;
 
     Mode mode {};
     bool print_config_help = false;
@@ -62,6 +61,9 @@ int main(int argc, char* argv[])
     bool should_render_debug_info_in_preview = false;
     std::string midi_output;
 
+    MIDIPlayer player;
+
+    // FIXME: This is very messy. Factor it out to a nice API or just get a library for argsparse :)
     if(argc < 2)
         print_usage_and_exit(Brief::No);
     else
@@ -94,7 +96,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                if(midi)
+                if(player.is_initialized())
                 {
                     std::cerr << "ERROR: Only one mode may be active at once" << std::endl;
                     return 1;
@@ -121,8 +123,9 @@ int main(int argc, char* argv[])
                             std::cerr << "ERROR: Expected character device (e.g /dev/midi3), got " << filename_sv << std::endl;
                             return 1;
                         }
-                        midi = std::make_unique<MIDIDevice>(std::string { filename_sv });
-                        mode = Mode::Realtime;
+
+                        player.initialize(MIDIPlayer::RealTime::Yes, std::make_unique<MIDIDevice>(std::string { filename_sv }),
+                            midi_output.empty() ? nullptr : std::make_unique<MIDIFileOutput>(midi_output));
                     }
                     else if(arg_sv == "play"sv)
                     {
@@ -134,31 +137,37 @@ int main(int argc, char* argv[])
                         std::ifstream stream(std::string { filename_sv }, std::ios::binary);
                         if(stream.fail())
                         {
-                            std::cerr << "Failed to open file." << std::endl;
+                            std::cerr << "ERROR: Failed to open file." << std::endl;
                             return 1;
                         }
                         auto midi_file = std::make_unique<MIDIFileInput>(stream);
                         if(!midi_file->is_valid())
                         {
-                            std::cerr << "Failed to read MIDI" << std::endl;
+                            std::cerr << "ERROR: Failed to read MIDI" << std::endl;
                             return 1;
                         }
                         midi_file->dump();
-                        mode = Mode::Play;
-                        midi = std::move(midi_file);
+                        player.initialize(MIDIPlayer::RealTime::No, std::move(midi_file), nullptr);
                     }
                 }
                 else
                 {
-                    std::cerr << "ERROR: Unknown mode" << std::endl;
+                    std::cerr << "ERROR: Unknown mode: " << arg_sv << std::endl;
                     print_usage_and_exit();
                 }
             }
         }
     }
-    if(!midi)
+
+    if(print_config_help)
     {
-        std::cerr << "ERROR: No MIDI input was specified. See --help." << std::endl;
+        player.print_config_help();
+        return 0;
+    }
+
+    if(!player.is_initialized())
+    {
+        std::cerr << "ERROR: No mode was given. You need to specify either 'play' or 'realtime'. See --help for details." << std::endl;
         return 1;
     }
 
@@ -207,17 +216,6 @@ int main(int argc, char* argv[])
     };
     create_windowed();
 
-    MIDIPlayer player { *midi, mode == Mode::Realtime ? MIDIPlayer::RealTime::Yes : MIDIPlayer::RealTime::No };
-    if(print_config_help)
-    {
-        // FIXME: This should be handled in argument parser but only MIDIPlayer initializes it.
-        player.print_config_help();
-        return 0;
-    }
-
-    if(!midi_output.empty())
-        player.set_midi_output(std::make_unique<MIDIFileOutput>(midi_output));
-
     sf::Clock fps_clock;
     sf::Time last_fps_time;
     while(player.playing())
@@ -239,11 +237,11 @@ int main(int argc, char* argv[])
         }
         player.update();
         // FIXME: Last FPS should be stored in MIDIPlayer somehow!
-        player.render(window, {.full_info = should_render_debug_info_in_preview, .last_fps_time = last_fps_time});
+        player.render(window, { .full_info = should_render_debug_info_in_preview, .last_fps_time = last_fps_time });
         window.display();
         if(render_texture)
         {
-            player.render(*render_texture, {.full_info = false, .last_fps_time = last_fps_time});
+            player.render(*render_texture, { .full_info = false, .last_fps_time = last_fps_time });
             render_texture->display();
             auto image = render_texture->getTexture().copyToImage();
 

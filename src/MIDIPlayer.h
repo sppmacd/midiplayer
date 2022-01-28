@@ -44,9 +44,10 @@ public:
     static constexpr float view_size_x = 52.0;
     static constexpr float piano_size_px = 200.f;
 
-    MIDIPlayer(MIDIInput& midi, RealTime real_time);
+    MIDIPlayer();
+    void initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output);
+    bool is_initialized() const { return m_initialized; }
 
-    void set_midi_output(std::unique_ptr<MIDIOutput>&& output) { m_midi_output = std::move(output); }
     void set_fps(unsigned fps) { m_fps = fps; }
     unsigned fps() const { return m_fps; }
     void set_tempo(uint32_t microseconds_per_quarter_note) { m_microseconds_per_quarter_note = microseconds_per_quarter_note; }
@@ -102,12 +103,12 @@ private:
 
     void reload_config_file();
 
-    MIDIInput& m_midi;
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
     unsigned m_fps { 60 };
     size_t m_current_tick { 0 };
     size_t m_current_frame { 0 };
     bool m_playing { true };
+    bool m_initialized { false };
 
     struct Wind
     {
@@ -160,5 +161,6 @@ private:
     sf::Texture m_particle_texture;
 
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
+    std::unique_ptr<MIDIInput> m_midi_input;
     std::unique_ptr<MIDIOutput> m_midi_output;
 };

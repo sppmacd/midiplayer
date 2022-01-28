@@ -57,21 +57,9 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
         std::cerr << "loadFromSamples failed: " << sample_count << std::endl;
 }
 
-MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
-: m_midi(midi), m_real_time(real_time == RealTime::Yes), m_start_time { std::chrono::system_clock::now() }, m_config_file_watcher("config.cfg")
+MIDIPlayer::MIDIPlayer()
+: m_config_file_watcher("config.cfg")
 {
-    auto resource_path = find_resource_path();
-    std::cerr << "Resource path: " << resource_path << std::endl;
-    ensure_sounds_generated();
-    if(
-        m_gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
-        && m_note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
-        && m_particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
-        std::cerr << "Shaders loaded" << std::endl;
-
-    if(m_debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
-        std::cerr << "Font loaded" << std::endl;
-
     m_config_file_reader.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool
         { 
         auto selectors = TRY_OPTIONAL(parser.read_selector_list());
@@ -142,7 +130,29 @@ MIDIPlayer::MIDIPlayer(MIDIInput& midi, RealTime real_time)
         {
         m_label_fade_time = TRY_OPTIONAL(parser.read_int_in_range(1, 1000));
         return true; });
+}
+
+void MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output)
+{
+    m_real_time = real_time == RealTime::Yes;
+    m_start_time = std::chrono::system_clock::now();
+    m_midi_output = std::move(output);
+    m_midi_input = std::move(input);
+
+    auto resource_path = find_resource_path();
+    std::cerr << "Resource path: " << resource_path << std::endl;
+    ensure_sounds_generated();
+    if(
+        m_gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
+        && m_note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
+        && m_particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
+        std::cerr << "Shaders loaded" << std::endl;
+
+    if(m_debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
+        std::cerr << "Font loaded" << std::endl;
+
     reload_config_file();
+    m_initialized = true;
 }
 
 void MIDIPlayer::reload_config_file()
@@ -153,7 +163,7 @@ void MIDIPlayer::reload_config_file()
     generate_particle_texture();
     if(m_real_time)
     {
-        m_midi.for_each_track([this](Track& trk)
+        m_midi_input->for_each_track([this](Track& trk)
             { trk.set_max_events(m_max_events_per_track); });
     }
     std::cerr << "Config file successfully reloaded from config.cfg" << std::endl;
@@ -207,7 +217,7 @@ void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing, sf::Co
 
 size_t MIDIPlayer::current_tick() const
 {
-    return m_midi.current_tick(*this);
+    return m_midi_input->current_tick(*this);
 }
 
 void MIDIPlayer::update()
@@ -215,9 +225,9 @@ void MIDIPlayer::update()
     if(m_config_file_watcher.file_was_modified())
         reload_config_file();
     auto previous_current_tick = m_current_tick;
-    m_midi.update(*this);
+    m_midi_input->update(*this);
     m_current_tick = current_tick();
-    auto events = m_midi.find_events_in_range(previous_current_tick, m_current_tick);
+    auto events = m_midi_input->find_events_in_range(previous_current_tick, m_current_tick);
 
     for(auto const& it : events)
     {
@@ -415,7 +425,7 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     sf::Vector2f target_size { target.getSize() };
     target.setView(sf::View({ 0, 0, target_size.x, target_size.y }));
     auto tick = current_tick();
-    auto end_tick = m_midi.end_tick();
+    auto end_tick = m_midi_input->end_tick();
     std::ostringstream oss;
     oss << (debug_info.full_info ? "Tick=" : "") << tick;
     if(!m_real_time && end_tick != 0)
@@ -464,13 +474,13 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     if(m_real_time)
     {
         ended_notes().clear();
-        m_midi.for_each_event_backwards([&](Event& event)
+        m_midi_input->for_each_event_backwards([&](Event& event)
             { event.render(*this, target); });
     }
     else
     {
         started_notes().clear();
-        m_midi.for_each_event([&](Event& event)
+        m_midi_input->for_each_event([&](Event& event)
             { event.render(*this, target); });
     }
     render_particles(target);
