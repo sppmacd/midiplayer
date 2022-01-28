@@ -46,4 +46,8 @@ make install -j$(nproc)
 
 You can use `CMAKE_INSTALL_PREFIX` to change the path. See [CMake docs](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html) for more details about installing.
 
+## Local and global installations
+
 Local installations can be run using `build/midiplayer` (using `res` directory from the current directory), global with just `midiplayer` (using global resource directory from `CMAKE_INSTALL_PREFIX` and `./res` as fallback.
+
+You can set an installation to be "portable" using `MIDIPLAYER_PORTABLE_INSTALL`. This will override `CMAKE_INSTALL_PREFIX` to `build/root` and create a ready-to-zip directory there. This supports running `midiplayer` from `bin` (as just `./midiplayer`) or from root (as `bin/midiplayer`).
