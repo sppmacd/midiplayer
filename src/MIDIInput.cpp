@@ -1,5 +1,7 @@
 #include "MIDIInput.h"
 
+#include "Logger.h"
+
 std::unique_ptr<Event> MIDIInput::read_channeled_event(std::istream& in, uint8_t type, uint8_t channel)
 {
     switch(type)
@@ -35,7 +37,7 @@ std::unique_ptr<Event> MIDIInput::read_channeled_event(std::istream& in, uint8_t
                 return {};
             if(number >= (uint8_t)ControlChangeEvent::Number::Count)
             {
-                std::cerr << "ERROR: Invalid Control Change Number" << std::endl;
+                logger::error("Invalid Control Change Number");
                 return std::make_unique<InvalidEvent>(type);
             }
             if(number < 0x40)
@@ -71,14 +73,14 @@ std::unique_ptr<Event> MIDIInput::read_event(std::istream& in)
         return read_channeled_event(in, status & 0xf0, status & 0x0f);
 
     if(status != 0xfe)
-        std::cerr << "ERROR: Invalid status number: " << std::hex << (int)status << std::dec << std::endl;
+        logger::error("Invalid status number: {:#x}", (int)status);
     return std::make_unique<InvalidEvent>(status);
 }
 
 std::vector<Event*> MIDIInput::find_events_in_range(size_t start_tick, size_t end_tick) const
 {
     std::vector<Event*> out;
-    for(auto& track: m_tracks)
+    for(auto& track : m_tracks)
     {
         auto track_out = track.find_events_in_range(start_tick, end_tick);
         out.insert(out.begin(), track_out.begin(), track_out.end());

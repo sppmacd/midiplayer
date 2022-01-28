@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "ConfigFileReader.h"
+#include "Logger.h"
 #include "MIDIDevice.h"
 #include "MIDIFile.h"
 #include "MIDIPlayer.h"
@@ -80,7 +81,7 @@ int main(int argc, char* argv[])
                 {
                     if(++i == argc)
                     {
-                        std::cerr << "ERROR: -m requires an argument" << std::endl;
+                        logger::error("-m requires an argument");
                         return 1;
                     }
                     midi_output = argv[i];
@@ -92,13 +93,13 @@ int main(int argc, char* argv[])
                 else if(opt_sv == "-help")
                     print_usage_and_exit(Brief::No);
                 else
-                    std::cerr << "WARNING: Ignoring invalid option: " << arg_sv << std::endl;
+                    logger::warning("WARNING: Ignoring invalid option: {}", arg_sv);
             }
             else
             {
                 if(player.is_initialized())
                 {
-                    std::cerr << "ERROR: Only one mode may be active at once" << std::endl;
+                    logger::error("Only one mode may be active at once");
                     return 1;
                 }
 
@@ -106,21 +107,21 @@ int main(int argc, char* argv[])
                 {
                     if(++i >= argc)
                     {
-                        std::cerr << "ERROR: Expected file name for 'realtime' mode" << std::endl;
+                        logger::error("Expected file name for 'realtime' mode");
                         return 1;
                     }
                     std::string_view filename_sv { argv[i] };
                     struct stat s;
                     if(stat(argv[i], &s) < 0)
                     {
-                        std::cerr << "ERROR: Failed to stat file " << filename_sv << std::endl;
+                        logger::error("Failed to stat file '{}': {}", filename_sv, strerror(errno));
                         return 1;
                     }
                     if(arg_sv == "realtime"sv)
                     {
                         if(!S_ISCHR(s.st_mode))
                         {
-                            std::cerr << "ERROR: Expected character device (e.g /dev/midi3), got " << filename_sv << std::endl;
+                            logger::error("Expected character device (e.g /dev/midi3), got {}", filename_sv);
                             return 1;
                         }
 
@@ -131,19 +132,19 @@ int main(int argc, char* argv[])
                     {
                         if(!S_ISREG(s.st_mode))
                         {
-                            std::cerr << "ERROR: Expected regular file, got " << filename_sv << std::endl;
+                            logger::error("Expected regular file, got {}", filename_sv);
                             return 1;
                         }
                         std::ifstream stream(std::string { filename_sv }, std::ios::binary);
                         if(stream.fail())
                         {
-                            std::cerr << "ERROR: Failed to open file." << std::endl;
+                            logger::error("Failed to open file");
                             return 1;
                         }
                         auto midi_file = std::make_unique<MIDIFileInput>(stream);
                         if(!midi_file->is_valid())
                         {
-                            std::cerr << "ERROR: Failed to read MIDI" << std::endl;
+                            logger::error("Failed to read MIDI");
                             return 1;
                         }
                         midi_file->dump();
@@ -152,7 +153,7 @@ int main(int argc, char* argv[])
                 }
                 else
                 {
-                    std::cerr << "ERROR: Unknown mode: " << arg_sv << std::endl;
+                    logger::error("Unknown mode: {}", arg_sv);
                     print_usage_and_exit();
                 }
             }
@@ -167,7 +168,7 @@ int main(int argc, char* argv[])
 
     if(!player.is_initialized())
     {
-        std::cerr << "ERROR: No mode was given. You need to specify either 'play' or 'realtime'. See --help for details." << std::endl;
+        logger::error("No mode was given. You need to specify either 'play' or 'realtime'. See --help for details.");
         return 1;
     }
 
@@ -177,7 +178,7 @@ int main(int argc, char* argv[])
         {
             if(isatty(STDOUT_FILENO))
             {
-                std::cerr << "ERROR: stdout is a terminal, refusing to print binary data" << std::endl;
+                logger::error("stdout is a terminal, refusing to print binary data");
                 return nullptr;
             }
 
@@ -185,7 +186,7 @@ int main(int argc, char* argv[])
             // TODO: Support custom resolution/FPS/format/...
             if(!texture->create(1920, 1080))
             {
-                std::cerr << "ERROR: Failed to create render texture, ignoring" << std::endl;
+                logger::error("Failed to create render texture, ignoring");
                 return nullptr;
             }
             std::cerr << "INFO: Rendering to stdout (RGBA24 1920x1080 60fps)" << std::endl;

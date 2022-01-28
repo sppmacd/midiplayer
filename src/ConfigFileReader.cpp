@@ -1,5 +1,6 @@
 #include "ConfigFileReader.h"
 
+#include "Logger.h"
 #include "Try.h"
 #include <fstream>
 #include <iomanip>
@@ -14,7 +15,7 @@ std::optional<int> PropertyParser::read_int()
     int value;
     if(m_in >> value)
         return value;
-    std::cerr << "ERROR: expected int" << std::endl;
+    logger::error("expected int");
     return {};
 }
 std::optional<int> PropertyParser::read_int_in_range(int min, int max)
@@ -22,7 +23,7 @@ std::optional<int> PropertyParser::read_int_in_range(int min, int max)
     int value = TRY_OPTIONAL(read_int());
     if(value < min || value > max)
     {
-        std::cerr << "ERROR: value must be in range <" << min << "," << max << ">, " << value << " given" << std::endl;
+        logger::error("value must be in range <{},{}>, {} given", min, max, value);
         return {};
     }
     return value;
@@ -34,7 +35,7 @@ std::optional<float> PropertyParser::read_float()
     float value;
     if(m_in >> value)
         return value;
-    std::cerr << "ERROR: expected float" << std::endl;
+    logger::error("expected float");
     return {};
 }
 
@@ -55,14 +56,14 @@ std::optional<std::string> PropertyParser::read_string()
             result += m_in.get();
             if(!m_in.good())
             {
-                std::cerr << "ERROR: failed to read next character" << std::endl;
+                logger::error("failed to read next character");
                 return {};
             }
         }
         // last quot
         if(m_in.get() != q)
         {
-            std::cerr << "ERROR: unclosed string literal" << std::endl;
+            logger::error("unclosed string literal");
             return {};
         }
         return result;
@@ -75,7 +76,7 @@ std::optional<std::string> PropertyParser::read_string()
     if(m_in >> result)
         return result;
 
-    std::cerr << "ERROR: expected string" << std::endl;
+    logger::error("expected string");
     return {};
 }
 
@@ -87,12 +88,12 @@ std::optional<sf::Color> PropertyParser::read_color(ColorAlphaMode alpha_mode)
     int r, g, b, a = 255;
     if(!(m_in >> r >> g >> b))
     {
-        std::cerr << "ERROR: color requires <r> <g> <b> components" << std::endl;
+        logger::error("color requires <r> <g> <b> components");
         return {};
     }
     if(r > 255 || g > 255 || b > 255 || r < 0 || g < 0 || b < 0)
     {
-        std::cerr << "ERROR: color requires components in range <0;255>, given (" << r << ", " << g << ", " << b << ")" << std::endl;
+        logger::error("color requires components in range <0;255>, given ({}, {}, {})", r, g, b);
         return {};
     }
     switch(alpha_mode)
@@ -108,7 +109,7 @@ std::optional<sf::Color> PropertyParser::read_color(ColorAlphaMode alpha_mode)
             }
             if(a > 255 || a < 0)
             {
-                std::cerr << "ERROR: color requires alpha component in range <0;255>, given " << a << std::endl;
+                logger::error("color requires alpha component in range <0;255>, given {}", a);
                 return {};
             }
             return sf::Color(r, g, b, a);
@@ -117,12 +118,12 @@ std::optional<sf::Color> PropertyParser::read_color(ColorAlphaMode alpha_mode)
         {
             if(!(m_in >> a))
             {
-                std::cerr << "ERROR: color requires alpha component" << std::endl;
+                logger::error("color requires alpha component");
                 return {};
             }
             if(a > 255 || a < 0)
             {
-                std::cerr << "ERROR: color requires alpha component in range <0;255>, given " << a << std::endl;
+                logger::error("color requires alpha component in range <0;255>, given {}", a);
                 return {};
             }
             m_in.clear();
@@ -139,7 +140,7 @@ std::optional<std::vector<std::unique_ptr<Selector>>> PropertyParser::read_selec
     {
         if(!selector && selectors.empty())
         {
-            std::cerr << "ERROR: invalid selector" << std::endl;
+            logger::error("invalid selector");
             return {};
         }
         selectors.push_back(std::move(selector));
@@ -167,7 +168,10 @@ bool ConfigFileReader::load(std::string const& file_name)
         for(size_t s = 0; s < 2; s++)
         {
             if(!std::getline(config_file, line))
+            {
                 std::cerr << "(end of file)" << std::endl;
+                return;
+            }
         }
         std::cerr << "| " << line << std::endl;
     };
@@ -185,15 +189,14 @@ bool ConfigFileReader::load(std::string const& file_name)
         auto property = m_properties.find(property_name);
         if(property == m_properties.end())
         {
-            std::cerr << "ERROR: unknown property: '" << property_name << "'" << std::endl;
-            display_help();
+            logger::error("unknown property: '{}', see --config-help for available properties", property_name);
             return false;
         }
         PropertyParser parser { config_file };
         if(!property->second.handler(parser))
         {
             // TODO: Display line:column
-            std::cerr << "ERROR:   in property: '" << property_name << "', offset " << config_file.tellg() << std::endl;
+            logger::error_note("in property: '{}', offset {}", property_name, config_file.tellg());
             print_next_line();
             std::cerr << "Usage: " << property_name << " " << property->second.usage << std::endl;
             return false;

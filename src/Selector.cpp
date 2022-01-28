@@ -1,6 +1,7 @@
 #include "Selector.h"
 
 #include "Event.h"
+#include "Logger.h"
 
 #include <cctype>
 #include <memory>
@@ -10,7 +11,7 @@ using namespace std::literals;
 
 inline void parse_error(std::string_view text)
 {
-    std::cerr << "    ERROR: Syntax error in selector: " << text << std::endl;
+    logger::error("Syntax error in selector: {}", text);
 }
 
 static void ignore_whitespace(std::istream& in)
@@ -59,7 +60,7 @@ static AttributeValue read_value(std::istream& in)
             int max;
             if(!(in >> max))
                 return {};
-            return {std::make_unique<Range>(v, max)};
+            return { std::make_unique<Range>(v, max) };
         }
         if(in.peek() == 'n')
         {
@@ -71,16 +72,16 @@ static AttributeValue read_value(std::istream& in)
                 int b;
                 if(!(in >> b))
                     return {};
-                return {std::make_unique<LinearEquation>(v, b)};
+                return { std::make_unique<LinearEquation>(v, b) };
             }
             if(next_c == '-')
             {
                 int b;
                 if(!(in >> b))
                     return {};
-                return {std::make_unique<LinearEquation>(v, -b)};
+                return { std::make_unique<LinearEquation>(v, -b) };
             }
-            return {std::make_unique<LinearEquation>(v, 0)};
+            return { std::make_unique<LinearEquation>(v, 0) };
         }
         return v;
     }
@@ -126,18 +127,18 @@ std::unique_ptr<Selector> AttributeSelector::read(std::istream& in)
     if(in.get() != ']')
     {
         parse_error("Expected ']' after attribute definition");
-        return nullptr; 
+        return nullptr;
     }
     ignore_whitespace(in);
 
     if(attribute_name == "channel"sv)
-        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Channel, std::move(value)} };
+        return std::unique_ptr<AttributeSelector> { new AttributeSelector { Attribute::Channel, std::move(value) } };
     if(attribute_name == "note"sv)
-        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::Note, std::move(value)} };
+        return std::unique_ptr<AttributeSelector> { new AttributeSelector { Attribute::Note, std::move(value) } };
     if(attribute_name == "white_key"sv)
-        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::WhiteKey, std::move(value)} };
+        return std::unique_ptr<AttributeSelector> { new AttributeSelector { Attribute::WhiteKey, std::move(value) } };
     if(attribute_name == "black_key"sv)
-        return std::unique_ptr<AttributeSelector>{ new AttributeSelector{Attribute::BlackKey, std::move(value)} };
+        return std::unique_ptr<AttributeSelector> { new AttributeSelector { Attribute::BlackKey, std::move(value) } };
     parse_error("Unknown attribute: " + attribute_name.value());
     return nullptr;
 }
