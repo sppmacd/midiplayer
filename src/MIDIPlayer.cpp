@@ -18,47 +18,6 @@
 
 using namespace std::literals;
 
-// https://github.com/MajicDesigns/MD_MusicTable/blob/master/src/MD_MusicTable_Data.cpp
-static float const s_frequency_lookup_table[] {
-    261.63, // C4 Middle C
-    277.18, // C#4
-    293.66, // D4
-    311.13, // D#4
-    329.63, // E4
-    349.23, // F4
-    369.99, // F#4
-    392.00, // G4
-    415.30, // G#4
-    440.00, // A4 440Hz Standard Tuning
-    466.16, // A#4
-    493.88, // B4
-};
-
-struct Note
-{
-    sf::SoundBuffer buffer;
-    sf::Sound sound;
-    bool is_playing = false;
-    sf::Color color;
-} s_notes[128];
-
-static float index_to_frequency(int index)
-{
-    return s_frequency_lookup_table[index % 12] * std::pow(2, index / 12 - 4);
-}
-
-void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
-{
-    std::vector<int16_t> samples;
-    samples.resize(sample_count);
-
-    for(size_t s = 0; s < sample_count; s++)
-        samples[s] = std::sin(static_cast<double>(s) * 6.28 / sample_count) * 32767;
-
-    if(!buf.loadFromSamples(samples.data(), sample_count, 1, 48000))
-        std::cerr << "loadFromSamples failed: " << sample_count << std::endl;
-}
-
 MIDIPlayer::MIDIPlayer()
 {
 }
@@ -84,7 +43,6 @@ bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& inp
 
     auto resource_path = find_resource_path();
     std::cerr << "Resource path: " << resource_path << std::endl;
-    ensure_sounds_generated();
     if(
         m_gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
         && m_note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
@@ -133,21 +91,6 @@ bool MIDIPlayer::reload_config_file()
     return true;
 }
 
-void MIDIPlayer::ensure_sounds_generated()
-{
-    static bool s_generated = false;
-    if(s_generated)
-        return;
-    s_generated = true;
-
-    for(int i = 0; i < 128; i++)
-    {
-        float fq = index_to_frequency(i);
-        generate_sound(s_notes[i].buffer, 48000 / fq);
-        s_notes[i].sound.setBuffer(s_notes[i].buffer);
-        s_notes[i].sound.setLoop(true);
-    }
-}
 void MIDIPlayer::generate_particle_texture()
 {
     sf::RenderTexture target;
@@ -170,13 +113,8 @@ void MIDIPlayer::generate_particle_texture()
 
 void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing, sf::Color color)
 {
-    s_notes[index].sound.setVolume((float)velocity / 1.27);
-    s_notes[index].is_playing = playing;
-    s_notes[index].color = color;
-    if(playing)
-        s_notes[index].sound.play();
-    else
-        s_notes[index].sound.stop();
+    m_notes[index].is_played = playing;
+    m_notes[index].color = color;
 }
 
 size_t MIDIPlayer::current_tick() const
@@ -346,7 +284,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         {
             sf::RectangleShape rs { { 1.f, (lower_y_to_view_pos - upper_y_to_view_pos) } };
             rs.setPosition(key.to_piano_position(), 0.f);
-            rs.setFillColor(s_notes[key].is_playing ? s_notes[key].color : sf::Color(230, 230, 230));
+            rs.setFillColor(m_notes[key].is_played ? m_notes[key].color : sf::Color(230, 230, 230));
             rs.setOutlineColor(sf::Color(150, 150, 150));
             rs.setOutlineThickness(0.1f);
             target.draw(rs);
@@ -359,7 +297,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         {
             sf::RectangleShape rs { { 0.7f, (lower_y_to_view_pos - upper_y_to_view_pos) * 3 / 5.f } };
             rs.setPosition(key.to_piano_position() - 0.15f, -0.1f);
-            rs.setFillColor(s_notes[key].is_playing ? s_notes[key].color * sf::Color(200, 200, 200) : sf::Color(50, 50, 50));
+            rs.setFillColor(m_notes[key].is_played ? m_notes[key].color * sf::Color(200, 200, 200) : sf::Color(50, 50, 50));
             target.draw(rs);
         }
     }

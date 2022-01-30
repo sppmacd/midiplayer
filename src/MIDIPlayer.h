@@ -97,7 +97,6 @@ public:
     Config const& config() const { return m_config; }
 
 private:
-    static void ensure_sounds_generated();
     void generate_particle_texture();
 
     void render_particles(sf::RenderTarget& target) const;
@@ -123,6 +122,13 @@ private:
         int start_time = 0;
     };
 
+    struct Note
+    {
+        bool is_played { false };
+        sf::Color color;
+    };
+
+    std::array<Note, 128> m_notes;
     std::list<Wind> m_winds;
     bool m_real_time { false };
     std::list<Particle> m_particles;
