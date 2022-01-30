@@ -66,7 +66,10 @@ std::unique_ptr<Event> MIDIInput::read_event(std::istream& in)
 {
     uint8_t status = 0;
     if(!(in.read((char*)&status, 1)))
+    {
+        logger::error("failed to read status number");
         return {};
+    }
 
     // Appendix 1.1 - Table of Major MIDI Messages
     if(status >= 0x80 && status <= 0xef)

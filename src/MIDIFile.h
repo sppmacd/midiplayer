@@ -61,6 +61,7 @@ public:
     explicit MIDIFileOutput(std::string path);
     ~MIDIFileOutput();
 
+    virtual bool is_valid() const override { return !m_output.fail(); }
     virtual void write_event(Event const&) override;
 
 private:

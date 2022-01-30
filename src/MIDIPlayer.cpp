@@ -1,6 +1,8 @@
 #include "MIDIPlayer.h"
 
+#include "Event.h"
 #include "Logger.h"
+#include "MIDIDevice.h"
 #include "MIDIFile.h"
 #include "Resources.h"
 #include "RoundedEdgeRectangleShape.hpp"
@@ -61,8 +63,20 @@ MIDIPlayer::MIDIPlayer()
 {
 }
 
-void MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output)
+bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output)
 {
+    // FIXME: This would need real error propagation instead of this. Maybe just use exceptions.
+    if(input && !input->is_valid())
+    {
+        logger::error("Invalid MIDI input");
+        return false;
+    }
+    if(output && !output->is_valid())
+    {
+        logger::error("Invalid MIDI output");
+        return false;
+    }
+
     m_real_time = real_time == RealTime::Yes;
     m_start_time = std::chrono::system_clock::now();
     m_midi_output = std::move(output);
@@ -81,6 +95,19 @@ void MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& inp
         std::cerr << "Font loaded" << std::endl;
 
     m_initialized = true;
+    return true;
+}
+
+void MIDIPlayer::setup_output()
+{
+    // Don't add bloat to MIDI files. These events are sent by device output anyway.
+    if(!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
+        return;
+    for(size_t s = 0; s < 16; s++)
+    {
+        ControlChangeEvent c1(s, ControlChangeEvent::Number::ResetAllControllers, 0);
+        m_midi_output->write_event(c1);
+    }
 }
 
 bool MIDIPlayer::load_config_file(std::string const& path)

@@ -21,11 +21,11 @@ enum class Brief
 
 static void print_usage_and_exit(Brief brief = Brief::Yes)
 {
-    std::cerr << "Usage: " << g_exec_name << " [options...] [<realtime <MIDI device>>|<play <MIDI file>>]" << std::endl;
+    std::cerr << "Usage: " << g_exec_name << " [options...] [list-midi-devices|<realtime <MIDI device>>|<play <MIDI file>>]" << std::endl;
     if(brief == Brief::No)
     {
         std::cerr << "Options:" << std::endl;
-        std::cerr << "    -m [file]       Save input to specified MIDI file (applicable only in realtime mode)" << std::endl;
+        std::cerr << "    -m [path]       Specify MIDI output (file in realtime mode, device in play mode)" << std::endl;
         std::cerr << "    -o              Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
         std::cerr << "    --config-help   Print help for Config Files" << std::endl;
         std::cerr << "    --debug         Enable debug info rendering" << std::endl;
@@ -117,34 +117,29 @@ int main(int argc, char* argv[])
                 {
                     if(++i >= argc)
                     {
-                        logger::error("Expected file name for 'realtime' mode");
+                        logger::error("Expected name for {} mode", arg_sv);
                         return 1;
                     }
                     std::string_view filename_sv { argv[i] };
-                    struct stat s;
-                    if(stat(argv[i], &s) < 0)
-                    {
-                        logger::error("Failed to stat file '{}': {}", filename_sv, strerror(errno));
-                        return 1;
-                    }
                     if(arg_sv == "realtime"sv)
                     {
-                        if(!S_ISCHR(s.st_mode))
+                        int value = 0;
+                        try
                         {
-                            logger::error("Expected character device (e.g /dev/midi3), got {}", filename_sv);
+                            // FIXME: stdc++, make consistent std::string_view support finally!!
+                            value = std::stoi(std::string{filename_sv});
+                        }
+                        catch(...)
+                        {
+                            logger::error("Expected port number. See midieditor list-midi-devices for a list of MIDI devices.");
                             return 1;
                         }
-
-                        player.initialize(MIDIPlayer::RealTime::Yes, std::make_unique<MIDIDeviceInput>(std::string { filename_sv }),
-                            midi_output.empty() ? nullptr : std::make_unique<MIDIFileOutput>(midi_output));
+                        if(!player.initialize(MIDIPlayer::RealTime::Yes, std::make_unique<MIDIDeviceInput>(value),
+                               midi_output.empty() ? nullptr : std::make_unique<MIDIFileOutput>(midi_output)))
+                            return 1;
                     }
                     else if(arg_sv == "play"sv)
                     {
-                        if(!S_ISREG(s.st_mode))
-                        {
-                            logger::error("Expected regular file, got {}", filename_sv);
-                            return 1;
-                        }
                         std::ifstream stream(std::string { filename_sv }, std::ios::binary);
                         if(stream.fail())
                         {
@@ -157,9 +152,26 @@ int main(int argc, char* argv[])
                             logger::error("Failed to read MIDI");
                             return 1;
                         }
-                        midi_file->dump();
-                        player.initialize(MIDIPlayer::RealTime::No, std::move(midi_file), nullptr);
+                        int value = 0;
+                        try
+                        {
+                            value = std::stoi(midi_output);
+                        }
+                        catch(...)
+                        {
+                            logger::error("Expected port number. See midieditor list-midi-devices for a list of MIDI devices.");
+                            return 1;
+                        }
+                        if(!player.initialize(MIDIPlayer::RealTime::No, std::move(midi_file),
+                               midi_output.empty() ? nullptr : std::make_unique<MIDIDeviceOutput>(value)))
+                            return 1;
                     }
+                }
+                else if(arg_sv == "list-midi-devices"sv)
+                {
+
+                    MIDI::print_available_ports();
+                    return 0;
                 }
                 else
                 {
@@ -234,6 +246,8 @@ int main(int argc, char* argv[])
         window.setMouseCursorVisible(false);
     };
     create_windowed();
+
+    player.setup_output();
 
     sf::Clock fps_clock;
     sf::Time last_fps_time;

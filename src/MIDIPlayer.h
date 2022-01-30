@@ -46,8 +46,9 @@ public:
     static constexpr float piano_size_px = 200.f;
 
     MIDIPlayer();
-    void initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output);
+    bool initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output);
     bool is_initialized() const { return m_initialized; }
+    void setup_output();
 
     void set_fps(unsigned fps) { m_fps = fps; }
     unsigned fps() const { return m_fps; }

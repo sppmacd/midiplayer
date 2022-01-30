@@ -235,7 +235,7 @@ public:
 
     virtual void dump() const override
     {
-        std::cerr << "Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec << ", value=" << (int)m_value << std::endl;
+        std::cerr << tick() << ": Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec << ", value=" << (int)m_value << std::endl;
     }
 
     virtual void execute(MIDIPlayer&) override { /* TODO */ }
@@ -243,10 +243,9 @@ public:
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
-        std::cerr << "control change" << std::endl;
-        stream << (uint8_t)(0xb0 + m_channel); // Control Change
-        stream << (uint8_t)m_number; // Number
-        stream << m_value;
+        stream.put((uint8_t)(0xb0 + m_channel)); // Control Change
+        stream.put((uint8_t)m_number); // Number
+        stream.put(m_value);
     }
 
 private:
