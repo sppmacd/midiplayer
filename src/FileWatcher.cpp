@@ -1,5 +1,7 @@
 #include "FileWatcher.h"
 
+#include "Logger.h"
+
 #include <cstring>
 #include <fcntl.h>
 #include <linux/limits.h>
@@ -11,14 +13,14 @@ FileWatcher::FileWatcher(std::string const& path)
     m_watcher_fd = inotify_init();
     if(m_watcher_fd < 0)
     {
-        std::cerr << "WARNING: Failed to setup watcher: " << strerror(errno) << std::endl;
+        logger::warning("Failed to setup watcher: {}", strerror(errno));
         m_watcher_fd = -1;
         return;
     }
 
     if(fcntl(m_watcher_fd, F_SETFL, fcntl(m_watcher_fd, F_GETFL) | O_NONBLOCK) < 0)
     {
-        std::cerr << "WARNING: Failed to set watcher non-blocking: " << strerror(errno) << std::endl;
+        logger::warning("Failed to set watcher non-blocking: {}", strerror(errno));
         m_watcher_fd = -1;
         return;
     }
@@ -26,7 +28,7 @@ FileWatcher::FileWatcher(std::string const& path)
     m_watcher_wd = inotify_add_watch(m_watcher_fd, path.c_str(), IN_MODIFY);
     if(m_watcher_wd < 0)
     {
-        std::cerr << "WARNING: Failed to setup watch for " << path << ": " << strerror(errno) << std::endl;
+        logger::warning("Failed to setup watch for {}: {}", path, strerror(errno));
         m_watcher_fd = -1;
         return;
     }
@@ -56,7 +58,7 @@ bool FileWatcher::file_was_modified() const
     if(read(m_watcher_fd, buffer.data(), buffer.size()) < 0)
     {
         if(errno != EAGAIN)
-            std::cerr << "WARNING: Failed to read inotify event: " << strerror(errno) << std::endl;
+            logger::warning("Failed to read inotify event: {}", strerror(errno));
         return false;
     }
     inotify_event* event = (inotify_event*)buffer.data();

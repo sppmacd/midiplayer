@@ -207,9 +207,9 @@ int main(int argc, char* argv[])
                 logger::error("Failed to create render texture, ignoring");
                 return nullptr;
             }
-            std::cerr << "INFO: Rendering to stdout (RGBA24 1920x1080 60fps)" << std::endl;
+            logger::info("Rendering to stdout (RGBA24 1920x1080 60fps)");
             if(mode == Mode::Realtime)
-                std::cerr << "WARNING: Realtime mode is not recommended for rendering, consider recording it to MIDI file first and playing" << std::endl;
+                logger::warning("Realtime mode is not recommended for rendering, consider recording it to MIDI file first and playing");
             return texture;
         }
         return nullptr;

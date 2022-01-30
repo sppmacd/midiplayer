@@ -290,7 +290,7 @@ MIDIFileOutput::MIDIFileOutput(std::string path)
         logger::error("Failed to open MIDI output file");
         return;
     }
-    std::cerr << "INFO: Enabled MIDI output to " << path << std::endl;
+    logger::info("Enabled MIDI output to {}.", path);
 
     // Header
     m_output.write("MThd", 4);     // Signature

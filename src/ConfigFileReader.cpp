@@ -157,10 +157,7 @@ bool ConfigFileReader::load(std::string const& file_name)
 {
     std::ifstream config_file(file_name);
     if(config_file.fail())
-    {
-        std::cerr << "WARNING: " << file_name << " doesn't exist." << std::endl;
         return false;
-    }
 
     auto print_next_line = [&]()
     {
