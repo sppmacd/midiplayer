@@ -61,6 +61,7 @@ int main(int argc, char* argv[])
     bool render_to_stdout = false;
     bool should_render_debug_info_in_preview = false;
     std::string midi_output;
+    std::string config_file_path = "";
 
     MIDIPlayer player;
 
@@ -75,8 +76,15 @@ int main(int argc, char* argv[])
             if(arg_sv.starts_with('-'))
             {
                 std::string_view opt_sv = arg_sv.substr(1);
-                if(opt_sv == "o"sv)
-                    render_to_stdout = true;
+                if(opt_sv == "c"sv)
+                {
+                    if(++i == argc)
+                    {
+                        logger::error("-c requires an argument");
+                        return 1;
+                    }
+                    config_file_path = argv[i];
+                }
                 else if(opt_sv == "m"sv)
                 {
                     if(++i == argc)
@@ -86,6 +94,8 @@ int main(int argc, char* argv[])
                     }
                     midi_output = argv[i];
                 }
+                else if(opt_sv == "o"sv)
+                    render_to_stdout = true;
                 else if(opt_sv == "-config-help")
                     print_config_help = true;
                 else if(opt_sv == "-debug")
@@ -169,6 +179,14 @@ int main(int argc, char* argv[])
     if(!player.is_initialized())
     {
         logger::error("No mode was given. You need to specify either 'play' or 'realtime'. See --help for details.");
+        return 1;
+    }
+
+    if(config_file_path.empty())
+        player.load_config_file("config.cfg");
+    else if(!player.load_config_file(config_file_path))
+    {
+        logger::error("Failed to load config file: {}", config_file_path);
         return 1;
     }
 

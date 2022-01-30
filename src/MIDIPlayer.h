@@ -90,6 +90,7 @@ public:
     int particle_count() const { return m_particle_count; }
     double scale() const { return real_time() ? m_real_time_scale : m_play_scale; }
 
+    bool load_config_file(std::string const& path);
     void print_config_help() const;
 
 private:
@@ -101,7 +102,7 @@ private:
     void render_background(sf::RenderTarget& target) const;
     void render_debug_info(sf::RenderTarget& target, DebugInfo const& debug_info) const;
 
-    void reload_config_file();
+    bool reload_config_file();
 
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
     unsigned m_fps { 60 };
@@ -138,6 +139,7 @@ private:
     mutable sf::Shader m_particle_shader;
     sf::Font m_debug_font;
     sf::Font m_display_font;
+    std::string m_config_file_path;
     ConfigFileReader m_config_file_reader;
     FileWatcher m_config_file_watcher;
 

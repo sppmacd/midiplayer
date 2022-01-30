@@ -1,5 +1,6 @@
 #include "MIDIPlayer.h"
 
+#include "Logger.h"
 #include "MIDIFile.h"
 #include "Resources.h"
 #include "RoundedEdgeRectangleShape.hpp"
@@ -58,7 +59,6 @@ void generate_sound(sf::SoundBuffer& buf, size_t sample_count)
 }
 
 MIDIPlayer::MIDIPlayer()
-: m_config_file_watcher("config.cfg")
 {
     m_config_file_reader.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool
         { 
@@ -117,7 +117,7 @@ MIDIPlayer::MIDIPlayer()
         auto path = TRY_OPTIONAL(parser.read_string());
         if(!m_display_font.loadFromFile(path))
         {
-            std::cerr << "WARNING: Failed to load display font (" << path << ") Using debug font." << std::endl;
+            std::cerr << "WARNING: Failed to load display font (" << path << "). Using debug font." << std::endl;
             m_display_font = m_debug_font;
             return true; // don't fail because of warning
         }
@@ -151,22 +151,34 @@ void MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& inp
     if(m_debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
         std::cerr << "Font loaded" << std::endl;
 
-    reload_config_file();
     m_initialized = true;
 }
 
-void MIDIPlayer::reload_config_file()
+bool MIDIPlayer::load_config_file(std::string const& path)
 {
+    m_config_file_path = path;
+    m_config_file_watcher = FileWatcher(path);
+    return reload_config_file();
+}
+
+bool MIDIPlayer::reload_config_file()
+{
+    // FIXME: This should be moved to a separate class which would be just default-assigned here.
+    m_background_color = { 10, 10, 10 };
     m_background_texture = sf::Texture();
     m_channel_colors.clear();
-    m_config_file_reader.load("config.cfg");
+
+    bool success = m_config_file_reader.load(m_config_file_path);
     generate_particle_texture();
     if(m_real_time)
     {
         m_midi_input->for_each_track([this](Track& trk)
             { trk.set_max_events(m_max_events_per_track); });
     }
-    std::cerr << "Config file successfully reloaded from config.cfg" << std::endl;
+    if(!success)
+        return false;
+    logger::info("Config file successfully reloaded from {}", m_config_file_path);
+    return true;
 }
 
 void MIDIPlayer::ensure_sounds_generated()
