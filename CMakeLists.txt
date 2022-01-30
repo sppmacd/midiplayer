@@ -14,6 +14,7 @@ find_package(fmt 8.0.0 REQUIRED)
 find_package(SFML 2.5.1 COMPONENTS graphics audio REQUIRED)
 
 add_executable(midiplayer
+    src/Config.cpp
     src/ConfigFileReader.cpp
     src/Event.cpp 
     src/FileWatcher.cpp

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config.h"
 #include "ConfigFileReader.h"
 #include "Event.h"
 #include "FileWatcher.h"
@@ -86,12 +87,13 @@ public:
     std::map<MIDIKey, NoteEvent>& started_notes() { return m_started_notes; }
     std::map<MIDIKey, std::optional<NoteEvent>>& ended_notes() { return m_ended_notes; }
 
-    sf::Color resolve_color(NoteEvent& event) const;
-    int particle_count() const { return m_particle_count; }
-    double scale() const { return real_time() ? m_real_time_scale : m_play_scale; }
+    int particle_count() const { return m_config.particle_count(); }
+    double scale() const { return real_time() ? m_config.real_time_scale() : m_config.play_scale(); }
+    sf::Color resolve_color(NoteEvent& event) const { return m_config.resolve_color(*this, event); }
 
     bool load_config_file(std::string const& path);
     void print_config_help() const;
+    Config const& config() const { return m_config; }
 
 private:
     static void ensure_sounds_generated();
@@ -138,28 +140,14 @@ private:
     mutable sf::Shader m_note_shader;
     mutable sf::Shader m_particle_shader;
     sf::Font m_debug_font;
-    sf::Font m_display_font;
+
+    Config m_config;
     std::string m_config_file_path;
-    ConfigFileReader m_config_file_reader;
     FileWatcher m_config_file_watcher;
 
     std::map<MIDIKey, NoteEvent> m_started_notes;
     std::map<MIDIKey, std::optional<NoteEvent>> m_ended_notes;
 
-    std::vector<std::pair<std::vector<std::unique_ptr<Selector>>, sf::Color>> m_channel_colors;
-    sf::Color m_default_color { 100, 100, 255 };
-    sf::Color m_background_color { 10, 10, 10 };
-    sf::Color m_overlay_color { 5, 5, 5 };
-    int m_particle_count = 2;
-    float m_particle_radius = 0.5;
-    float m_particle_glow_size = 0.1;
-    size_t m_max_events_per_track = 4096;
-    double m_real_time_scale = 0.05;
-    double m_play_scale = 0.05;
-    int m_label_font_size = 50;
-    int m_label_fade_time = 30;
-    sf::Texture m_background_texture;
-    sf::Sprite m_background_sprite;
     sf::Texture m_particle_texture;
 
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
