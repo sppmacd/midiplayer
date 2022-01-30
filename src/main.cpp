@@ -44,7 +44,7 @@ const char* VERSION_STRING = "dev";
 static void print_version(Brief brief = Brief::Yes)
 {
     // This is based on gcc's --version output
-    std::cerr << "\e[1m" << g_exec_name << " (MIDIPlayer) " << VERSION_STRING << "\e[0m" << std::endl;
+    std::cerr << "\e[1m" << g_exec_name << " (MIDIPlayer) " << VERSION_STRING << "\e[0m (" << __DATE__ << " " << __TIME__ << ")" << std::endl;
     if(brief == Brief::No)
         std::cerr << "Copyright (C) 2021-2022 sppmacd" << std::endl;
 }
