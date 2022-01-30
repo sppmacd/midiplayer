@@ -8,10 +8,11 @@ The dependencies required are:
 - CMake 3.13+
 - SFML 2.5.1+
 - fmtlib 8.0.0+
+- RtMidi 5.0.0+
 
 Arch Linux:
 ```
-# pacman -S base-devel cmake sfml fmt
+# pacman -S base-devel cmake sfml fmt rtmidi
 ```
 
 ## 2. Download the project

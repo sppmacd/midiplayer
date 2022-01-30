@@ -29,7 +29,7 @@ add_executable(midiplayer
     src/Track.cpp
     src/main.cpp
 )
-target_link_libraries(midiplayer pthread sfml-graphics sfml-audio fmt)
+target_link_libraries(midiplayer pthread sfml-graphics sfml-audio fmt rtmidi)
 target_include_directories(midiplayer PUBLIC ${CMAKE_BINARY_DIR}/src)
 install(TARGETS midiplayer DESTINATION bin)
 if(MIDIPLAYER_PORTABLE_INSTALL)
