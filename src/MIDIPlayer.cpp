@@ -93,7 +93,12 @@ bool MIDIPlayer::reload_config_file()
         return false;
     }
     m_render_resources->background_sprite.setTexture(m_render_resources->background_texture);
-    if(!m_config.display_font().empty() && !m_render_resources->display_font.loadFromFile(m_config.display_font()))
+    if(m_config.display_font().empty())
+    {
+        logger::warning("No display font is specified. Using debug font.");
+        m_render_resources->display_font = m_render_resources->debug_font;
+    }
+    else if(!m_render_resources->display_font.loadFromFile(m_config.display_font()))
     {
         logger::error("Failed to load display font from {}.", m_config.display_font());
         return false;
