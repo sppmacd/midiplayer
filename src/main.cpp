@@ -21,16 +21,20 @@ enum class Brief
 
 static void print_usage_and_exit(Brief brief = Brief::Yes)
 {
-    std::cerr << "Usage: " << g_exec_name << " [options...] [list-midi-devices|<realtime <MIDI device>>|<play <MIDI file>>]" << std::endl;
+    std::cerr << "Usage: " << g_exec_name << " [options...] [list-midi-devices|<play <MIDI file>|<realtime <MIDI device>>>]" << std::endl;
     if(brief == Brief::No)
     {
+        std::cerr << "Modes:" << std::endl;
+        std::cerr << "    list-midi-devices  Print a list of MIDI input/output devices." << std::endl;
+        std::cerr << "    play [file]        Play pre-recorded .mid file. Supports output to MIDI device with -m option." << std::endl;
+        std::cerr << "    realtime [port]    Display MIDI device input in realtime. Supports output to .mid file with -m option." << std::endl;
         std::cerr << "Options:" << std::endl;
-        std::cerr << "    -m [path]       Specify MIDI output (file in realtime mode, device in play mode)" << std::endl;
-        std::cerr << "    -o              Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
-        std::cerr << "    --config-help   Print help for Config Files" << std::endl;
-        std::cerr << "    --debug         Enable debug info rendering" << std::endl;
-        std::cerr << "    --help          Print this message" << std::endl;
-        std::cerr << "    --version       Print MIDIPlayer version" << std::endl;
+        std::cerr << "    -m [file/port]     Specify MIDI output (file in realtime mode, port number in play mode)" << std::endl;
+        std::cerr << "    -o                 Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
+        std::cerr << "    --config-help      Print help for Config Files" << std::endl;
+        std::cerr << "    --debug            Enable debug info rendering" << std::endl;
+        std::cerr << "    --help             Print this message" << std::endl;
+        std::cerr << "    --version          Print MIDIPlayer version" << std::endl;
     }
     exit(1);
 }
