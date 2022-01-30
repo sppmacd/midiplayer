@@ -33,7 +33,6 @@ MIDIDeviceInput::MIDIDeviceInput(int port)
                 return;
             }
             event->set_tick(this_->current_tick(player));
-            event->dump();
     
             std::lock_guard lock{this_->m_event_queue_mutex};
             this_->m_event_queue.push(std::move(event)); },
@@ -91,7 +90,6 @@ MIDIDeviceOutput::MIDIDeviceOutput(int out)
 
 void MIDIDeviceOutput::write_event(Event const& event)
 {
-    event.dump();
     std::ostringstream oss;
     event.serialize(oss);
     if(oss.str().size() == 0)

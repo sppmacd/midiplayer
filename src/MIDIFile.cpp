@@ -178,7 +178,6 @@ bool MIDIFileInput::read_track_data(std::istream& in, size_t length)
         event->set_tick(current_tick);
         if(dynamic_cast<EndOfTrackEvent*>(event.get()) && current_tick > m_end_tick)
             m_end_tick = current_tick;
-        event->dump();
         track.add_event(std::move(event));
         offset = in.tellg();
     }
@@ -219,7 +218,7 @@ std::unique_ptr<Event> MIDIFileInput::read_meta_event(std::istream& in, uint8_t 
     if(!len.has_value())
         return {};
 
-    std::cerr << "meta-event type=" << std::hex << (int)type << std::dec << " len=" << len.value() << std::endl;
+    //std::cerr << "meta-event type=" << std::hex << (int)type << std::dec << " len=" << len.value() << std::endl;
     // 3.1 - Meta-Event Definitions
     switch(type)
     {
@@ -315,7 +314,7 @@ MIDIFileOutput::~MIDIFileOutput()
     EndOfTrackEvent event;
     event.set_tick(m_last_tick + 192);
     write_event(event);
-    std::cerr << "MIDIFileOutput: Closed successfully" << std::endl;
+    //std::cerr << "MIDIFileOutput: Closed successfully" << std::endl;
 }
 
 void MIDIFileOutput::write_event(Event const& event)
