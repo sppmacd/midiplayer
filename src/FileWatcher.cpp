@@ -32,6 +32,21 @@ FileWatcher::FileWatcher(std::string const& path)
     }
 }
 
+FileWatcher::FileWatcher(FileWatcher&& other)
+{
+    *this = std::move(other);
+}
+
+FileWatcher& FileWatcher::operator=(FileWatcher&& other)
+{
+    if(this == &other)
+        return *this;
+
+    m_watcher_fd = std::exchange(other.m_watcher_fd, -1);
+    m_watcher_wd = std::exchange(other.m_watcher_wd, -1);
+    return *this;
+}
+
 bool FileWatcher::file_was_modified() const
 {
     if(m_watcher_fd == -1)

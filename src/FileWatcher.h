@@ -6,7 +6,12 @@
 class FileWatcher
 {
 public:
+    FileWatcher() = default;
     explicit FileWatcher(std::string const& path);
+    FileWatcher(FileWatcher const&) = delete;
+    FileWatcher& operator=(FileWatcher const&) = delete;
+    FileWatcher(FileWatcher&&);
+    FileWatcher& operator=(FileWatcher&&);
     ~FileWatcher();
 
     bool file_was_modified() const;
