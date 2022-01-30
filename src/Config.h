@@ -16,7 +16,7 @@ public:
     bool reload(std::string const& path);
     void display_help() const { m_reader.display_help(); }
 
-    sf::Font const& display_font() const { return m_options.display_font; }
+    std::string display_font() const { return m_options.display_font; }
     sf::Color default_color() const { return m_options.default_color; }
     sf::Color background_color() const { return m_options.background_color; }
     sf::Color overlay_color() const { return m_options.overlay_color; }
@@ -28,7 +28,7 @@ public:
     double play_scale() const { return m_options.play_scale; }
     int label_font_size() const { return m_options.label_font_size; }
     int label_fade_time() const { return m_options.label_fade_time; }
-    sf::Sprite const& background_sprite() const { return m_options.background_sprite; }
+    std::string background_image() const { return m_options.background_image; }
 
     sf::Color resolve_color(MIDIPlayer const& player, NoteEvent& event) const;
 
@@ -37,7 +37,7 @@ private:
 
     struct Options
     {
-        sf::Font display_font;
+        std::string display_font;
         std::vector<std::pair<std::vector<std::unique_ptr<Selector>>, sf::Color>> channel_colors;
         sf::Color default_color { 100, 100, 255 };
         sf::Color background_color { 10, 10, 10 };
@@ -50,7 +50,6 @@ private:
         double play_scale = 0.05;
         int label_font_size = 50;
         int label_fade_time = 30;
-        sf::Texture background_texture;
-        sf::Sprite background_sprite;
+        std::string background_image;
     } m_options;
 };

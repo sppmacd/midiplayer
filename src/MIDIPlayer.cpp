@@ -41,23 +41,25 @@ bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& inp
     m_midi_output = std::move(output);
     m_midi_input = std::move(input);
 
-    auto resource_path = find_resource_path();
-    std::cerr << "Resource path: " << resource_path << std::endl;
-    if(
-        m_gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
-        && m_note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
-        && m_particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
-        std::cerr << "Shaders loaded" << std::endl;
-
-    if(m_debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
-        std::cerr << "Font loaded" << std::endl;
-
     m_initialized = true;
     return true;
 }
 
-void MIDIPlayer::setup_output()
+void MIDIPlayer::setup()
 {
+    m_render_resources = std::make_unique<RenderResources>();
+
+    auto resource_path = find_resource_path();
+    logger::info("Resource path: {}", resource_path);
+    if(
+        m_render_resources->gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
+        && m_render_resources->note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
+        && m_render_resources->particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
+        logger::info("Shaders loaded");
+
+    if(m_render_resources->debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
+        logger::info("Font loaded");
+
     // Don't add bloat to MIDI files. These events are sent by device output anyway.
     if(!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
         return;
@@ -79,7 +81,20 @@ bool MIDIPlayer::reload_config_file()
 {
     // FIXME: This should be moved to a separate class which would be just default-assigned here.
     bool success = m_config.reload(m_config_file_path);
+
     generate_particle_texture();
+    if(!m_config.background_image().empty() && !m_render_resources->background_texture.loadFromFile(m_config.background_image()))
+    {
+        logger::error("Failed to load background image from {}.", m_config.background_image());
+        return false;
+    }
+    m_render_resources->background_sprite.setTexture(m_render_resources->background_texture);
+    if(!m_config.display_font().empty() && !m_render_resources->display_font.loadFromFile(m_config.display_font()))
+    {
+        logger::error("Failed to load display font from {}.", m_config.display_font());
+        return false;
+    }
+
     if(m_real_time)
     {
         m_midi_input->for_each_track([this](Track& trk)
@@ -107,8 +122,8 @@ void MIDIPlayer::generate_particle_texture()
     target.display();
 
     // NOTE: SFML doesn't use move semantics, so we need to COPY the texture :(
-    m_particle_texture = target.getTexture();
-    m_particle_texture.setSmooth(true);
+    m_render_resources->particle_texture = target.getTexture();
+    m_render_resources->particle_texture.setSmooth(true);
 }
 
 void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing, sf::Color color)
@@ -198,7 +213,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
         color.a = particle.lifetime * 255 / particle.start_lifetime;
 
         float size = config().particle_radius();
-        float tex_size = m_particle_texture.getSize().x;
+        float tex_size = m_render_resources->particle_texture.getSize().x;
 
         varr[counter * 6 + 0] = sf::Vertex(
             { particle.position.x - size, particle.position.y - size },
@@ -220,7 +235,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
             color, { tex_size, 0 });
         counter++;
     }
-    sf::RenderStates states { &m_particle_texture };
+    sf::RenderStates states { &m_render_resources->particle_texture };
     states.blendMode = {
         sf::BlendMode::SrcAlpha, sf::BlendMode::DstAlpha, sf::BlendMode::Add,
         sf::BlendMode::One, sf::BlendMode::DstAlpha, sf::BlendMode::Add
@@ -238,13 +253,13 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
 
         // Gradient / Overlay
         sf::RectangleShape rs { sf::Vector2f { target_size } };
-        m_gradient_shader.setUniform("uColor", sf::Glsl::Vec4 { config().overlay_color() });
-        target.draw(rs, sf::RenderStates { &m_gradient_shader });
+        m_render_resources->gradient_shader.setUniform("uColor", sf::Glsl::Vec4 { config().overlay_color() });
+        target.draw(rs, sf::RenderStates { &m_render_resources->gradient_shader });
 
         // Labels
         for(auto const& label : m_labels)
         {
-            sf::Text text(label.text, config().display_font(), config().label_font_size());
+            sf::Text text(label.text, m_render_resources->display_font, config().label_font_size());
             auto bounds = text.getLocalBounds();
             float padding_left_right = config().label_font_size() * 100.f / 45.f;
             float padding_top_bottom = config().label_font_size() * 40.f / 45.f;
@@ -326,18 +341,18 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
         oss << m_particles.size() << " particles" << std::endl;
     }
 
-    sf::Text text { oss.str(), m_debug_font, 10 };
+    sf::Text text { oss.str(), m_render_resources->debug_font, 10 };
     text.setPosition(5, 5);
     target.draw(text);
 }
 
 void MIDIPlayer::render_background(sf::RenderTarget& target) const
 {
-    auto* texture = config().background_sprite().getTexture();
+    auto* texture = m_render_resources->background_sprite.getTexture();
     if(!texture)
         return;
     target.setView(sf::View { sf::FloatRect { {}, sf::Vector2f { texture->getSize() } } });
-    target.draw(config().background_sprite());
+    target.draw(m_render_resources->background_sprite);
 }
 
 void MIDIPlayer::display_label(LabelType label, std::string text, int duration)

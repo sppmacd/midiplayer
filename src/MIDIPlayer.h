@@ -46,9 +46,14 @@ public:
     static constexpr float piano_size_px = 200.f;
 
     MIDIPlayer();
+
+    // Initialize the MIDIPlayer object: open MIDI devices/files.
     bool initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output);
+
     bool is_initialized() const { return m_initialized; }
-    void setup_output();
+
+    // Do setup: load resources, do all heavy OpenGL initialization, reset MIDI output.
+    void setup();
 
     void set_fps(unsigned fps) { m_fps = fps; }
     unsigned fps() const { return m_fps; }
@@ -82,8 +87,8 @@ public:
 
     void render(sf::RenderTarget& target, DebugInfo const& debug_info);
 
-    sf::Shader& note_shader() const { return m_note_shader; }
-    sf::Shader& particle_shader() const { return m_particle_shader; }
+    sf::Shader& note_shader() const { return m_render_resources->note_shader; }
+    sf::Shader& particle_shader() const { return m_render_resources->particle_shader; }
 
     std::map<MIDIKey, NoteEvent>& started_notes() { return m_started_notes; }
     std::map<MIDIKey, std::optional<NoteEvent>>& ended_notes() { return m_ended_notes; }
@@ -143,10 +148,21 @@ private:
 
     std::list<Label> m_labels;
 
-    mutable sf::Shader m_gradient_shader;
-    mutable sf::Shader m_note_shader;
-    mutable sf::Shader m_particle_shader;
-    sf::Font m_debug_font;
+    // This is moved out of MIDIPlayer to shorten startup delay.
+    // FIXME: Should be probably moved to separate Renderer class.
+    struct RenderResources
+    {
+        mutable sf::Shader gradient_shader;
+        mutable sf::Shader note_shader;
+        mutable sf::Shader particle_shader;
+        sf::Font display_font;
+        sf::Font debug_font;
+        sf::Texture particle_texture;
+        sf::Texture background_texture;
+        sf::Sprite background_sprite;
+    };
+
+    std::unique_ptr<RenderResources> m_render_resources;
 
     Config m_config;
     std::string m_config_file_path;
@@ -154,8 +170,6 @@ private:
 
     std::map<MIDIKey, NoteEvent> m_started_notes;
     std::map<MIDIKey, std::optional<NoteEvent>> m_ended_notes;
-
-    sf::Texture m_particle_texture;
 
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
     std::unique_ptr<MIDIInput> m_midi_input;

@@ -49,22 +49,11 @@ Config::Config()
         return true; });
     m_reader.register_property("background_image", "Path to background image", "<path(string)>", [&](PropertyParser& parser) -> bool
         { 
-        auto path = TRY_OPTIONAL(parser.read_string());
-        if(!m_options.background_texture.loadFromFile(path))
-        {
-            logger::error("Failed to load background image from {}.", path);
-            return false;
-        }
-        m_options.background_sprite.setTexture(m_options.background_texture);
+        m_options.background_image = TRY_OPTIONAL(parser.read_string());
         return true; });
     m_reader.register_property("display_font", "Font used for displaying e.g. labels", "<path(string)>", [&](PropertyParser& parser) -> bool
         {
-        auto path = TRY_OPTIONAL(parser.read_string());
-        if(!m_options.display_font.loadFromFile(path))
-        {
-            logger::error("Failed to load display font from {}.", path);
-            return false;
-        }
+        m_options.display_font = TRY_OPTIONAL(parser.read_string());
         return true; });
     m_reader.register_property("label_font_size", "Font size for labels (in pt)", "<size(int)>", [&](PropertyParser& parser) -> bool
         {

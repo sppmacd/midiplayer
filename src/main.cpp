@@ -44,9 +44,10 @@ const char* VERSION_STRING = "dev";
 static void print_version(Brief brief = Brief::Yes)
 {
     // This is based on gcc's --version output
-    std::cerr << "\e[1m" << g_exec_name << " (MIDIPlayer) " << VERSION_STRING << "\e[0m (" << __DATE__ << " " << __TIME__ << ")" << std::endl;
     if(brief == Brief::No)
         std::cerr << "Copyright (C) 2021-2022 sppmacd" << std::endl;
+    else
+        std::cerr << "\e[1m" << g_exec_name << " (MIDIPlayer) " << VERSION_STRING << "\e[0m (" << __DATE__ << " " << __TIME__ << ")" << std::endl;
 }
 
 enum class Mode
@@ -58,6 +59,7 @@ enum class Mode
 int main(int argc, char* argv[])
 {
     g_exec_name = argv[0];
+    
     print_version();
 
     Mode mode {};
@@ -106,6 +108,11 @@ int main(int argc, char* argv[])
                     should_render_debug_info_in_preview = true;
                 else if(opt_sv == "-help")
                     print_usage_and_exit(Brief::No);
+                else if(opt_sv == "-version")
+                {
+                    print_version(Brief::No);
+                    return 0;
+                }
                 else
                     logger::warning("WARNING: Ignoring invalid option: {}", arg_sv);
             }
@@ -173,7 +180,6 @@ int main(int argc, char* argv[])
                 }
                 else if(arg_sv == "list-midi-devices"sv)
                 {
-
                     MIDI::print_available_ports();
                     return 0;
                 }
@@ -197,6 +203,8 @@ int main(int argc, char* argv[])
         logger::error("No mode was given. You need to specify either 'play' or 'realtime'. See --help for details.");
         return 1;
     }
+
+    player.setup();
 
     if(config_file_path.empty())
         player.load_config_file("config.cfg");
@@ -251,10 +259,9 @@ int main(int argc, char* argv[])
     };
     create_windowed();
 
-    player.setup_output();
-
     sf::Clock fps_clock;
     sf::Time last_fps_time;
+    
     while(player.playing())
     {
         {
