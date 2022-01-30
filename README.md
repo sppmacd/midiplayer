@@ -3,11 +3,12 @@
 **MIDI Player** (probably needs some better name) is a "beautiful" MIDI renderer. It's free and open source (BSD 2-Clause license).
 
 Some basic features:
-* MIDI input: realtime display and saving to MIDI files
-* Playing MIDI files (but no MIDI output for now)
+* Input/output from/to .mid files and MIDI devices
 * Rendering:
     * Raw frames for now, needs `ffmpeg` to actually turn into a video - see [example script](./render.sh)
+    * No sound
     * Only **RGBA 1920x1080 60 fps** is supported
+* Configuration, with "hot reload" support
 * Various customization options:
     * Background (single color or image)
     * Tile color (depending on channel or index)
@@ -15,11 +16,10 @@ Some basic features:
     * Label font, fade time
     * And more...
 
-Only Linux is supported as the target platform for now. Other platforms don't even have MIDI input implemented.
+Only Linux is supported as the target platform for now.
 
 Things that I (want to) work on:
 * Other platforms
-* MIDI output
 * Inserting custom events (so that you can make e.g. subtitles)
 * Changing styling when the track is playing (e.g at some time or when a key is pressed)
 * Customization of video format (framerate, resolution,...)
@@ -27,7 +27,7 @@ Things that I (want to) work on:
 ![Defaults](./docs/screenshots/defaults.png)
 ![Selectors](./docs/screenshots/selectors.png)
 
-The app is still in development, it has probably many dumb bugs and is definitely not fully functional (see e.g MIDI output, Windows support, etc.).
+The app is still in development, it has probably many dumb bugs and is definitely not fully functional.
 
 ## Building / Installing
 
