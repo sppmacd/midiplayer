@@ -83,6 +83,8 @@ bool MIDIPlayer::load_config_file(std::string const& path)
 
 bool MIDIPlayer::reload_config_file()
 {
+    assert(m_render_resources);
+
     // FIXME: This should be moved to a separate class which would be just default-assigned here.
     bool success = m_config.reload(m_config_file_path);
 
