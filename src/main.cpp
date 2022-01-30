@@ -164,14 +164,17 @@ int main(int argc, char* argv[])
                             return 1;
                         }
                         int value = 0;
-                        try
+                        if(!midi_output.empty())
                         {
-                            value = std::stoi(midi_output);
-                        }
-                        catch(...)
-                        {
-                            logger::error("Expected port number. See midieditor list-midi-devices for a list of MIDI devices.");
-                            return 1;
+                            try
+                            {
+                                value = std::stoi(midi_output);
+                            }
+                            catch(...)
+                            {
+                                logger::error("Expected port number. See midieditor list-midi-devices for a list of MIDI devices.");
+                                return 1;
+                            }
                         }
                         if(!player.initialize(MIDIPlayer::RealTime::No, std::move(midi_file),
                                midi_output.empty() ? nullptr : std::make_unique<MIDIDeviceOutput>(value)))
