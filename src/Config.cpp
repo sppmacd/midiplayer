@@ -53,7 +53,7 @@ Config::Config()
         if(!m_options.background_texture.loadFromFile(path))
         {
             logger::error("Failed to load background image from {}.", path);
-            return true; // don't fail because of warning
+            return false;
         }
         m_options.background_sprite.setTexture(m_options.background_texture);
         return true; });
@@ -63,7 +63,7 @@ Config::Config()
         if(!m_options.display_font.loadFromFile(path))
         {
             logger::error("Failed to load display font from {}.", path);
-            return false; // don't fail because of warning
+            return false;
         }
         return true; });
     m_reader.register_property("label_font_size", "Font size for labels (in pt)", "<size(int)>", [&](PropertyParser& parser) -> bool
