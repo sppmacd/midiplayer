@@ -46,6 +46,7 @@ public:
     static constexpr float piano_size_px = 200.f;
 
     MIDIPlayer();
+    ~MIDIPlayer();
 
     // Initialize the MIDIPlayer object: open MIDI devices/files.
     bool initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output);

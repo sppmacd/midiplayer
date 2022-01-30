@@ -22,6 +22,20 @@ MIDIPlayer::MIDIPlayer()
 {
 }
 
+MIDIPlayer::~MIDIPlayer()
+{
+    // Don't add bloat to MIDI files. These events are sent by device output anyway.
+    if(!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
+        return;
+    for(size_t s = 0; s < 16; s++)
+    {
+        ControlChangeEvent c1(s, ControlChangeEvent::Number::AllSoundOff, 0);
+        m_midi_output->write_event(c1);
+        ControlChangeEvent c2(s, ControlChangeEvent::Number::AllNotesOff, 0);
+        m_midi_output->write_event(c2);
+    }
+}
+
 bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output)
 {
     // FIXME: This would need real error propagation instead of this. Maybe just use exceptions.
