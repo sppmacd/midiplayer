@@ -37,7 +37,6 @@ bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& inp
     }
 
     m_real_time = real_time == RealTime::Yes;
-    m_start_time = std::chrono::system_clock::now();
     m_midi_output = std::move(output);
     m_midi_input = std::move(input);
 
@@ -68,6 +67,11 @@ void MIDIPlayer::setup()
         ControlChangeEvent c1(s, ControlChangeEvent::Number::ResetAllControllers, 0);
         m_midi_output->write_event(c1);
     }
+}
+
+void MIDIPlayer::start_timer()
+{
+    m_start_time = std::chrono::system_clock::now();
 }
 
 bool MIDIPlayer::load_config_file(std::string const& path)

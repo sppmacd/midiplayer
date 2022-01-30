@@ -55,6 +55,8 @@ public:
     // Do setup: load resources, do all heavy OpenGL initialization, reset MIDI output.
     void setup();
 
+    void start_timer();
+
     void set_fps(unsigned fps) { m_fps = fps; }
     unsigned fps() const { return m_fps; }
     void set_tempo(uint32_t microseconds_per_quarter_note) { m_microseconds_per_quarter_note = microseconds_per_quarter_note; }

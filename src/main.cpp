@@ -262,6 +262,7 @@ int main(int argc, char* argv[])
     sf::Clock fps_clock;
     sf::Time last_fps_time;
     
+    player.start_timer();
     while(player.playing())
     {
         {
