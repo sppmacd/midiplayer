@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
                             return 1;
                         }
 
-                        player.initialize(MIDIPlayer::RealTime::Yes, std::make_unique<MIDIDevice>(std::string { filename_sv }),
+                        player.initialize(MIDIPlayer::RealTime::Yes, std::make_unique<MIDIDeviceInput>(std::string { filename_sv }),
                             midi_output.empty() ? nullptr : std::make_unique<MIDIFileOutput>(midi_output));
                     }
                     else if(arg_sv == "play"sv)

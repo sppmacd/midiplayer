@@ -8,7 +8,7 @@
 
 using namespace std::chrono_literals;
 
-MIDIDevice::MIDIDevice(std::string const& path)
+MIDIDeviceInput::MIDIDeviceInput(std::string const& path)
 {
     m_tracks.resize(1);
     m_io_thread = std::jthread([this, path]() {
@@ -39,7 +39,7 @@ MIDIDevice::MIDIDevice(std::string const& path)
     m_io_thread_stop_source = m_io_thread.get_stop_source();
 }
 
-std::unique_ptr<Event> MIDIDevice::read_event()
+std::unique_ptr<Event> MIDIDeviceInput::read_event()
 {
     std::lock_guard lock{m_event_queue_mutex};
     if(m_event_queue.empty())
@@ -49,7 +49,7 @@ std::unique_ptr<Event> MIDIDevice::read_event()
     return event;
 }
 
-void MIDIDevice::update(MIDIPlayer& player)
+void MIDIDeviceInput::update(MIDIPlayer& player)
 {
     m_player = &player;
     while(auto event = read_event())
@@ -61,7 +61,7 @@ void MIDIDevice::update(MIDIPlayer& player)
     }
 }
 
-size_t MIDIDevice::current_tick(MIDIPlayer const& player) const
+size_t MIDIDeviceInput::current_tick(MIDIPlayer const& player) const
 {
     auto time = (std::chrono::system_clock::now() - player.start_time());
     return time / 1us * ((double)ticks_per_quarter_note() / player.microseconds_per_quarter_note());

@@ -9,10 +9,10 @@
 #include <thread>
 #include <mutex>
 
-class MIDIDevice : public MIDIInput
+class MIDIDeviceInput : public MIDIInput
 {
 public:
-    MIDIDevice(std::string const& path);
+    MIDIDeviceInput(std::string const& path);
 
     virtual bool is_valid() const override { return m_valid.load(std::memory_order_relaxed); }
     std::unique_ptr<Event> read_event();
