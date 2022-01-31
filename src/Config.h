@@ -1,14 +1,17 @@
 #pragma once
 
-#include "ConfigFileReader.h"
+#include "Config/Parser.h"
+#include "Config/Selector.h"
 #include "FileWatcher.h"
-#include "Selector.h"
 
 #include <SFML/Graphics.hpp>
 #include <memory>
 #include <vector>
 
-struct Config
+namespace Config
+{
+
+class Config
 {
 public:
     Config();
@@ -53,3 +56,5 @@ private:
         std::string background_image;
     } m_properties;
 };
+
+}

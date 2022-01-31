@@ -7,6 +7,9 @@
 #include <optional>
 #include <string>
 
+namespace Config
+{
+
 class PropertyParser
 {
 public:
@@ -54,3 +57,5 @@ private:
     };
     std::map<std::string, Property> m_properties;
 };
+
+}

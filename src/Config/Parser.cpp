@@ -1,13 +1,16 @@
-#include "ConfigFileReader.h"
+#include "Parser.h"
 
-#include "Logger.h"
-#include "Try.h"
+#include "../Logger.h"
+#include "../Try.h"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <sstream>
 #include <string>
+
+namespace Config
+{
 
 std::optional<int> PropertyParser::read_int()
 {
@@ -214,4 +217,6 @@ void ConfigFileReader::display_help() const
             << "\e[0m";
         std::cerr << std::left << std::setw(75) << oss.str() << " " << it.second.description << std::endl;
     }
+}
+
 }

@@ -3,6 +3,9 @@
 #include "Logger.h"
 #include "Try.h"
 
+namespace Config
+{
+
 Config::Config()
 {
     m_reader.register_property("color", "Key tile color", "<selectors(Selector)...> <color(rgb[a])>", [&](PropertyParser& parser) -> bool
@@ -88,4 +91,6 @@ sf::Color Config::resolve_color(MIDIPlayer const& player, NoteEvent& event) cons
             return pair.second;
     }
     return m_properties.default_color;
+}
+
 }

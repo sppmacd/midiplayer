@@ -1,7 +1,6 @@
 #include <cstring>
 #include <fstream>
 
-#include "ConfigFileReader.h"
 #include "Logger.h"
 #include "MIDIDevice.h"
 #include "MIDIFile.h"

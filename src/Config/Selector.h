@@ -7,6 +7,9 @@
 class MIDIPlayer;
 class NoteEvent;
 
+namespace Config
+{
+
 class Selector
 {
 public:
@@ -98,3 +101,5 @@ private:
     AttributeSelector(Attribute attr, AttributeValue&& value)
     : m_attribute(attr), m_value(std::move(value)) {}
 };
+
+}

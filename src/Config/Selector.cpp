@@ -1,13 +1,16 @@
 #include "Selector.h"
 
-#include "Event.h"
-#include "Logger.h"
+#include "../Event.h"
+#include "../Logger.h"
 
 #include <cctype>
 #include <memory>
 #include <optional>
 
 using namespace std::literals;
+
+namespace Config
+{
 
 inline void parse_error(std::string_view text)
 {
@@ -157,4 +160,6 @@ bool AttributeSelector::matches(MIDIPlayer const& player, NoteEvent const& event
             return m_value.matches(event.key().black_key_index());
     }
     abort();
+}
+
 }

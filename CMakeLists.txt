@@ -15,7 +15,8 @@ find_package(SFML 2.5.1 COMPONENTS graphics audio REQUIRED)
 
 add_executable(midiplayer
     src/Config.cpp
-    src/ConfigFileReader.cpp
+    src/Config/Parser.cpp
+    src/Config/Selector.cpp
     src/Event.cpp 
     src/FileWatcher.cpp
     src/MIDIDevice.cpp
@@ -25,7 +26,6 @@ add_executable(midiplayer
     src/MIDIPlayer.cpp
     src/Resources.cpp
     src/RoundedEdgeRectangleShape.cpp
-    src/Selector.cpp
     src/Track.cpp
     src/main.cpp
 )
