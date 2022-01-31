@@ -16,7 +16,7 @@ label_font_size 60
 label_fade_time 40
 ```
 
-## Options
+## Properties
 
 This list may not be up to date. The up-to-date list can be found by running `midi --config-help`.
 
@@ -65,7 +65,7 @@ Y scale (tile falling speed) for realtime mode
 ## Argument Types
 
 ### `int`
-An integer number in range -2^31 - 2^31-1. This range may be limited by specific options.
+An integer number in range -2^31 - 2^31-1. This range may be limited by specific properties.
 
 Examples: `1235`, `-54`
 
