@@ -22,7 +22,9 @@ MIDIDeviceInput::MIDIDeviceInput(int port)
             assert(user_data);
             assert(data);
             MIDIDeviceInput* this_ = reinterpret_cast<MIDIDeviceInput*>(user_data);
-            auto& player = *this_->m_player.load();
+            auto* player = this_->m_player.load();
+            if(!player)
+                return;
     
             ISpanStream stream({data->data(), data->size()});
             auto event = this_->MIDIInput::read_event(stream);
@@ -32,7 +34,7 @@ MIDIDeviceInput::MIDIDeviceInput(int port)
                 this_->m_valid.store(false, std::memory_order_relaxed);
                 return;
             }
-            event->set_tick(this_->current_tick(player));
+            event->set_tick(this_->current_tick(*player));
     
             std::lock_guard lock{this_->m_event_queue_mutex};
             this_->m_event_queue.push(std::move(event)); },
