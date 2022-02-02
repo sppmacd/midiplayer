@@ -2,6 +2,8 @@
 
 #include "../Logger.h"
 #include "../Try.h"
+#include <fmt/color.h>
+#include <fmt/format.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -136,9 +138,9 @@ std::optional<sf::Color> PropertyParser::read_color(ColorAlphaMode alpha_mode)
     return {};
 }
 
-std::optional<std::vector<std::unique_ptr<Selector>>> PropertyParser::read_selector_list()
+std::optional<SelectorList> PropertyParser::read_selector_list()
 {
-    std::vector<std::unique_ptr<Selector>> selectors;
+    SelectorList selectors;
     while(auto selector = Selector::read(m_in))
     {
         if(!selector && selectors.empty())
@@ -151,9 +153,46 @@ std::optional<std::vector<std::unique_ptr<Selector>>> PropertyParser::read_selec
     return selectors;
 }
 
-void ConfigFileReader::register_property(std::string name, std::string description, std::string help_string, PropertyHandler handler)
+std::optional<std::vector<PropertyParameter>> PropertyParser::parse_property_parameters(std::span<PropertyFormalParameter const> params)
 {
-    m_properties.insert({ name, { description, help_string, std::move(handler) } });
+    std::vector<PropertyParameter> result;
+    for(auto const& formal_param : params)
+    {
+        auto param = TRY_OPTIONAL([&]() -> std::optional<PropertyParameter>
+            {
+                std::cerr << (int)formal_param.type() << std::endl;
+                switch(formal_param.type())
+                {
+                    case PropertyType::Int:
+                        return TRY_OPTIONAL(read_int());
+                    case PropertyType::Float:
+                        return TRY_OPTIONAL(read_float());
+                    case PropertyType::String:
+                        return TRY_OPTIONAL(read_string());
+                    case PropertyType::ColorRGB:
+                        return TRY_OPTIONAL(read_color(ColorAlphaMode::DontAllow));
+                    case PropertyType::ColorRGBA:
+                        return TRY_OPTIONAL(read_color(ColorAlphaMode::Allow));
+                    case PropertyType::SelectorList:
+                        return TRY_OPTIONAL(read_selector_list());
+                    default:
+                        return {};
+                }
+            }());
+        if(!formal_param.value_matches(param))
+        {
+            logger::error("Value for parameter '{}' must match {}", formal_param.name(), formal_param.match_expression()->to_string());
+            return {};
+        }
+        result.push_back(std::move(param));
+    }
+    assert(result.size() == params.size());
+    return result;
+}
+
+void ConfigFileReader::register_property(std::string name, std::string description, std::vector<PropertyFormalParameter> parameters, OnSetPropertyFunction on_set_property)
+{
+    m_properties.emplace(std::move(name), Property { std::move(description), std::move(parameters), std::move(on_set_property) });
 }
 
 bool ConfigFileReader::load(std::string const& file_name)
@@ -193,16 +232,35 @@ bool ConfigFileReader::load(std::string const& file_name)
             return false;
         }
         PropertyParser parser { config_file };
-        if(!property->second.handler(parser))
+        auto property_parameters = parser.parse_property_parameters(property->second.parameters);
+        if(!property_parameters.has_value() || !property->second.on_set_property(property_parameters.value()))
         {
             // TODO: Display line:column
             logger::error_note("in property: '{}', offset {}", property_name, config_file.tellg());
             print_next_line();
-            std::cerr << "Usage: " << property_name << " " << property->second.usage << std::endl;
             return false;
         }
     }
     return true;
+}
+
+std::string ConfigFileReader::Property::get_usage_string() const
+{
+    std::string result;
+    for(size_t s = 0; s < parameters.size(); s++)
+    {
+        auto& param = parameters[s];
+        result += "<";
+        result += param.name();
+        result += ": ";
+        result += param.type_string();
+        if(param.match_expression())
+            result += "(" + param.match_expression()->to_string() + ")";
+        result += ">";
+        if(s != parameters.size() - 1)
+            result += " ";
+    }
+    return result;
 }
 
 void ConfigFileReader::display_help() const
@@ -213,10 +271,17 @@ void ConfigFileReader::display_help() const
     for(auto& it : m_properties)
     {
         std::ostringstream oss;
-        oss << "- \e[1;32m" << it.first << "\e[0;3m " << it.second.usage << "\e[0m"
+        // TODO: Usage
+        oss << "- \e[1;32m" << it.first << "\e[0;3m "
+            << it.second.get_usage_string()
             << "\e[0m";
         std::cerr << std::left << std::setw(75) << oss.str() << " " << it.second.description << std::endl;
     }
+}
+
+void ConfigFileReader::set_property(std::string const& name, ArgumentList const& args)
+{
+    m_properties[name].on_set_property(args);
 }
 
 }

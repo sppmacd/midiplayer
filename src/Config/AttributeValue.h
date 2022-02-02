@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fmt/format.h>
 #include <memory>
 #include <string>
 #include <variant>
@@ -8,6 +9,7 @@ class MatchExpression
 {
 public:
     virtual bool matches(int value) const = 0;
+    virtual std::string to_string() const = 0;
 };
 
 class Range : public MatchExpression
@@ -21,6 +23,7 @@ public:
     }
 
     virtual bool matches(int value) const override { return value >= m_min && value <= m_max; }
+    virtual std::string to_string() const override { return fmt::format("range {}-{}", m_min, m_max); }
 
 private:
     int m_min {};
@@ -35,6 +38,7 @@ public:
     : m_a(a), m_b(b) {}
 
     virtual bool matches(int value) const override { return (m_a <= 1 && value > 0) || (value - m_b >= 0 && (value - m_b) % m_a == 0); }
+    virtual std::string to_string() const override { return fmt::format("equation {}n{:+}", m_a, m_b); }
 
 private:
     int m_a {};

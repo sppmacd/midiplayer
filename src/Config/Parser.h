@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Property.h"
 #include "Selector.h"
 #include <SFML/Graphics.hpp>
 #include <functional>
 #include <map>
 #include <optional>
+#include <span>
 #include <string>
 
 namespace Config
@@ -24,11 +26,13 @@ public:
         Allow,     // #(<r> <g> <b> [a])
         Require    // #(<r> <g> <b> <a>)
     };
-
+ 
     std::optional<sf::Color> read_color(ColorAlphaMode);
 
-    // [...]
-    std::optional<std::vector<std::unique_ptr<Selector>>> read_selector_list();
+    // [name=value]...
+    std::optional<SelectorList> read_selector_list();
+
+    std::optional<std::vector<PropertyParameter>> parse_property_parameters(std::span<PropertyFormalParameter const>);
 
 private:
     friend class ConfigFileReader;
@@ -42,18 +46,22 @@ private:
 class ConfigFileReader
 {
 public:
-    using PropertyHandler = std::function<bool(PropertyParser&)>;
+    using OnSetPropertyFunction = std::function<bool(ArgumentList const&)>;
 
-    void register_property(std::string name, std::string description, std::string usage, PropertyHandler handler);
+    void register_property(std::string name, std::string description, std::vector<PropertyFormalParameter> parameters, OnSetPropertyFunction on_set_property);
     bool load(std::string const& file_name);
     void display_help() const;
+
+    void set_property(std::string const& name, ArgumentList const& args);
 
 private:
     struct Property
     {
         std::string description;
-        std::string usage;
-        PropertyHandler handler;
+        std::vector<PropertyFormalParameter> parameters;
+        OnSetPropertyFunction on_set_property;
+
+        std::string get_usage_string() const;
     };
     std::map<std::string, Property> m_properties;
 };

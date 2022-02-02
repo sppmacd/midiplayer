@@ -35,13 +35,15 @@ public:
 
     sf::Color resolve_color(MIDIPlayer const& player, NoteEvent& event) const;
 
+    void set_property(std::string const& name, std::vector<PropertyParameter> const& params);
+
 private:
     ConfigFileReader m_reader;
 
     struct Properties
     {
         std::string display_font;
-        std::vector<std::pair<std::vector<std::unique_ptr<Selector>>, sf::Color>> channel_colors;
+        std::vector<std::pair<SelectorList, sf::Color>> channel_colors;
         sf::Color default_color { 100, 100, 255 };
         sf::Color background_color { 10, 10, 10 };
         sf::Color overlay_color { 5, 5, 5 };
