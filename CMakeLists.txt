@@ -14,10 +14,14 @@ find_package(fmt 8.0.0 REQUIRED)
 find_package(SFML 2.5.1 COMPONENTS graphics audio REQUIRED)
 
 add_executable(midiplayer
-    src/Config.cpp
+    src/Config/Configuration.cpp
+    src/Config/Info.cpp
+    src/Config/Lexer.cpp
     src/Config/Parser.cpp
     src/Config/Property.cpp
+    src/Config/Reader.cpp
     src/Config/Selector.cpp
+    src/Config/Statement.cpp
     src/Event.cpp 
     src/FileWatcher.cpp
     src/MIDIDevice.cpp
@@ -25,6 +29,7 @@ add_executable(midiplayer
     src/MIDIInput.cpp
     src/MIDIKey.cpp
     src/MIDIPlayer.cpp
+    src/MIDIPlayerConfig.cpp
     src/Resources.cpp
     src/RoundedEdgeRectangleShape.cpp
     src/Track.cpp

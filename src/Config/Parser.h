@@ -1,69 +1,131 @@
 #pragma once
 
+#include "Configuration.h"
+#include "Info.h"
+#include "Lexer.h"
 #include "Property.h"
 #include "Selector.h"
+
 #include <SFML/Graphics.hpp>
 #include <functional>
 #include <map>
 #include <optional>
 #include <span>
 #include <string>
+#include <type_traits>
 
 namespace Config
 {
 
-class PropertyParser
+struct SourceRange
+{
+    SourceLocation location;
+    size_t size;
+};
+
+struct ParserError
+{
+    SourceRange range;
+    std::string message;
+};
+
+template<class T>
+class [[nodiscard]] ParserErrorOr
 {
 public:
-    std::optional<int> read_int();
-    std::optional<int> read_int_in_range(int min, int max);
-    std::optional<float> read_float();
-    std::optional<std::string> read_string();
+    ParserErrorOr(T&& t)
+    : m_value(std::move(t)) {}
 
+    ParserErrorOr(ParserError&& t)
+    : m_error(std::move(t)) {}
+
+    template<class U>
+    requires(std::is_convertible_v<U, T>)
+        ParserErrorOr(U&& u)
+    : m_value(std::move(u)) {}
+
+    bool has_value() const { return m_value.has_value(); }
+    bool has_error() const { return m_error.has_value(); }
+    T& value() { return m_value.value(); }
+    T const& value() const { return m_value.value(); }
+    T release_value() { return std::move(value()); }
+    ParserError& error() { return m_error.value(); }
+    ParserError const& error() const { return m_error.value(); }
+    ParserError release_error() { return std::move(error()); }
+
+private:
+    std::optional<T> m_value;
+    std::optional<ParserError> m_error;
+};
+
+class Parser
+{
+public:
     enum class ColorAlphaMode
     {
         DontAllow, // #(<r> <g> <b>)
         Allow,     // #(<r> <g> <b> [a])
         Require    // #(<r> <g> <b> <a>)
     };
- 
-    std::optional<sf::Color> read_color(ColorAlphaMode);
+
+    static ParserErrorOr<Configuration> parse(Info&, std::vector<Token> const&);
+
+private:
+    ParserErrorOr<float> get_number();
+    ParserErrorOr<std::string> get_string();
+    ParserErrorOr<int> get_int();
+    ParserErrorOr<Configuration> parse_configuration();
+    ParserErrorOr<sf::Color> parse_color(ColorAlphaMode);
 
     // [name=value]...
-    std::optional<SelectorList> read_selector_list();
+    ParserErrorOr<SelectorList> parse_selector_list();
+    ParserErrorOr<AttributeValue> parse_selector_attribute_value();
+    ParserErrorOr<std::shared_ptr<Selector>> parse_selector();
+    ParserErrorOr<std::vector<PropertyParameter>> parse_property_parameters(std::span<PropertyFormalParameter const>);
 
-    std::optional<std::vector<PropertyParameter>> parse_property_parameters(std::span<PropertyFormalParameter const>);
+    explicit Parser(Info& info, std::vector<Token> const& in)
+    : m_info(info), m_tokens(in) {}
 
-private:
-    friend class ConfigFileReader;
-
-    PropertyParser(std::ifstream& in)
-    : m_in(in) {}
-
-    std::ifstream& m_in;
-};
-
-class ConfigFileReader
-{
-public:
-    using OnSetPropertyFunction = std::function<bool(ArgumentList const&)>;
-
-    void register_property(std::string name, std::string description, std::vector<PropertyFormalParameter> parameters, OnSetPropertyFunction on_set_property);
-    bool load(std::string const& file_name);
-    void display_help() const;
-
-    void set_property(std::string const& name, ArgumentList const& args);
-
-private:
-    struct Property
+    Token const* peek_next_token()
     {
-        std::string description;
-        std::vector<PropertyFormalParameter> parameters;
-        OnSetPropertyFunction on_set_property;
+        if(m_offset >= m_tokens.size())
+            return nullptr;
+        return &m_tokens[m_offset];
+    }
 
-        std::string get_usage_string() const;
-    };
-    std::map<std::string, Property> m_properties;
+    Token const* get_next_token()
+    {
+        auto token = peek_next_token();
+        m_offset++;
+        return token;
+    }
+
+    Token const* get_next_token_of_type(Token::Type type)
+    {
+        auto token = peek_next_token();
+        if(token->type() == type)
+        {
+            m_offset++;
+            return token;
+        }
+        return nullptr;
+    }
+
+    SourceRange current_source_range() const
+    {
+        auto token = m_offset == m_tokens.size() ? m_tokens[m_offset - 1] : m_tokens[m_offset];
+        return m_offset == m_tokens.size() ? SourceRange { token.location(), 1 } : SourceRange { token.location(), token.size() };
+    }
+
+    template<class... Args>
+    [[nodiscard]] ParserError parser_error(fmt::format_string<Args...> message, Args&&... args) const
+    {
+        return ParserError { current_source_range(), fmt::format(message, std::forward<Args>(args)...) };
+    }
+
+    size_t m_offset = 0;
+    Info& m_info;
+    std::vector<Token> const& m_tokens;
 };
 
 }

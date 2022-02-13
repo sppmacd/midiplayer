@@ -1,23 +1,22 @@
 #pragma once
 
-#include "Config/Parser.h"
+#include "Config/Configuration.h"
+#include "Config/Reader.h"
 #include "Config/Selector.h"
+#include "Config/Property.h"
 #include "FileWatcher.h"
 
 #include <SFML/Graphics.hpp>
 #include <memory>
 #include <vector>
 
-namespace Config
-{
-
-class Config
+class MIDIPlayerConfig
 {
 public:
-    Config();
+    MIDIPlayerConfig();
 
     bool reload(std::string const& path);
-    void display_help() const { m_reader.display_help(); }
+    void display_help() const;
 
     std::string display_font() const { return m_properties.display_font; }
     sf::Color default_color() const { return m_properties.default_color; }
@@ -34,16 +33,15 @@ public:
     std::string background_image() const { return m_properties.background_image; }
 
     sf::Color resolve_color(MIDIPlayer const& player, NoteEvent& event) const;
-
-    void set_property(std::string const& name, std::vector<PropertyParameter> const& params);
+    void set_property(std::string const& name, std::vector<Config::PropertyParameter> const& params);
 
 private:
-    ConfigFileReader m_reader;
+    Config::Info m_info;
 
     struct Properties
     {
         std::string display_font;
-        std::vector<std::pair<SelectorList, sf::Color>> channel_colors;
+        std::vector<std::pair<Config::SelectorList, sf::Color>> channel_colors;
         sf::Color default_color { 100, 100, 255 };
         sf::Color background_color { 10, 10, 10 };
         sf::Color overlay_color { 5, 5, 5 };
@@ -58,5 +56,3 @@ private:
         std::string background_image;
     } m_properties;
 };
-
-}

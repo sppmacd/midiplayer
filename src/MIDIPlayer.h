@@ -1,11 +1,9 @@
 #pragma once
 
-#include "Config.h"
-#include "Config/Parser.h"
-#include "Config/Selector.h"
 #include "Event.h"
 #include "FileWatcher.h"
 #include "MIDIOutput.h"
+#include "MIDIPlayerConfig.h"
 #include <SFML/Graphics.hpp>
 #include <chrono>
 #include <cstddef>
@@ -102,7 +100,7 @@ public:
 
     bool load_config_file(std::string const& path);
     void print_config_help() const;
-    Config::Config const& config() const { return m_config; }
+    MIDIPlayerConfig const& config() const { return m_config; }
 
 private:
     void generate_particle_texture();
@@ -167,7 +165,7 @@ private:
 
     std::unique_ptr<RenderResources> m_render_resources;
 
-    Config::Config m_config;
+    MIDIPlayerConfig m_config;
     std::string m_config_file_path;
     FileWatcher m_config_file_watcher;
 
