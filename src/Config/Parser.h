@@ -5,6 +5,7 @@
 #include "Lexer.h"
 #include "Property.h"
 #include "Selector.h"
+#include "Action.h"
 
 #include <SFML/Graphics.hpp>
 #include <functional>
@@ -40,9 +41,17 @@ public:
     : m_error(std::move(t)) {}
 
     template<class U>
-    requires(std::is_convertible_v<U, T>)
-        ParserErrorOr(U&& u)
+    ParserErrorOr(U&& u)
     : m_value(std::move(u)) {}
+
+    template<class U>
+    ParserErrorOr(ParserErrorOr<U>&& u)
+    {
+        if(u.has_error())
+            m_error = u.release_error();
+        else
+            m_value = u.release_value();
+    }
 
     bool has_value() const { return m_value.has_value(); }
     bool has_error() const { return m_error.has_value(); }
@@ -82,6 +91,12 @@ private:
     ParserErrorOr<AttributeValue> parse_selector_attribute_value();
     ParserErrorOr<std::shared_ptr<Selector>> parse_selector();
     ParserErrorOr<std::vector<PropertyParameter>> parse_property_parameters(std::span<PropertyFormalParameter const>);
+    ParserErrorOr<std::shared_ptr<Condition>> parse_condition();
+    ParserErrorOr<std::shared_ptr<Action>> parse_action();
+    ParserErrorOr<std::shared_ptr<SetAction>> parse_set_action();
+    ParserErrorOr<std::unique_ptr<Statement>> parse_statement();
+    ParserErrorOr<std::unique_ptr<OnStatement>> parse_on_statement();
+    ParserErrorOr<std::unique_ptr<PropertyStatement>> parse_property_statement();
 
     explicit Parser(Info& info, std::vector<Token> const& in)
     : m_info(info), m_tokens(in) {}

@@ -2,6 +2,7 @@
 
 #include "../Logger.h"
 #include "../Try.h"
+#include "Condition.h"
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <fstream>
@@ -202,19 +203,94 @@ ParserErrorOr<std::vector<PropertyParameter>> Parser::parse_property_parameters(
     return result;
 }
 
+ParserErrorOr<std::shared_ptr<Condition>> Parser::parse_condition()
+{
+    auto identifier = get_next_token();
+    if(!identifier || identifier->type() != Token::Type::Identifier)
+        return parser_error("expected identifier in condition");
+    if(identifier->value() != "startup") 
+        return parser_error("identifier must be 'startup'");
+    return std::make_shared<StartupCondition>();
+}
+
+ParserErrorOr<std::shared_ptr<Action>> Parser::parse_action()
+{
+    auto identifier = peek_next_token();
+    if(!identifier || identifier->type() != Token::Type::Identifier)
+        return parser_error("expected identifier in action");
+    if(identifier->value() == "set")
+        return parse_set_action();
+    return parser_error("unknown action");
+}
+
+ParserErrorOr<std::shared_ptr<SetAction>> Parser::parse_set_action()
+{
+    get_next_token(); // "set"
+
+    auto bl = get_next_token_of_type(Token::Type::CurlyLeft);
+    if(!bl)
+        return parser_error("expected '{{' in 'set' action");
+
+    std::vector<std::unique_ptr<Statement>> statements;
+    while(true)
+    {
+        auto token = peek_next_token();
+        if(token && token->type() == Token::Type::CurlyRight)
+            break;
+        statements.push_back(TRY(parse_statement()));
+    }
+
+    auto br = get_next_token_of_type(Token::Type::CurlyRight);
+    if(!br)
+        return parser_error("expected closing '}}'");
+
+    return std::make_shared<SetAction>(std::move(statements));
+}
+
+ParserErrorOr<std::unique_ptr<Statement>> Parser::parse_statement()
+{
+    auto identifier = peek_next_token();
+    if(!identifier || identifier->type() != Token::Type::Identifier)
+        return parser_error("expected statement");
+    if(identifier->value() == "on")
+        return parse_on_statement();
+    return parse_property_statement();
+}
+
+ParserErrorOr<std::unique_ptr<OnStatement>> Parser::parse_on_statement()
+{
+    get_next_token(); // "on"
+
+    auto bl = get_next_token_of_type(Token::Type::BracketLeft);
+    if(!bl)
+        return parser_error("expected '(' in 'on' statement");
+
+    // TODO: Multiple conditions
+    auto condition = TRY(parse_condition());
+
+    auto br = get_next_token_of_type(Token::Type::BracketRight);
+    if(!br)
+        return parser_error("expected closing ')'");
+
+    auto action = TRY(parse_action());
+    return std::make_unique<OnStatement>(condition, action);
+}
+
+ParserErrorOr<std::unique_ptr<PropertyStatement>> Parser::parse_property_statement()
+{
+    auto identifier = get_next_token_of_type(Token::Type::Identifier);
+    if(!identifier)
+        return parser_error("expected identifier");
+    auto formal_parameters = m_info.property_formal_parameters(identifier->value());
+    auto property_parameters = TRY(parse_property_parameters(formal_parameters));
+    return { std::make_unique<PropertyStatement>(identifier->value(), std::move(property_parameters)) };
+}
+
 ParserErrorOr<Configuration> Parser::parse_configuration()
 {
     Configuration config;
-    while(true)
-    {
-        auto token = get_next_token();
-        if(!token)
-            return config;
-        if(token->type() != Token::Type::Identifier)
-            return parser_error("expected identifier");
-        auto property_parameters = TRY(parse_property_parameters(m_info.property_formal_parameters(token->value())));
-        config.add_statement(std::make_unique<PropertyStatement>(token->value(), std::move(property_parameters)));
-    }
+    while(peek_next_token())
+        config.add_statement(TRY(parse_statement()));
     return config;
 }
 

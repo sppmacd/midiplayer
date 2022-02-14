@@ -1,22 +1,23 @@
 #pragma once
 
 #include "Config/Configuration.h"
+#include "Config/Property.h"
 #include "Config/Reader.h"
 #include "Config/Selector.h"
-#include "Config/Property.h"
 #include "FileWatcher.h"
 
 #include <SFML/Graphics.hpp>
+#include <list>
 #include <memory>
-#include <vector>
 
 class MIDIPlayerConfig
 {
 public:
-    MIDIPlayerConfig();
+    MIDIPlayerConfig(MIDIPlayer& player);
 
     bool reload(std::string const& path);
     void display_help() const;
+    void update();
 
     std::string display_font() const { return m_properties.display_font; }
     sf::Color default_color() const { return m_properties.default_color; }
@@ -37,11 +38,12 @@ public:
 
 private:
     Config::Info m_info;
+    Config::Reader m_reader;
 
     struct Properties
     {
         std::string display_font;
-        std::vector<std::pair<Config::SelectorList, sf::Color>> channel_colors;
+        std::list<std::pair<Config::SelectorList, sf::Color>> channel_colors;
         sf::Color default_color { 100, 100, 255 };
         sf::Color background_color { 10, 10, 10 };
         sf::Color overlay_color { 5, 5, 5 };

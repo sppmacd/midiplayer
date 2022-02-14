@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "Condition.h"
 #include "Property.h"
 
 namespace Config
@@ -27,6 +28,21 @@ public:
 private:
     std::string m_name;
     std::vector<PropertyParameter> m_args;
+};
+
+class Action;
+
+class OnStatement : public Statement
+{
+public:
+    OnStatement(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action)
+    : m_condition(std::move(condition)), m_action(std::move(action)) {}
+
+    virtual bool execute(Reader& reader) const override;
+
+private:
+    std::shared_ptr<Condition> m_condition;
+    std::shared_ptr<Action> m_action;
 };
 
 }

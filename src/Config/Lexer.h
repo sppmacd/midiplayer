@@ -27,7 +27,11 @@ public:
         Add,
         EqualSign,
         SquareBracketLeft,
-        SquareBracketRight
+        SquareBracketRight,
+        BracketLeft,
+        BracketRight,
+        CurlyLeft,
+        CurlyRight,
     };
 
     Token(Type type, SourceLocation start, size_t size, std::string value)

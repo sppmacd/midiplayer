@@ -164,6 +164,9 @@ void MIDIPlayer::update()
 {
     if(m_config_file_watcher.file_was_modified())
         reload_config_file();
+    
+    m_config.update();
+
     auto previous_current_tick = m_current_tick;
     m_midi_input->update(*this);
     m_current_tick = current_tick();

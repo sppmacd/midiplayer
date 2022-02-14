@@ -52,6 +52,26 @@ std::vector<Token> Lexer::lex()
             consume_one();
             tokens.push_back(Token(Token::Type::SquareBracketRight, start_location, 1, "]"));
         }
+        else if(next == '(')
+        {
+            consume_one();
+            tokens.push_back(Token(Token::Type::BracketLeft, start_location, 1, "("));
+        }
+        else if(next == ')')
+        {
+            consume_one();
+            tokens.push_back(Token(Token::Type::BracketRight, start_location, 1, ")"));
+        }
+        else if(next == '{')
+        {
+            consume_one();
+            tokens.push_back(Token(Token::Type::CurlyLeft, start_location, 1, "{"));
+        }
+        else if(next == '}')
+        {
+            consume_one();
+            tokens.push_back(Token(Token::Type::CurlyRight, start_location, 1, "}"));
+        }
         else if(next == '-')
         {
             consume_one();

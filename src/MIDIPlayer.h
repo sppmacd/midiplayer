@@ -165,7 +165,7 @@ private:
 
     std::unique_ptr<RenderResources> m_render_resources;
 
-    MIDIPlayerConfig m_config;
+    MIDIPlayerConfig m_config { *this };
     std::string m_config_file_path;
     FileWatcher m_config_file_watcher;
 

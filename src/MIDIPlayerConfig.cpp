@@ -6,9 +6,11 @@
 #include "Logger.h"
 #include "Try.h"
 
+#include <algorithm>
 #include <fstream>
 
-MIDIPlayerConfig::MIDIPlayerConfig()
+MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
+: m_reader(m_info, player)
 {
     // FIXME: There is a copy here which could be omitted, but this makes shared_ptr needed.
     m_info.register_property("color",
@@ -18,7 +20,7 @@ MIDIPlayerConfig::MIDIPlayerConfig()
         {
             auto& selectors = arglist[0].as_selector_list();
             auto color = arglist[1].as_color();
-            m_properties.channel_colors.push_back({ std::move(selectors), color });
+            m_properties.channel_colors.push_front({ std::move(selectors), color });
             return true;
         });
     m_info.register_property("default_color",
@@ -128,9 +130,15 @@ MIDIPlayerConfig::MIDIPlayerConfig()
         });
 }
 
+void MIDIPlayerConfig::update()
+{
+    m_reader.update();
+}
+
 bool MIDIPlayerConfig::reload(std::string const& path)
 {
     m_properties = {};
+    m_reader.clear();
 
     std::ifstream file(path);
     if(file.fail())
@@ -145,8 +153,7 @@ bool MIDIPlayerConfig::reload(std::string const& path)
         return false;
     }
 
-    Config::Reader reader(m_info);
-    return config.release_value().execute(reader);
+    return config.release_value().execute(m_reader);
 }
 
 void MIDIPlayerConfig::display_help() const
