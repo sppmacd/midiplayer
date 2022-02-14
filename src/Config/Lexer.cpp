@@ -115,10 +115,10 @@ std::vector<Token> Lexer::lex()
         }
     }
 
-    /*
+    
     for(auto const& token: tokens)
         std::cout << (int)token.type() << " = " << token.value() << std::endl;
-    */
+    
 
     return tokens;
 }

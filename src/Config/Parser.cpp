@@ -82,6 +82,19 @@ ParserErrorOr<sf::Color> Parser::parse_color(ColorAlphaMode alpha_mode)
     return parser_error("?? invalid alpha mode");
 }
 
+ParserErrorOr<Time> Parser::parse_time()
+{
+    auto value = TRY(get_number());
+    auto unit = get_next_token_of_type(Token::Type::Identifier);
+    if(!unit || unit->value() == "s")
+        return Time{value, Time::Unit::Seconds};
+    if(unit->value() == "f")
+        return Time{value, Time::Unit::Frames};
+    if(unit->value() == "t")
+        return Time{value, Time::Unit::Ticks};
+    return parser_error("invalid time unit: {}", unit->value());
+}
+
 ParserErrorOr<SelectorList> Parser::parse_selector_list()
 {
     SelectorList selectors;
@@ -208,9 +221,18 @@ ParserErrorOr<std::shared_ptr<Condition>> Parser::parse_condition()
     auto identifier = get_next_token();
     if(!identifier || identifier->type() != Token::Type::Identifier)
         return parser_error("expected identifier in condition");
-    if(identifier->value() != "startup") 
+
+    // TODO: Some kind of condition registry
+    if(identifier->value() == "startup") 
+        return std::make_shared<StartupCondition>();
+    if(identifier->value() == "time")
+    {
+        if(!get_next_token_of_type(Token::Type::EqualSign))
+            return parser_error("expected '='");
+        auto value = TRY(parse_time());
+        return std::make_shared<TimeCondition>(value);
+    }
         return parser_error("identifier must be 'startup'");
-    return std::make_shared<StartupCondition>();
 }
 
 ParserErrorOr<std::shared_ptr<Action>> Parser::parse_action()

@@ -85,6 +85,7 @@ private:
     ParserErrorOr<int> get_int();
     ParserErrorOr<Configuration> parse_configuration();
     ParserErrorOr<sf::Color> parse_color(ColorAlphaMode);
+    ParserErrorOr<Time> parse_time();
 
     // [name=value]...
     ParserErrorOr<SelectorList> parse_selector_list();

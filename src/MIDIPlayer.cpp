@@ -160,11 +160,25 @@ size_t MIDIPlayer::current_tick() const
     return m_midi_input->current_tick(*this);
 }
 
+bool MIDIPlayer::current_time_is(Config::Time time)
+{
+    switch(time.unit())
+    {
+        case Config::Time::Unit::Ticks:
+            return current_tick() == time.value();
+        case Config::Time::Unit::Frames:
+            return current_frame() == time.value();
+        case Config::Time::Unit::Seconds:
+            return std::abs(current_frame() - time.value() * fps()) < 1.f / fps();
+    }
+    return false;
+}
+
 void MIDIPlayer::update()
 {
     if(m_config_file_watcher.file_was_modified())
         reload_config_file();
-    
+
     m_config.update();
 
     auto previous_current_tick = m_current_tick;
