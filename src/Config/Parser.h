@@ -88,6 +88,8 @@ private:
     ParserErrorOr<Time> parse_time();
 
     // [name=value]...
+    ParserErrorOr<std::map<std::string, PropertyParameter>> parse_named_parameters(std::map<std::string, PropertyFormalParameter> const&);
+    ParserErrorOr<PropertyParameter> parse_property_parameter(PropertyFormalParameter const&);
     ParserErrorOr<SelectorList> parse_selector_list();
     ParserErrorOr<AttributeValue> parse_selector_attribute_value();
     ParserErrorOr<std::shared_ptr<Selector>> parse_selector();

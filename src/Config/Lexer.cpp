@@ -87,6 +87,11 @@ std::vector<Token> Lexer::lex()
             consume_one();
             tokens.push_back(Token(Token::Type::EqualSign, start_location, 1, "="));
         }
+        else if(next == ',')
+        {
+            consume_one();
+            tokens.push_back(Token(Token::Type::Comma, start_location, 1, ","));
+        }
         else if(std::isalpha(next) || next == '_')
         {
             std::string result = consume_while([&](char c)

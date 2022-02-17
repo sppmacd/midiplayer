@@ -95,6 +95,35 @@ ParserErrorOr<Time> Parser::parse_time()
     return parser_error("invalid time unit: {}", unit->value());
 }
 
+ParserErrorOr<std::map<std::string, PropertyParameter>> Parser::parse_named_parameters(std::map<std::string, PropertyFormalParameter> const& formal_params)
+{
+    if(!get_next_token_of_type(Token::Type::BracketLeft))
+        return parser_error("expected '('");
+
+    std::map<std::string, PropertyParameter> parameters;
+
+    while(true)
+    {
+        auto name = get_next_token_of_type(Token::Type::Identifier);
+        if(!name)
+            return parser_error("expected identifier in named parameter list");
+        if(get_next_token_of_type(Token::Type::EqualSign))
+        {
+            auto formal_param = formal_params.find(name->value());
+            if(formal_param == formal_params.end())
+                return parser_error("invalid named parameter: '{}'", name->value());
+
+            parameters.insert({name->value(), TRY(parse_property_parameter(formal_param->second))});
+        }
+        if(!get_next_token_of_type(Token::Type::Comma))
+            break;
+    }
+
+    if(!get_next_token_of_type(Token::Type::BracketRight))
+        return parser_error("expected closing ')'");
+    return parameters;
+}
+
 ParserErrorOr<SelectorList> Parser::parse_selector_list()
 {
     SelectorList selectors;
@@ -104,11 +133,7 @@ ParserErrorOr<SelectorList> Parser::parse_selector_list()
         if(!maybe_left_bracket || maybe_left_bracket->type() != Token::Type::SquareBracketLeft)
             break;
 
-        auto maybe_selector = parse_selector();
-        if(maybe_selector.has_error())
-            return maybe_selector.release_error();
-
-        selectors.push_back(maybe_selector.release_value());
+        selectors.push_back(TRY(parse_selector()));
     }
     return selectors;
 }
@@ -188,32 +213,36 @@ ParserErrorOr<std::vector<PropertyParameter>> Parser::parse_property_parameters(
     std::vector<PropertyParameter> result;
     for(auto const& formal_param : params)
     {
-        auto param = TRY([&]() -> ParserErrorOr<PropertyParameter>
-            {
-                switch(formal_param.type())
-                {
-                    case PropertyType::Int:
-                        return TRY(get_int());
-                    case PropertyType::Float:
-                        return TRY(get_number());
-                    case PropertyType::String:
-                        return TRY(get_string());
-                    case PropertyType::ColorRGB:
-                        return TRY(parse_color(ColorAlphaMode::DontAllow));
-                    case PropertyType::ColorRGBA:
-                        return TRY(parse_color(ColorAlphaMode::Allow));
-                    case PropertyType::SelectorList:
-                        return TRY(parse_selector_list());
-                    default:
-                        return parser_error("?? invalid property type");
-                }
-            }());
+        auto param = TRY(parse_property_parameter(formal_param));
         if(!formal_param.value_matches(param))
             return parser_error("value for parameter '{}' must match {}", formal_param.name(), formal_param.match_expression()->to_string());
         result.push_back(std::move(param));
     }
     assert(result.size() == params.size());
     return result;
+}
+
+ParserErrorOr<PropertyParameter> Parser::parse_property_parameter(PropertyFormalParameter const& formal_param)
+{
+    switch(formal_param.type())
+    {
+        case PropertyType::Int:
+            return TRY(get_int());
+        case PropertyType::Float:
+            return TRY(get_number());
+        case PropertyType::String:
+            return TRY(get_string());
+        case PropertyType::ColorRGB:
+            return TRY(parse_color(ColorAlphaMode::DontAllow));
+        case PropertyType::ColorRGBA:
+            return TRY(parse_color(ColorAlphaMode::Allow));
+        case PropertyType::SelectorList:
+            return TRY(parse_selector_list());
+        case PropertyType::Time:
+            return TRY(parse_time());
+        default:
+            return parser_error("?? invalid property type");
+    }
 }
 
 ParserErrorOr<std::shared_ptr<Condition>> Parser::parse_condition()
@@ -249,25 +278,23 @@ ParserErrorOr<std::shared_ptr<SetAction>> Parser::parse_set_action()
 {
     get_next_token(); // "set"
 
-    Time transition_time;
+    std::map<std::string, PropertyParameter> params;
 
-    // transition?
-    if(get_next_token_of_type(Token::Type::BracketLeft))
+    auto next = peek_next_token();
+    if(next && next->type() == Token::Type::BracketLeft)
     {
-        auto identifier = get_next_token();
-        if(!identifier || identifier->type() != Token::Type::Identifier)
-            return parser_error("expected identifier in 'set' options");
-
-        if(identifier->value() != "transition")
-            return parser_error("invalid 'set' option: {}", identifier->value());
-
-        if(!get_next_token_of_type(Token::Type::EqualSign))
-            return parser_error("expected '='");
-        transition_time = TRY(parse_time());
-
-        if(!get_next_token_of_type(Token::Type::BracketRight))
-            return parser_error("expected closing ')");
+        params = TRY(parse_named_parameters({ { "transition", PropertyFormalParameter(PropertyType::Time, "transition") } }));
     }
+
+    auto get_or = [&](std::string key, auto default_value) -> PropertyParameter
+    {
+        auto it = params.find(key);
+        if(it == params.end())
+            return default_value;
+        return it->second;
+    };
+
+    Time transition_time = get_or("transition", Time()).as_time();
 
     if(!get_next_token_of_type(Token::Type::CurlyLeft))
         return parser_error("expected '{{' in 'set' action");

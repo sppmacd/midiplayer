@@ -32,6 +32,7 @@ public:
         BracketRight,
         CurlyLeft,
         CurlyRight,
+        Comma,
     };
 
     Token(Type type, SourceLocation start, size_t size, std::string value)
