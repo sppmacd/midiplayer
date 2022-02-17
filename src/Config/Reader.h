@@ -25,13 +25,13 @@ public:
         m_conditional_actions.push_back({ condition, action });
     }
 
-    // FIXME: Turn this into real "execution context"
-    void push_transition_time(Time time) { m_transition_times.push(time); }
-    void pop_transition_time() { m_transition_times.pop(); }
-    Time current_transition_time() { return m_transition_times.top(); }
-    bool has_transition_time() const { return !m_transition_times.empty(); }
+    // FIXME: Turn this into real "execution context"?
+    void push_transition(Transition transition) { m_transition_stack.push(transition); }
+    void pop_transition() { m_transition_stack.pop(); }
+    Transition current_transition() { return m_transition_stack.top(); }
+    bool has_transition() const { return !m_transition_stack.empty(); }
 
-    void add_transition(Time time, std::function<void(double)> handler);
+    void add_transition(Transition transition, std::function<void(double)> handler);
 
     void update();
 
@@ -45,16 +45,17 @@ private:
     Info& m_info;
     MIDIPlayer& m_player;
     std::vector<ConditionalAction> m_conditional_actions;
-    std::stack<Time> m_transition_times;
+    std::stack<Transition> m_transition_stack;
 
-    struct Transition
+    struct OngoingTransition
     {
+        Transition::Function function;
         size_t start_frame {};
         size_t length {};
         std::function<void(double)> handler;
     };
 
-    std::vector<Transition> m_transitions;
+    std::vector<OngoingTransition> m_ongoing_transitions;
 };
 
 }

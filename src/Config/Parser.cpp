@@ -3,6 +3,8 @@
 #include "../Logger.h"
 #include "../Try.h"
 #include "Condition.h"
+#include "Transition.h"
+
 #include <fmt/color.h>
 #include <fmt/format.h>
 #include <fstream>
@@ -113,7 +115,7 @@ ParserErrorOr<std::map<std::string, PropertyParameter>> Parser::parse_named_para
             if(formal_param == formal_params.end())
                 return parser_error("invalid named parameter: '{}'", name->value());
 
-            parameters.insert({name->value(), TRY(parse_property_parameter(formal_param->second))});
+            parameters.insert({ name->value(), TRY(parse_property_parameter(formal_param->second)) });
         }
         if(!get_next_token_of_type(Token::Type::Comma))
             break;
@@ -283,7 +285,8 @@ ParserErrorOr<std::shared_ptr<SetAction>> Parser::parse_set_action()
     auto next = peek_next_token();
     if(next && next->type() == Token::Type::BracketLeft)
     {
-        params = TRY(parse_named_parameters({ { "transition", PropertyFormalParameter(PropertyType::Time, "transition") } }));
+        params = TRY(parse_named_parameters({ { "transition", PropertyFormalParameter(PropertyType::Time, "transition") },
+            { "function", PropertyFormalParameter(PropertyType::String, "function") } }));
     }
 
     auto get_or = [&](std::string key, auto default_value) -> PropertyParameter
@@ -295,6 +298,7 @@ ParserErrorOr<std::shared_ptr<SetAction>> Parser::parse_set_action()
     };
 
     Time transition_time = get_or("transition", Time()).as_time();
+    std::string transition_function = get_or("function", "linear").as_string();
 
     if(!get_next_token_of_type(Token::Type::CurlyLeft))
         return parser_error("expected '{{' in 'set' action");
@@ -311,7 +315,20 @@ ParserErrorOr<std::shared_ptr<SetAction>> Parser::parse_set_action()
     if(!get_next_token_of_type(Token::Type::CurlyRight))
         return parser_error("expected closing '}}'");
 
-    return std::make_shared<SetAction>(std::move(statements), transition_time);
+    auto transition_function_from_string = [this](std::string const& str)->ParserErrorOr<Transition::Function>
+    {
+        if(str == "constant-0")
+            return Transition::Function::Constant0;
+        if(str == "constant-1")
+            return Transition::Function::Constant1;
+        if(str == "linear")
+            return Transition::Function::Linear;
+        if(str == "ease-in-out-quad")
+            return Transition::Function::EaseInOutQuad;
+        return parser_error("invalid transition function: '{}'", str);
+    };
+
+    return std::make_shared<SetAction>(std::move(statements), Transition(transition_time, TRY(transition_function_from_string(transition_function))));
 }
 
 ParserErrorOr<std::unique_ptr<Statement>> Parser::parse_statement()

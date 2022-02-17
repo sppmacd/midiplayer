@@ -10,11 +10,11 @@ namespace Config
 
 bool PropertyStatement::execute(Reader& reader) const
 {
-    auto transition_time = reader.has_transition_time() ? reader.current_transition_time() : Time{0, Time::Unit::Seconds};
-    if(transition_time.value() == 0)
+    auto transition = reader.has_transition() ? reader.current_transition() : Transition();
+    if(transition.time().value() == 0)
         reader.info().set_property(m_name, m_args, 1);
     else
-        reader.add_transition(transition_time, [&reader, this](double factor) {
+        reader.add_transition(transition, [&reader, this](double factor) {
             reader.info().set_property(m_name, m_args, factor);
         });
     return true;

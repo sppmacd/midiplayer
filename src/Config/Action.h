@@ -2,6 +2,7 @@
 
 #include "Property.h"
 #include "Statement.h"
+#include "Transition.h"
 
 namespace Config
 {
@@ -18,14 +19,14 @@ public:
 class SetAction : public Action
 {
 public:
-    SetAction(std::vector<std::unique_ptr<Statement>> statements, Time transition_time)
-    : m_statements(std::move(statements)), m_transition_time(transition_time) {}
+    SetAction(std::vector<std::unique_ptr<Statement>> statements, Transition transition)
+    : m_statements(std::move(statements)), m_transition(transition) {}
 
     virtual void execute(Reader&) const override;
 
 private:
     std::vector<std::unique_ptr<Statement>> m_statements;
-    Time m_transition_time;
+    Transition m_transition;
 };
 
 }
