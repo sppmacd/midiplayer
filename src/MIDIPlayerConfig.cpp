@@ -82,17 +82,17 @@ MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
     m_info.register_property("real_time_scale",
         "Y scale (tile falling speed) for realtime mode",
         { { Config::PropertyType::Float, "value" } },
-        [&](Config::ArgumentList const& arglist, double) -> bool
+        [&](Config::ArgumentList const& arglist, double factor) -> bool
         {
-            m_properties.real_time_scale = arglist[0].as_float();
+            m_properties.real_time_scale.set_value_with_factor(arglist[0].as_float(), factor);
             return true;
         });
     m_info.register_property("play_scale",
         "Y scale (tile falling speed) for play mode",
         { { Config::PropertyType::Float, "value" } },
-        [&](Config::ArgumentList const& arglist, double) -> bool
+        [&](Config::ArgumentList const& arglist, double factor) -> bool
         {
-            m_properties.play_scale = arglist[0].as_float();
+            m_properties.play_scale.set_value_with_factor(arglist[0].as_float(), factor);
             return true;
         });
     m_info.register_property("background_image",

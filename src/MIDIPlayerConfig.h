@@ -60,8 +60,8 @@ private:
         float particle_radius = 0.5;
         float particle_glow_size = 0.1;
         size_t max_events_per_track = 4096;
-        double real_time_scale = 0.05;
-        double play_scale = 0.05;
+        Config::AnimatableProperty<double> real_time_scale { 0.05 };
+        Config::AnimatableProperty<double> play_scale { 0.05 };
         int label_font_size = 50;
         int label_fade_time = 30;
         std::string background_image;
