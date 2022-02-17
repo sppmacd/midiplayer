@@ -13,6 +13,8 @@ public:
         Frames,
     };
 
+    Time() = default;
+
     Time(double value, Unit unit)
     : m_value(value), m_unit(unit) {}
 

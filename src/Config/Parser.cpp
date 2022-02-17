@@ -87,11 +87,11 @@ ParserErrorOr<Time> Parser::parse_time()
     auto value = TRY(get_number());
     auto unit = get_next_token_of_type(Token::Type::Identifier);
     if(!unit || unit->value() == "s")
-        return Time{value, Time::Unit::Seconds};
+        return Time { value, Time::Unit::Seconds };
     if(unit->value() == "f")
-        return Time{value, Time::Unit::Frames};
+        return Time { value, Time::Unit::Frames };
     if(unit->value() == "t")
-        return Time{value, Time::Unit::Ticks};
+        return Time { value, Time::Unit::Ticks };
     return parser_error("invalid time unit: {}", unit->value());
 }
 
@@ -223,7 +223,7 @@ ParserErrorOr<std::shared_ptr<Condition>> Parser::parse_condition()
         return parser_error("expected identifier in condition");
 
     // TODO: Some kind of condition registry
-    if(identifier->value() == "startup") 
+    if(identifier->value() == "startup")
         return std::make_shared<StartupCondition>();
     if(identifier->value() == "time")
     {
@@ -232,7 +232,7 @@ ParserErrorOr<std::shared_ptr<Condition>> Parser::parse_condition()
         auto value = TRY(parse_time());
         return std::make_shared<TimeCondition>(value);
     }
-        return parser_error("identifier must be 'startup'");
+    return parser_error("invalid condition: {}", identifier->value());
 }
 
 ParserErrorOr<std::shared_ptr<Action>> Parser::parse_action()
@@ -249,8 +249,27 @@ ParserErrorOr<std::shared_ptr<SetAction>> Parser::parse_set_action()
 {
     get_next_token(); // "set"
 
-    auto bl = get_next_token_of_type(Token::Type::CurlyLeft);
-    if(!bl)
+    Time transition_time;
+
+    // transition?
+    if(get_next_token_of_type(Token::Type::BracketLeft))
+    {
+        auto identifier = get_next_token();
+        if(!identifier || identifier->type() != Token::Type::Identifier)
+            return parser_error("expected identifier in 'set' options");
+
+        if(identifier->value() != "transition")
+            return parser_error("invalid 'set' option: {}", identifier->value());
+
+        if(!get_next_token_of_type(Token::Type::EqualSign))
+            return parser_error("expected '='");
+        transition_time = TRY(parse_time());
+
+        if(!get_next_token_of_type(Token::Type::BracketRight))
+            return parser_error("expected closing ')");
+    }
+
+    if(!get_next_token_of_type(Token::Type::CurlyLeft))
         return parser_error("expected '{{' in 'set' action");
 
     std::vector<std::unique_ptr<Statement>> statements;
@@ -262,11 +281,10 @@ ParserErrorOr<std::shared_ptr<SetAction>> Parser::parse_set_action()
         statements.push_back(TRY(parse_statement()));
     }
 
-    auto br = get_next_token_of_type(Token::Type::CurlyRight);
-    if(!br)
+    if(!get_next_token_of_type(Token::Type::CurlyRight))
         return parser_error("expected closing '}}'");
 
-    return std::make_shared<SetAction>(std::move(statements));
+    return std::make_shared<SetAction>(std::move(statements), transition_time);
 }
 
 ParserErrorOr<std::unique_ptr<Statement>> Parser::parse_statement()

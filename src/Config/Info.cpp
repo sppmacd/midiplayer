@@ -47,12 +47,12 @@ void Info::display_help() const
     }
 }
 
-void Info::set_property(std::string const& name, ArgumentList const& args) const
+void Info::set_property(std::string const& name, ArgumentList const& args, double transition_factor) const
 {
     auto it = m_properties.find(name);
     if(it == m_properties.end())
         return;
-    it->second.on_set_property(args);
+    it->second.on_set_property(args, transition_factor);
 }
 
 std::span<PropertyFormalParameter const> Info::property_formal_parameters(std::string const& name) const

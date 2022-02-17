@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config/AnimatableProperty.h"
 #include "Config/Configuration.h"
 #include "Config/Property.h"
 #include "Config/Reader.h"
@@ -9,6 +10,14 @@
 #include <SFML/Graphics.hpp>
 #include <list>
 #include <memory>
+
+inline sf::Color operator*(sf::Color const& left, double right)
+{
+    return { static_cast<sf::Uint8>(left.r * right),
+        static_cast<sf::Uint8>(left.g * right),
+        static_cast<sf::Uint8>(left.b * right),
+        static_cast<sf::Uint8>(left.a * right) };
+}
 
 class MIDIPlayerConfig
 {
@@ -44,8 +53,8 @@ private:
     {
         std::string display_font;
         std::list<std::pair<Config::SelectorList, sf::Color>> channel_colors;
-        sf::Color default_color { 100, 100, 255 };
-        sf::Color background_color { 10, 10, 10 };
+        sf::Color default_color { 255, 100, 100 };
+        Config::AnimatableProperty<sf::Color> background_color { sf::Color(10, 10, 10) };
         sf::Color overlay_color { 5, 5, 5 };
         int particle_count = 2;
         float particle_radius = 0.5;

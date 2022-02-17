@@ -69,7 +69,8 @@ public:
     bool real_time() const { return m_real_time; }
     size_t current_tick() const;
     size_t current_frame() const { return m_current_frame; }
-    bool current_time_is(Config::Time);
+    bool current_time_is(Config::Time) const;
+    size_t frame_count_for_time(Config::Time time) const;
     auto start_time() const { return m_start_time; }
     auto microseconds_per_quarter_note() const { return m_microseconds_per_quarter_note; }
 

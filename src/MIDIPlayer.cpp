@@ -160,7 +160,7 @@ size_t MIDIPlayer::current_tick() const
     return m_midi_input->current_tick(*this);
 }
 
-bool MIDIPlayer::current_time_is(Config::Time time)
+bool MIDIPlayer::current_time_is(Config::Time time) const
 {
     switch(time.unit())
     {
@@ -172,6 +172,20 @@ bool MIDIPlayer::current_time_is(Config::Time time)
             return std::abs(current_frame() - time.value() * fps()) < 1.f / fps();
     }
     return false;
+}
+
+size_t MIDIPlayer::frame_count_for_time(Config::Time time) const
+{
+    switch(time.unit())
+    {
+        case Config::Time::Unit::Ticks:
+            return time.value() * fps() / (microseconds_per_quarter_note() / (double)m_midi_input->ticks_per_quarter_note()) / 1000000.0;
+        case Config::Time::Unit::Frames:
+            return time.value();
+        case Config::Time::Unit::Seconds:
+            return time.value() * fps();
+    }
+    return 0;
 }
 
 void MIDIPlayer::update()

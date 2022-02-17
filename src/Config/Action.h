@@ -18,13 +18,14 @@ public:
 class SetAction : public Action
 {
 public:
-    SetAction(std::vector<std::unique_ptr<Statement>> statements)
-    : m_statements(std::move(statements)) {}
+    SetAction(std::vector<std::unique_ptr<Statement>> statements, Time transition_time)
+    : m_statements(std::move(statements)), m_transition_time(transition_time) {}
 
     virtual void execute(Reader&) const override;
 
 private:
     std::vector<std::unique_ptr<Statement>> m_statements;
+    Time m_transition_time;
 };
 
 }
