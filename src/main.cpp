@@ -28,6 +28,7 @@ static void print_usage_and_exit(Brief brief = Brief::Yes)
         std::cerr << "    play [file]        Play pre-recorded .mid file. Supports output to MIDI device with -m option." << std::endl;
         std::cerr << "    realtime [port]    Display MIDI device input in realtime. Supports output to .mid file with -m option." << std::endl;
         std::cerr << "Options:" << std::endl;
+        std::cerr << "    -c [path]          Specify alternative config file" << std::endl;
         std::cerr << "    -m [file/port]     Specify MIDI output (file in realtime mode, port number in play mode)" << std::endl;
         std::cerr << "    -o                 Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
         std::cerr << "    --config-help      Print help for Config Files" << std::endl;
