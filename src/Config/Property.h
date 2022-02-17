@@ -2,6 +2,7 @@
 
 #include "AttributeValue.h"
 #include "Selector.h"
+#include "Time.h"
 #include <SFML/Graphics.hpp>
 #include <cassert>
 #include <optional>
@@ -21,7 +22,8 @@ enum class PropertyType
     String,
     ColorRGB,
     ColorRGBA,
-    SelectorList
+    SelectorList,
+    Time
 };
 
 class PropertyFormalParameter
@@ -45,7 +47,7 @@ private:
 };
 
 using SelectorList = std::vector<std::shared_ptr<Selector>>;
-using PropertyParameterBase = std::variant<int, float, std::string, sf::Color, SelectorList>;
+using PropertyParameterBase = std::variant<int, float, std::string, sf::Color, SelectorList, Time>;
 
 class PropertyParameter : public PropertyParameterBase
 {
@@ -78,6 +80,11 @@ public:
     {
         assert(std::holds_alternative<SelectorList>(*this));
         return std::get<SelectorList>(*this);
+    }
+    Time const& as_time() const
+    {
+        assert(std::holds_alternative<Time>(*this));
+        return std::get<Time>(*this);
     }
 };
 
