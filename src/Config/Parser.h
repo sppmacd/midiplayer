@@ -121,7 +121,7 @@ private:
     Token const* get_next_token_of_type(Token::Type type)
     {
         auto token = peek_next_token();
-        if(token->type() == type)
+        if(token && token->type() == type)
         {
             m_offset++;
             return token;
