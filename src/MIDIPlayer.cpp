@@ -13,6 +13,7 @@
 #include <climits>
 #include <cmath>
 #include <fstream>
+#include <iomanip>
 #include <random>
 #include <sstream>
 
@@ -379,7 +380,14 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     auto tick = current_tick();
     auto end_tick = m_midi_input->end_tick();
     std::ostringstream oss;
-    oss << (debug_info.full_info ? "Tick=" : "") << tick;
+    auto elapsed_seconds = (double)current_frame() / fps();
+    oss << std::setfill('0');
+    if(elapsed_seconds > 3600)
+        oss << std::setw(2) << (int)elapsed_seconds / 3600 << ":" << std::setw(2); // The last setw is for minutes
+    oss << ((int)elapsed_seconds / 60) % 60 << ":"
+        << std::setw(2) << (int)elapsed_seconds % 60;
+    if(debug_info.full_info)
+        oss << " (Tick=" << tick << " Frame=" << current_frame() << " Second=" << std::fixed << std::setprecision(2) << elapsed_seconds << ")";
     if(!m_real_time && end_tick != 0)
         oss << "/" << end_tick << " (" << 100 * tick / end_tick << "%)";
     if(debug_info.full_info)
