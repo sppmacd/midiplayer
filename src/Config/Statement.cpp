@@ -26,4 +26,10 @@ bool OnStatement::execute(Reader& reader) const
     return true;
 }
 
+bool EveryStatement::execute(Reader& reader) const
+{
+    reader.register_periodic_action(m_interval, m_action);
+    return true;
+}
+
 }

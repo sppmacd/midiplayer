@@ -21,6 +21,7 @@ public:
     void clear();
 
     void register_conditional_action(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action);
+    void register_periodic_action(Time interval, std::shared_ptr<Action> action);
 
     // FIXME: Turn this into real "execution context"?
     void push_transition(Transition transition) { m_transition_stack.push(transition); }
@@ -42,9 +43,17 @@ private:
         size_t add_frame;
     };
 
+    struct PeriodicAction
+    {
+        Time interval;
+        std::shared_ptr<Action> action;
+        size_t add_frame;
+    };
+
     Info& m_info;
     MIDIPlayer& m_player;
     std::vector<ConditionalAction> m_conditional_actions;
+    std::vector<PeriodicAction> m_periodic_actions;
     std::stack<Transition> m_transition_stack;
     size_t m_time_offset = 0;
 

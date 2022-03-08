@@ -179,6 +179,21 @@ bool MIDIPlayer::current_time_is(Config::Time time, size_t offset_in_frames) con
     return false;
 }
 
+bool MIDIPlayer::is_in_interval_frame(Config::Time interval, size_t offset_in_frames) const
+{
+    switch(interval.unit())
+    {
+        case Config::Time::Unit::Ticks:
+            // FIXME: Implement this
+            return false;
+        case Config::Time::Unit::Frames:
+            return (current_frame() - offset_in_frames) % (size_t)interval.value() == 0;
+        case Config::Time::Unit::Seconds:
+            return (current_frame() - offset_in_frames) % (size_t)(interval.value() * fps()) == 0;
+    }
+    return false;
+}
+
 size_t MIDIPlayer::frame_count_for_time(Config::Time time) const
 {
     switch(time.unit())

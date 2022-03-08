@@ -338,6 +338,8 @@ ParserErrorOr<std::unique_ptr<Statement>> Parser::parse_statement()
         return parser_error("expected statement");
     if(identifier->value() == "on")
         return parse_on_statement();
+    if(identifier->value() == "every")
+        return parse_every_statement();
     return parse_property_statement();
 }
 
@@ -358,6 +360,24 @@ ParserErrorOr<std::unique_ptr<OnStatement>> Parser::parse_on_statement()
 
     auto action = TRY(parse_action());
     return std::make_unique<OnStatement>(condition, action);
+}
+
+ParserErrorOr<std::unique_ptr<EveryStatement>> Parser::parse_every_statement()
+{
+    get_next_token(); // "every"
+
+    auto bl = get_next_token_of_type(Token::Type::BracketLeft);
+    if(!bl)
+        return parser_error("expected '(' in 'on' statement");
+
+    auto interval = TRY(parse_time());
+
+    auto br = get_next_token_of_type(Token::Type::BracketRight);
+    if(!br)
+        return parser_error("expected closing ')'");
+
+    auto action = TRY(parse_action());
+    return std::make_unique<EveryStatement>(interval, action);
 }
 
 ParserErrorOr<std::unique_ptr<PropertyStatement>> Parser::parse_property_statement()

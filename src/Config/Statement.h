@@ -45,4 +45,17 @@ private:
     std::shared_ptr<Action> m_action;
 };
 
+class EveryStatement : public Statement
+{
+public:
+    EveryStatement(Time interval, std::shared_ptr<Action> action)
+    : m_interval(std::move(interval)), m_action(std::move(action)) {}
+
+    virtual bool execute(Reader& reader) const override;
+
+private:
+    Time m_interval;
+    std::shared_ptr<Action> m_action;
+};
+
 }

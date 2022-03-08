@@ -36,6 +36,11 @@ void Reader::register_conditional_action(std::shared_ptr<Condition> condition, s
     m_conditional_actions.push_back({ condition, action, m_player.current_frame() });
 }
 
+void Reader::register_periodic_action(Time interval, std::shared_ptr<Action> action)
+{
+    m_periodic_actions.push_back({ interval, action, m_player.current_frame() });
+}
+
 void Reader::update()
 {
     auto player_frame = m_player.current_frame();
@@ -49,6 +54,13 @@ void Reader::update()
         if(action.condition->is_met(*this))
             actions_to_run.push_back(action.action.get());
     }
+
+    for(auto const& action : m_periodic_actions)
+    {
+        if(m_player.is_in_interval_frame(action.interval, action.add_frame))
+            actions_to_run.push_back(action.action.get());
+    }
+
     for(auto action : actions_to_run)
         action->execute(*this);
 
