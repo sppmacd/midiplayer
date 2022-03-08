@@ -12,6 +12,7 @@ namespace Config
 void Reader::clear()
 {
     m_conditional_actions.clear();
+    m_periodic_actions.clear();
 }
 
 static double apply_timing_function(double x, Transition::Function function)
