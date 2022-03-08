@@ -438,6 +438,28 @@ void MIDIPlayer::render_background(sf::RenderTarget& target) const
     target.draw(m_render_resources->background_sprite);
 }
 
+void MIDIPlayer::spawn_random_particles(sf::RenderTarget& target, MIDIKey key, sf::Color color, int velocity)
+{
+    auto size = target.getView().getSize();
+    static std::default_random_engine engine;
+    for(int i = 0; i < particle_count(); i++)
+    {
+        float velocity_factor = (velocity - 64) / 800.f + 0.03f;
+        float rand_x_speed = (std::binomial_distribution<int>(100, 0.5)(engine) - 50) / 250.0;
+        float rand_y_speed = -std::binomial_distribution<int>(100, 0.1)(engine) / 500.0 - velocity_factor;
+        float offset = std::uniform_real_distribution<float>(-0.2, 0.2)(engine);
+        int lifetime = std::gamma_distribution<double>(120, 0.9)(engine);
+        spawn_particle(Particle {
+            { key.to_piano_position() * size.x / MIDIPlayer::view_size_x + (key.is_black() ? 0.25f : 0.5f) + offset, 0 },
+            { rand_x_speed, rand_y_speed },
+            sf::Color(
+                std::min(255, color.r + 50),
+                std::min(255, color.g + 50),
+                std::min(255, color.b + 50)),
+            lifetime, lifetime });
+    }
+};
+
 void MIDIPlayer::display_label(LabelType label, std::string text, int duration)
 {
     m_labels.push_back({ label, std::move(text), duration, duration });

@@ -76,6 +76,7 @@ public:
     auto microseconds_per_quarter_note() const { return m_microseconds_per_quarter_note; }
 
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
+    void spawn_random_particles(sf::RenderTarget& target, MIDIKey key, sf::Color color, int velocity);
 
     enum class LabelType
     {
