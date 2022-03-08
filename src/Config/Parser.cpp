@@ -270,7 +270,7 @@ ParserErrorOr<std::shared_ptr<Action>> Parser::parse_action()
 {
     auto identifier = peek_next_token();
     if(!identifier || identifier->type() != Token::Type::Identifier)
-        return parser_error("expected identifier in action");
+        return parser_error("expected action type (valid are 'set')");
     if(identifier->value() == "set")
         return parse_set_action();
     return parser_error("unknown action");
