@@ -20,16 +20,15 @@ public:
 
     void clear();
 
-    void register_conditional_actions(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action)
-    {
-        m_conditional_actions.push_back({ condition, action });
-    }
+    void register_conditional_action(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action);
 
     // FIXME: Turn this into real "execution context"?
     void push_transition(Transition transition) { m_transition_stack.push(transition); }
     void pop_transition() { m_transition_stack.pop(); }
     Transition current_transition() { return m_transition_stack.top(); }
     bool has_transition() const { return !m_transition_stack.empty(); }
+
+    size_t time_offset() { return m_time_offset; }
 
     void add_transition(Transition transition, std::function<void(double)> handler);
 
@@ -40,12 +39,14 @@ private:
     {
         std::shared_ptr<Condition> condition;
         std::shared_ptr<Action> action;
+        size_t add_frame;
     };
 
     Info& m_info;
     MIDIPlayer& m_player;
     std::vector<ConditionalAction> m_conditional_actions;
     std::stack<Transition> m_transition_stack;
+    size_t m_time_offset = 0;
 
     struct OngoingTransition
     {

@@ -13,7 +13,7 @@ bool StartupCondition::is_met(Reader& reader) const
 
 bool TimeCondition::is_met(Reader& reader) const
 {
-    return reader.player().current_time_is(m_time);
+    return reader.player().current_time_is(m_time, reader.time_offset());
 }
 
 }

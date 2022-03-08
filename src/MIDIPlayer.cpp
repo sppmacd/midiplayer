@@ -161,16 +161,20 @@ size_t MIDIPlayer::current_tick() const
     return m_midi_input->current_tick(*this);
 }
 
-bool MIDIPlayer::current_time_is(Config::Time time) const
+bool MIDIPlayer::current_time_is(Config::Time time, size_t offset_in_frames) const
 {
     switch(time.unit())
     {
         case Config::Time::Unit::Ticks:
-            return current_tick() == time.value();
+        {
+            // FIXME: This should have its converter function
+            auto offset_in_ticks = offset_in_frames * fps() / (microseconds_per_quarter_note() / (double)m_midi_input->ticks_per_quarter_note()) / 1000000.0;
+            return current_tick() == time.value() + offset_in_ticks;
+        }
         case Config::Time::Unit::Frames:
-            return current_frame() == time.value();
+            return current_frame() == time.value() + offset_in_frames;
         case Config::Time::Unit::Seconds:
-            return std::abs(current_frame() - time.value() * fps()) < 1.f / fps();
+            return std::abs(current_frame() - (time.value() * fps() + offset_in_frames)) < 1.f / fps();
     }
     return false;
 }
@@ -180,6 +184,7 @@ size_t MIDIPlayer::frame_count_for_time(Config::Time time) const
     switch(time.unit())
     {
         case Config::Time::Unit::Ticks:
+            // FIXME: This should have its converter function
             return time.value() * fps() / (microseconds_per_quarter_note() / (double)m_midi_input->ticks_per_quarter_note()) / 1000000.0;
         case Config::Time::Unit::Frames:
             return time.value();

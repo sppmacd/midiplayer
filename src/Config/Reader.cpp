@@ -31,14 +31,27 @@ static double apply_timing_function(double x, Transition::Function function)
     }
 }
 
+void Reader::register_conditional_action(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action)
+{
+    m_conditional_actions.push_back({ condition, action, m_player.current_frame() });
+}
+
 void Reader::update()
 {
+    auto player_frame = m_player.current_frame();
+
+    // NOTE: We need to actually execute in separate pass because it may
+    //       modify the array!
+    std::list<Action*> actions_to_run;
     for(auto const& action : m_conditional_actions)
     {
+        m_time_offset = action.add_frame;
         if(action.condition->is_met(*this))
-            action.action->execute(*this);
+            actions_to_run.push_back(action.action.get());
     }
-    auto player_frame = m_player.current_frame();
+    for(auto action : actions_to_run)
+        action->execute(*this);
+
     for(auto const& transition : m_ongoing_transitions)
     {
         auto raw_factor = (double)(player_frame - transition.start_frame) / transition.length;

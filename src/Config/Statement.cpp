@@ -22,7 +22,7 @@ bool PropertyStatement::execute(Reader& reader) const
 
 bool OnStatement::execute(Reader& reader) const
 {
-    reader.register_conditional_actions(m_condition, m_action);
+    reader.register_conditional_action(m_condition, m_action);
     return true;
 }
 
