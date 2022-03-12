@@ -1,10 +1,20 @@
 #include "Event.h"
+#include "Config/Property.h"
+#include "Logger.h"
 #include "MIDIPlayer.h"
 #include "RoundedEdgeRectangleShape.hpp"
+
 #include <cstddef>
 #include <optional>
 #include <random>
 #include <type_traits>
+
+std::unique_ptr<Event> Event::create_event_from_name(std::string_view name)
+{
+    if(name == "Text")
+        return std::make_unique<TextEvent>();
+    return nullptr;
+}
 
 void EndOfTrackEvent::execute(MIDIPlayer& player)
 {
@@ -35,6 +45,36 @@ void TextEvent::execute(MIDIPlayer& player)
             // TODO
             break;
     }
+}
+
+Config::NamedFormalParameters TextEvent::formal_parameters() const
+{
+    return {
+        {"type", Config::PropertyFormalParameter(Config::PropertyType::String, "type")},
+        {"text", Config::PropertyFormalParameter(Config::PropertyType::String, "text")},
+    };
+}
+
+bool TextEvent::read_from_parameters(Config::NamedParameters const& params)
+{
+    auto type = params.find("type");
+    if(type != params.end())
+    {
+        if(type->first != "track_name")
+        {
+            logger::error("The only supported TextEvent type is 'track_name'");
+            return false;
+        }
+    }
+    auto text = params.find("text");
+    if(text == params.end())
+    {
+        logger::error("required argument: 'text'");
+        return false;
+    }
+    m_text = text->second.as_string();
+    m_type = Type::TrackName;
+    return true;
 }
 
 void SetTempoEvent::execute(MIDIPlayer& player)

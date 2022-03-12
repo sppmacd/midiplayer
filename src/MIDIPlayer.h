@@ -105,6 +105,9 @@ public:
     void print_config_help() const;
     MIDIPlayerConfig const& config() const { return m_config; }
 
+    MIDIInput* midi_input() { return m_midi_input.get(); }
+    MIDIOutput* midi_output() { return m_midi_output.get(); }
+
 private:
     void generate_particle_texture();
 

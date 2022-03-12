@@ -1,5 +1,6 @@
 #include "Parser.h"
 
+#include "../Event.h"
 #include "../Logger.h"
 #include "../Try.h"
 #include "Condition.h"
@@ -97,12 +98,12 @@ ParserErrorOr<Time> Parser::parse_time()
     return parser_error("invalid time unit: {}", unit->value());
 }
 
-ParserErrorOr<std::map<std::string, PropertyParameter>> Parser::parse_named_parameters(std::map<std::string, PropertyFormalParameter> const& formal_params)
+ParserErrorOr<NamedParameters> Parser::parse_named_parameters(NamedFormalParameters const& formal_params)
 {
     if(!get_next_token_of_type(Token::Type::BracketLeft))
         return parser_error("expected '('");
 
-    std::map<std::string, PropertyParameter> parameters;
+    NamedParameters parameters;
 
     while(true)
     {
@@ -270,9 +271,11 @@ ParserErrorOr<std::shared_ptr<Action>> Parser::parse_action()
 {
     auto identifier = peek_next_token();
     if(!identifier || identifier->type() != Token::Type::Identifier)
-        return parser_error("expected action type (valid are 'set')");
+        return parser_error("expected action type (valid are 'set', 'add_event')");
     if(identifier->value() == "set")
         return parse_set_action();
+    if(identifier->value() == "add_event")
+        return parse_add_event_action();
     return parser_error("unknown action");
 }
 
@@ -329,6 +332,26 @@ ParserErrorOr<std::shared_ptr<SetAction>> Parser::parse_set_action()
     };
 
     return std::make_shared<SetAction>(std::move(statements), Transition(transition_time, TRY(transition_function_from_string(transition_function))));
+}
+
+ParserErrorOr<std::shared_ptr<AddEventAction>> Parser::parse_add_event_action()
+{
+    get_next_token(); // "add_event"
+
+    auto name = get_next_token_of_type(Token::Type::Identifier);
+    if(!name)
+        return parser_error("expected event type name");
+    auto event = Event::create_event_from_name(name->value());
+    if(!event)
+        return parser_error("invalid event name");
+    auto formal_parameters = event->formal_parameters();
+    auto parameters = TRY(parse_named_parameters(formal_parameters));
+    if(!event->read_from_parameters(parameters))
+    {
+        // FIXME: More detailed error info
+        return parser_error("failed to read parameters");
+    }
+    return std::make_shared<AddEventAction>(std::move(event));
 }
 
 ParserErrorOr<std::unique_ptr<Statement>> Parser::parse_statement()

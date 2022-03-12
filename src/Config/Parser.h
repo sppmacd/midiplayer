@@ -87,8 +87,7 @@ private:
     ParserErrorOr<sf::Color> parse_color(ColorAlphaMode);
     ParserErrorOr<Time> parse_time();
 
-    // [name=value]...
-    ParserErrorOr<std::map<std::string, PropertyParameter>> parse_named_parameters(std::map<std::string, PropertyFormalParameter> const&);
+    ParserErrorOr<NamedParameters> parse_named_parameters(NamedFormalParameters const&);
     ParserErrorOr<PropertyParameter> parse_property_parameter(PropertyFormalParameter const&);
     ParserErrorOr<SelectorList> parse_selector_list();
     ParserErrorOr<AttributeValue> parse_selector_attribute_value();
@@ -97,6 +96,7 @@ private:
     ParserErrorOr<std::shared_ptr<Condition>> parse_condition();
     ParserErrorOr<std::shared_ptr<Action>> parse_action();
     ParserErrorOr<std::shared_ptr<SetAction>> parse_set_action();
+    ParserErrorOr<std::shared_ptr<AddEventAction>> parse_add_event_action();
     ParserErrorOr<std::unique_ptr<Statement>> parse_statement();
     ParserErrorOr<std::unique_ptr<OnStatement>> parse_on_statement();
     ParserErrorOr<std::unique_ptr<EveryStatement>> parse_every_statement();

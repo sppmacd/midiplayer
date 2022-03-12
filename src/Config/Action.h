@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Event.h"
 #include "Property.h"
 #include "Statement.h"
 #include "Transition.h"
@@ -27,6 +28,18 @@ public:
 private:
     std::vector<std::unique_ptr<Statement>> m_statements;
     Transition m_transition;
+};
+
+class AddEventAction : public Action
+{
+public:
+    explicit AddEventAction(std::unique_ptr<Event> event)
+    : m_event(std::move(event)) {}
+
+    virtual void execute(Reader&) const override;
+
+private:
+    std::unique_ptr<Event> m_event;
 };
 
 }

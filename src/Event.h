@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Config/Property.h"
 #include "MIDIKey.h"
 
 #include <SFML/Graphics.hpp>
 #include <bit>
 #include <iostream>
+#include <memory>
 #include <optional>
 
 class MIDIPlayer;
@@ -12,6 +14,8 @@ class MIDIPlayer;
 class Event
 {
 public:
+    virtual ~Event() = default;
+
     void set_tick(size_t tick) { m_tick = tick; }
     size_t tick() const { return m_tick; }
 
@@ -21,6 +25,12 @@ public:
 
     virtual bool is_serializable() const { return false; }
     virtual void serialize(std::ostream&) const {}
+
+    virtual std::unique_ptr<Event> clone() const = 0;
+    virtual Config::NamedFormalParameters formal_parameters() const { return {}; }
+    virtual bool read_from_parameters(Config::NamedParameters const&) { return false; }
+
+    static std::unique_ptr<Event> create_event_from_name(std::string_view);
 
 private:
     size_t m_tick { 0 };
@@ -41,6 +51,8 @@ public:
         stream.put(0x2f); // End Of Track
         stream.put(0); // size: vlq 1
     }
+
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<EndOfTrackEvent>(*this); }
 };
 
 class InvalidEvent : public Event
@@ -51,6 +63,8 @@ public:
 
     virtual void dump() const override { std::cerr << "Invalid Event " << std::hex << (int)m_type << std::dec << std::endl; }
     virtual void execute(MIDIPlayer&) override {}
+
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<InvalidEvent>(*this); }
 
 private:
     uint8_t m_type;
@@ -70,11 +84,15 @@ public:
         CuePoint
     };
 
-    TextEvent(Type type, std::string const& text)
+    TextEvent(Type type = {}, std::string const& text = {})
     : m_type(type), m_text(text) {}
 
     virtual void dump() const override { std::cerr << "Text Event " << static_cast<int>(m_type) << ": " << m_text << std::endl; }
     virtual void execute(MIDIPlayer&) override;
+
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<TextEvent>(*this); }
+    virtual Config::NamedFormalParameters formal_parameters() const override;
+    virtual bool read_from_parameters(Config::NamedParameters const&) override;
 
 private:
     Type m_type;
@@ -101,6 +119,8 @@ public:
         stream.put((m_microseconds_per_quarter_note >> 8) & 0xff);
         stream.put(m_microseconds_per_quarter_note & 0xff);
     }
+
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<SetTempoEvent>(*this); }
 
 private:
     uint32_t m_microseconds_per_quarter_note;
@@ -130,6 +150,8 @@ public:
         stream.put(m_clocks_per_metronome_click);
         stream.put(m_32s_in_quarter_note);
     }
+
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<TimeSignatureEvent>(*this); }
 
 private:
     unsigned m_numerator;
@@ -171,6 +193,8 @@ public:
 
         stream << m_key << m_velocity;
     }
+
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<NoteEvent>(*this); }
 
 private:
     mutable std::optional<sf::Color> m_cached_color;
@@ -248,6 +272,8 @@ public:
         stream.put(m_value);
     }
 
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<ControlChangeEvent>(*this); }
+
 private:
     MIDIChannel m_channel;
     Number m_number;
@@ -273,6 +299,8 @@ public:
         stream.put((uint8_t)(0xc0 + m_channel)); // Program Change
         stream.put(m_value);
     }
+
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<ProgramChangeEvent>(*this); }
 
 private:
     MIDIChannel m_channel;
@@ -326,6 +354,8 @@ public:
         stream.put((uint8_t)m_number | (m_byte_index == ByteIndex::MSB ? 0x20 : 0x0));
         stream.put(m_value);
     }
+
+    virtual std::unique_ptr<Event> clone() const override { return std::make_unique<LMControlChangeEvent>(*this); }
 
 private:
     MIDIChannel m_channel;

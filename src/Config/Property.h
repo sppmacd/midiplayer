@@ -104,4 +104,8 @@ private:
     std::vector<PropertyParameter> m_args;
 };
 
+// FIXME: These should use dedicated objects like ArgumentList
+using NamedFormalParameters = std::map<std::string, PropertyFormalParameter>;
+using NamedParameters = std::map<std::string, PropertyParameter>;
+
 }

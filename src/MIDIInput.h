@@ -51,6 +51,9 @@ public:
 
     std::vector<Event*> find_events_in_range(size_t start_tick, size_t end_tick) const;
 
+    Track& track(size_t index) { return m_tracks[index]; }
+    size_t track_count() const { return m_tracks.size(); }
+
 protected:
     std::vector<Track> m_tracks;
 
