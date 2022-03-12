@@ -117,10 +117,10 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
             if(end_note != player.ended_notes().end() && end_note->second.has_value())
                 note_size_y = std::min(static_cast<float>(end_note->second.value().tick() - tick()), note_size_y);
             render_note(tick(), note_size_y * scale, color);
-            if(end_note != player.ended_notes().end())
-                player.ended_notes().erase(end_note);
             if(end_note == player.ended_notes().end() || !end_note->second.has_value())
                 spawn_particles(velocity());
+            if(end_note != player.ended_notes().end())
+                player.ended_notes().erase(end_note);
         }
         else if(end_note == player.ended_notes().end())
             player.ended_notes().insert({ m_key, *this });
