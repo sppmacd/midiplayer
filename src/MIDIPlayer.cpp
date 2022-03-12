@@ -105,9 +105,10 @@ bool MIDIPlayer::reload_config_file()
     if(!m_config.background_image().empty() && !m_render_resources->background_texture.loadFromFile(m_config.background_image()))
     {
         logger::error("Failed to load background image from {}.", m_config.background_image());
-        return false;
+        success = false;
     }
     m_render_resources->background_sprite.setTexture(m_render_resources->background_texture);
+    logger::info("Loading display font: {}", m_config.display_font());
     if(m_config.display_font().empty())
     {
         logger::warning("No display font is specified. Using debug font.");
@@ -116,7 +117,7 @@ bool MIDIPlayer::reload_config_file()
     else if(!m_render_resources->display_font.loadFromFile(m_config.display_font()))
     {
         logger::error("Failed to load display font from {}.", m_config.display_font());
-        return false;
+        success = false;
     }
 
     if(m_real_time)
