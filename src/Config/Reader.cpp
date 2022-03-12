@@ -35,6 +35,12 @@ static double apply_timing_function(double x, Transition::Function function)
 void Reader::register_conditional_action(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action)
 {
     m_conditional_actions.push_back({ condition, action, m_player.current_frame() });
+    
+    // Also try to execute because some actions have its condition met
+    // in the tick they were added (e.g on[time=0s])
+    m_time_offset = m_player.current_frame();
+    if(condition->is_met(*this))
+        action->execute(*this);
 }
 
 void Reader::register_periodic_action(Time interval, std::shared_ptr<Action> action)
