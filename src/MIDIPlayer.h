@@ -100,7 +100,7 @@ public:
     std::map<MIDIKey, std::optional<NoteEvent>>& ended_notes() { return m_ended_notes; }
 
     int particle_count() const { return m_config.particle_count(); }
-    double scale() const { return real_time() ? m_config.real_time_scale() : m_config.play_scale(); }
+    double scale() const { return m_config.scale(); }
     sf::Color resolve_color(NoteEvent& event) const { return m_config.resolve_color(*this, event); }
 
     bool load_config_file(std::string const& path);

@@ -75,11 +75,8 @@ Particle glow size (in keys).
 ### `particle_radius <radius: float>`
 Particle radius (in keys).
 
-### `play_scale <value: float>`
-Y scale (tile falling speed) for play mode.
-
-### `real_time_scale <value: float>`
-Y scale (tile falling speed) for realtime mode.
+### `scale <value: float>`
+Y scale (tile falling speed).
 
 ## Argument Types
 
@@ -113,6 +110,17 @@ Examples: `0 0 0 128` (half-transparent black), `255 0 0` (opaque red)
 ### `Selector...`
 A list of selectors. They are described in detail below.
 
+### `time`
+A time value with unit. Unit can be `s` (seconds), `t` (MIDI ticks) or `f` (render frames).
+
+Some examples:
+```ini
+1s      # 1 second
+1t      # 1 MIDI tick
+1.5s    # 1.5 second
+2f      # 2 frames
+```
+
 Examples: `[channel=0][black=2n+1]`
 
 ## Selectors
@@ -143,17 +151,9 @@ You can execute an action only when a condition is met, e.g. with some delay. Th
 on(condition=value) action
 ```
 
-Actions are described in detail in [separate section](#actions).
+The `on` statement is checked on every tick.
 
-### Conditions
-For now, there is only one condition available: `time`. It takes time as argument. Below there are some examples:
-
-```ini
-1s      # 1 second
-1t      # 1 MIDI tick
-1.5s    # 1.5 second
-2f      # 2 frames
-```
+See detailed description of [Actions](#actions) and [conditions](#conditions).
 
 ### Examples
 
@@ -163,6 +163,30 @@ on(time=1s) set {
     background_color 255 255 255
 }
 ```
+
+## Conditions
+
+### `time`=time
+
+True if the current time is equal to `time`. More specifically, the current tick must contain time point specified by `time`.
+
+### `startup`
+True only at the first tick (run only once at startup).
+
+Example:
+```ini
+on(startup) set {
+    statements...
+}
+```
+
+is functionally equivalent to just
+```ini
+statements...
+```
+
+### `mode`=mode
+True if `mode` is equal to mode specified in command line and only at the first tick. Valid values are `realtime` or `play`.
 
 ## Actions
 Many statements takes actions as arguments, for example, the `on` statement.

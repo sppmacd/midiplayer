@@ -37,8 +37,7 @@ public:
     float particle_radius() const { return m_properties.particle_radius; }
     float particle_glow_size() const { return m_properties.particle_glow_size; }
     size_t max_events_per_track() const { return m_properties.max_events_per_track; }
-    double real_time_scale() const { return m_properties.real_time_scale; }
-    double play_scale() const { return m_properties.play_scale; }
+    double scale() const { return m_properties.scale; }
     int label_font_size() const { return m_properties.label_font_size; }
     int label_fade_time() const { return m_properties.label_fade_time; }
     BlendedBackground background_image() const { return m_properties.background_image; }
@@ -63,8 +62,7 @@ private:
         float particle_radius = 0.5;
         float particle_glow_size = 0.1;
         size_t max_events_per_track = 4096;
-        Config::AnimatableProperty<double> real_time_scale { 0.05 };
-        Config::AnimatableProperty<double> play_scale { 0.05 };
+        Config::AnimatableProperty<double> scale { 0.05 };
         int label_font_size = 50;
         int label_fade_time = 30;
         Config::AnimatableProperty<AnimatableBackground> background_image;
