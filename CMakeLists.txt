@@ -37,6 +37,7 @@ add_executable(midiplayer
     src/Track.cpp
     src/main.cpp
 )
+target_compile_options(midiplayer PUBLIC -Werror -Wnon-virtual-dtor)
 target_link_libraries(midiplayer pthread sfml-graphics sfml-audio fmt rtmidi)
 target_include_directories(midiplayer PUBLIC ${CMAKE_BINARY_DIR}/src)
 install(TARGETS midiplayer DESTINATION bin)
