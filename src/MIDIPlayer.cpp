@@ -87,6 +87,7 @@ void MIDIPlayer::setup()
 void MIDIPlayer::start_timer()
 {
     m_start_time = std::chrono::system_clock::now();
+    m_in_loop = true;
 }
 
 bool MIDIPlayer::load_config_file(std::string const& path)

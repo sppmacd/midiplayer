@@ -74,6 +74,7 @@ public:
     size_t frame_count_for_time(Config::Time time) const;
     auto start_time() const { return m_start_time; }
     auto microseconds_per_quarter_note() const { return m_microseconds_per_quarter_note; }
+    bool is_in_loop() const { return m_in_loop; }
 
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
     void spawn_random_particles(sf::RenderTarget& target, MIDIKey key, sf::Color color, int velocity);
@@ -127,6 +128,7 @@ private:
     size_t m_current_frame { 0 };
     bool m_playing { true };
     bool m_initialized { false };
+    bool m_in_loop { false };
 
     struct Wind
     {

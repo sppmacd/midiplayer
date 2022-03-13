@@ -38,6 +38,9 @@ void Reader::register_conditional_action(std::shared_ptr<Condition> condition, s
     
     // Also try to execute because some actions have its condition met
     // in the tick they were added (e.g on[time=0s])
+    if(!m_player.is_in_loop())
+        return;
+
     m_time_offset = m_player.current_frame();
     if(condition->is_met(*this))
         action->execute(*this);
