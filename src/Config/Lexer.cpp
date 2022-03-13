@@ -120,11 +120,9 @@ std::vector<Token> Lexer::lex()
         }
     }
 
-    
     for(auto const& token: tokens)
-        std::cout << (int)token.type() << " = " << token.value() << std::endl;
+        std::cout << (int)token.type() << " = " << token.value() << " at " << token.location().line << ":" << token.location().column << std::endl;
     
-
     return tokens;
 }
 
