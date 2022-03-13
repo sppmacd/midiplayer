@@ -40,46 +40,46 @@ every(5s) add_event Text(text="foo")
 This list may not be up to date. The up-to-date list can be found by running `midi --config-help`.
 
 ### `background_color <color: Color<RGB>>`
-Background color
+Background color. The plain-color background is always covered by background image if it is specified.
 
 ### `background_image <path: string>`
-Path to background image
+Path to background image.
 
 ### `color <selectors: SelectorList> <color: Color<RGBA>>`
-Key tile color, applied only to tiles matching `selector`
+Key tile color, applied only to tiles matching all of `selectors`.
 
 ### `default_color <color: Color<RGBA>>`
-Default key tile color. Used when no selector matches a tile.
+Default key tile color. Used when no selector specified in `color` matches a tile.
 
 ### `display_font <path: string>`
-Font used for displaying e.g. labels
+Font used for displaying e.g. labels.
 
 ### `label_fade_time <time: int(range 1-1000)>`
-Label fade time (in frames)
+Label fade time (in frames).
 
 ### `label_font_size <time: int(range 1-1000)>`
-Font size for labels (in pt)
+Font size for labels (in pt).
 
 ### `max_events_per_track <count: int>`
 Maximum event count that are stored in track. Applicable only for realtime mode. Doesn't affect events that are saved to MIDI file; is used just for performance. Too small number may break display when there is a long key press along with many short key presses. It's recommended not to touch this value unless you know what you are doing.
 
 ### `overlay_color <color: Color<RGBA>>`
-Overlay (fade out) color
+Overlay (fade out) color.
 
 ### `particle_count <count: int>`
-Particle count (per tick)
+Count of particles that are spawned every tick.
 
 ### `particle_glow_size <radius: float>`
-Particle glow size (in keys)
+Particle glow size (in keys).
 
 ### `particle_radius <radius: float>`
-Particle radius (in keys)
+Particle radius (in keys).
 
 ### `play_scale <value: float>`
-Y scale (tile falling speed) for play mode
+Y scale (tile falling speed) for play mode.
 
 ### `real_time_scale <value: float>`
-Y scale (tile falling speed) for realtime mode
+Y scale (tile falling speed) for realtime mode.
 
 ## Argument Types
 
