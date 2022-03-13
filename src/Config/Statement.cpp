@@ -14,8 +14,8 @@ bool PropertyStatement::execute(Reader& reader) const
     if(transition.time().value() == 0)
         reader.info().set_property(m_name, m_args, 1);
     else
-        reader.add_transition(transition, [&reader, this](double factor) {
-            reader.info().set_property(m_name, m_args, factor);
+        reader.add_transition(transition, [&reader, name=m_name, args=m_args](double factor) {
+            reader.info().set_property(name, args, factor);
         });
     return true;
 }
