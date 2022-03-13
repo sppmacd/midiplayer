@@ -137,6 +137,32 @@ void MIDIPlayerConfig::update()
     m_reader.update();
 }
 
+static void display_source_range(std::ostream& output, std::istream& input, Config::SourceRange const& span)
+{
+    // TODO: Handle EOF errors
+    size_t start = span.location.index - span.location.column + 1;
+    input.clear();
+    input.seekg(start);
+
+    std::string code;
+    if(!std::getline(input, code))
+    {
+        output << "(failed to read code)" << std::endl;
+        return;
+    }
+
+    // TODO: Handle multiline
+    output << " | " << code << std::endl
+           << " | ";
+    for(size_t s = 0; s < span.location.column - 1; s++)
+        output << " ";
+
+    for(size_t s = 0; s < span.size; s++)
+        output << "^";
+
+    output << std::endl;
+}
+
 bool MIDIPlayerConfig::reload(std::string const& path)
 {
     m_properties = {};
@@ -152,6 +178,7 @@ bool MIDIPlayerConfig::reload(std::string const& path)
     {
         logger::error("Failed to parse config file: {}", config.error().message);
         logger::error_note("at {}:{}", config.error().range.location.line, config.error().range.location.column);
+        display_source_range(std::cerr, file, config.error().range);
         return false;
     }
 
