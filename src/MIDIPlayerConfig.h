@@ -57,7 +57,7 @@ private:
         sf::Color default_color { 255, 100, 100 };
         Config::AnimatableProperty<sf::Color> background_color { sf::Color(10, 10, 10) };
         sf::Color overlay_color { 5, 5, 5 };
-        int particle_count = 2;
+        int particle_count = 5;
         float particle_radius = 0.5;
         float particle_glow_size = 0.1;
         size_t max_events_per_track = 4096;
