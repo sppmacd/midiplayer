@@ -14,7 +14,7 @@ char Lexer::consume_one()
     if(next == '\n')
     {
         m_location.line++;
-        m_location.column = 0;
+        m_location.column = 1;
     }
     else
         m_location.column++;
