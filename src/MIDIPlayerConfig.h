@@ -46,6 +46,8 @@ public:
     sf::Color resolve_color(MIDIPlayer const& player, NoteEvent& event) const;
     void set_property(std::string const& name, std::vector<Config::PropertyParameter> const& params);
 
+    void dump_stats(std::ostream&) const;
+
 private:
     Config::Info m_info;
     Config::Reader m_reader;

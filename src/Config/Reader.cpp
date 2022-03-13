@@ -95,4 +95,11 @@ void Reader::add_transition(Transition transition, std::function<void(double)> h
     m_ongoing_transitions.push_back(ongoing_transition);
 }
 
+void Reader::dump_stats(std::ostream& out) const
+{
+    out << "ConditionalActions: " << m_conditional_actions.size() << std::endl;
+    out << "PeriodicActions: " << m_periodic_actions.size() << std::endl;
+    out << "OngoingTransitions: " << m_ongoing_transitions.size() << std::endl;
+}
+
 }

@@ -410,13 +410,15 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     {
         oss << "\n\n";
         oss << std::to_string(1.f / debug_info.last_fps_time.asSeconds()) + " fps\n";
+        oss << m_particles.size() << " particles" << std::endl;
+        m_config.dump_stats(oss);
+
         if(!m_winds.empty())
         {
             oss << "WIND:\n";
             for(auto const& wind : m_winds)
                 oss << "    [" << wind.pos.x << "," << wind.pos.y << "] " << wind.speed << " " << wind.time << "\n";
         }
-        oss << m_particles.size() << " particles" << std::endl;
     }
 
     sf::Text text { oss.str(), m_render_resources->debug_font, 10 };

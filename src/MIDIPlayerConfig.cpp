@@ -213,3 +213,9 @@ void MIDIPlayerConfig::set_property(std::string const& name, std::vector<Config:
 {
     m_info.set_property(std::move(name), params, 1);
 }
+
+void MIDIPlayerConfig::dump_stats(std::ostream& out) const
+{
+    out << "-- Config Reader" << std::endl;
+    m_reader.dump_stats(out);
+}

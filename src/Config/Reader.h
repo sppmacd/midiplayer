@@ -35,6 +35,8 @@ public:
 
     void update();
 
+    void dump_stats(std::ostream& out) const;
+
 private:
     struct ConditionalAction
     {
