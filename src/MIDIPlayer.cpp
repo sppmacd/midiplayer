@@ -102,12 +102,8 @@ bool MIDIPlayer::reload_config_file()
     bool success = m_config.reload(m_config_file_path);
 
     generate_particle_texture();
-    if(!m_config.background_image().empty() && !m_render_resources->background_texture.loadFromFile(m_config.background_image()))
-    {
-        logger::error("Failed to load background image from {}.", m_config.background_image());
-        success = false;
-    }
-    m_render_resources->background_sprite.setTexture(m_render_resources->background_texture);
+    success &= reload_background_image();
+
     logger::info("Loading display font: {}", m_config.display_font());
     if(m_config.display_font().empty())
     {
@@ -494,4 +490,15 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
 void MIDIPlayer::print_config_help() const
 {
     config().display_help();
+}
+
+bool MIDIPlayer::reload_background_image()
+{
+    if(!m_config.background_image().empty() && !m_render_resources->background_texture.loadFromFile(m_config.background_image()))
+    {
+        logger::error("Failed to load background image from {}.", m_config.background_image());
+        return false;
+    }
+    m_render_resources->background_sprite.setTexture(m_render_resources->background_texture, true);
+    return true;
 }

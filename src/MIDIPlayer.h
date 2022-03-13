@@ -109,6 +109,8 @@ public:
     MIDIInput* midi_input() { return m_midi_input.get(); }
     MIDIOutput* midi_output() { return m_midi_output.get(); }
 
+    bool reload_background_image();
+
 private:
     void generate_particle_texture();
 

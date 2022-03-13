@@ -4,6 +4,7 @@
 #include "Config/Parser.h"
 #include "Config/Property.h"
 #include "Logger.h"
+#include "MIDIPlayer.h"
 #include "Try.h"
 
 #include <algorithm>
@@ -100,7 +101,11 @@ MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
         { { Config::PropertyType::String, "path" } },
         [&](Config::ArgumentList const& arglist, double) -> bool
         {
-            m_properties.background_image = arglist[0].as_string();
+            if(m_properties.background_image != arglist[0].as_string())
+            {
+                m_properties.background_image = arglist[0].as_string();
+                m_reader.player().reload_background_image();
+            }
             return true;
         });
     m_info.register_property("display_font",
