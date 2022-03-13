@@ -99,13 +99,10 @@ MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
     m_info.register_property("background_image",
         "Path to background image",
         { { Config::PropertyType::String, "path" } },
-        [&](Config::ArgumentList const& arglist, double) -> bool
+        [&](Config::ArgumentList const& arglist, double transition) -> bool
         {
-            if(m_properties.background_image != arglist[0].as_string())
-            {
-                m_properties.background_image = arglist[0].as_string();
-                m_reader.player().reload_background_image();
-            }
+            auto texture = m_reader.player().get_background_image(arglist[0].as_string());
+            m_properties.background_image.set_value_with_factor(AnimatableBackground(texture), transition);
             return true;
         });
     m_info.register_property("display_font",

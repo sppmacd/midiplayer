@@ -24,6 +24,7 @@ add_executable(midiplayer
     src/Config/Reader.cpp
     src/Config/Selector.cpp
     src/Config/Statement.cpp
+    src/AnimatableBackground.cpp
     src/Event.cpp 
     src/FileWatcher.cpp
     src/MIDIDevice.cpp

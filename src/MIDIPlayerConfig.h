@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AnimatableBackground.h"
 #include "Config/AnimatableProperty.h"
 #include "Config/Configuration.h"
 #include "Config/Property.h"
@@ -40,7 +41,7 @@ public:
     double play_scale() const { return m_properties.play_scale; }
     int label_font_size() const { return m_properties.label_font_size; }
     int label_fade_time() const { return m_properties.label_fade_time; }
-    std::string background_image() const { return m_properties.background_image; }
+    BlendedBackground background_image() const { return m_properties.background_image; }
 
     sf::Color resolve_color(MIDIPlayer const& player, NoteEvent& event) const;
     void set_property(std::string const& name, std::vector<Config::PropertyParameter> const& params);
@@ -64,6 +65,6 @@ private:
         Config::AnimatableProperty<double> play_scale { 0.05 };
         int label_font_size = 50;
         int label_fade_time = 30;
-        std::string background_image;
+        Config::AnimatableProperty<AnimatableBackground> background_image;
     } m_properties;
 };

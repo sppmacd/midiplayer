@@ -102,7 +102,6 @@ bool MIDIPlayer::reload_config_file()
     bool success = m_config.reload(m_config_file_path);
 
     generate_particle_texture();
-    success &= reload_background_image();
 
     logger::info("Loading display font: {}", m_config.display_font());
     if(m_config.display_font().empty())
@@ -427,11 +426,7 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
 
 void MIDIPlayer::render_background(sf::RenderTarget& target) const
 {
-    auto* texture = m_render_resources->background_sprite.getTexture();
-    if(!texture)
-        return;
-    target.setView(sf::View { sf::FloatRect { {}, sf::Vector2f { texture->getSize() } } });
-    target.draw(m_render_resources->background_sprite);
+    target.draw(m_config.background_image());
 }
 
 void MIDIPlayer::spawn_random_particles(sf::RenderTarget& target, MIDIKey key, sf::Color color, int velocity)
@@ -492,13 +487,22 @@ void MIDIPlayer::print_config_help() const
     config().display_help();
 }
 
-bool MIDIPlayer::reload_background_image()
+sf::Texture* MIDIPlayer::get_background_image(std::string const& filename)
 {
-    if(!m_config.background_image().empty() && !m_render_resources->background_texture.loadFromFile(m_config.background_image()))
+    if(!filename.empty())
     {
-        logger::error("Failed to load background image from {}.", m_config.background_image());
-        return false;
+        auto maybe_existing_texture = m_render_resources->background_textures.find(filename);
+        if(maybe_existing_texture != m_render_resources->background_textures.end())
+            return &maybe_existing_texture->second;
+
+        auto new_texture = m_render_resources->background_textures.emplace(std::make_pair(filename, sf::Texture()));
+        assert(new_texture.second);
+        if(!new_texture.first->second.loadFromFile(filename))
+        {
+            logger::error("Failed to load background image from {}.", filename);
+            return nullptr;
+        }
+        return &new_texture.first->second;
     }
-    m_render_resources->background_sprite.setTexture(m_render_resources->background_texture, true);
-    return true;
+    return nullptr;
 }

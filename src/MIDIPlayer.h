@@ -109,7 +109,7 @@ public:
     MIDIInput* midi_input() { return m_midi_input.get(); }
     MIDIOutput* midi_output() { return m_midi_output.get(); }
 
-    bool reload_background_image();
+    sf::Texture* get_background_image(std::string const& filename);
 
 private:
     void generate_particle_texture();
@@ -168,8 +168,7 @@ private:
         sf::Font display_font;
         sf::Font debug_font;
         sf::Texture particle_texture;
-        sf::Texture background_texture;
-        sf::Sprite background_sprite;
+        std::map<std::string, sf::Texture> background_textures;
     };
 
     std::unique_ptr<RenderResources> m_render_resources;
