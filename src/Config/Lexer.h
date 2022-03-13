@@ -64,7 +64,7 @@ private:
     {
         std::string string;
         char c = m_input.peek();
-        while(predicate(c))
+        while(predicate(c) && !m_input.eof())
         {
             consume_one();
             string += c;
