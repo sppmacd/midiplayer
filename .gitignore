@@ -1,3 +1,10 @@
 .cache
 .vscode
 build*
+*.mid
+*.ttf
+!res
+*.mp4
+*.jpg
+callgrind.out*
+perf.data
