@@ -22,13 +22,15 @@ public:
             m_current_value = m_next_value;
     }
 
-    T value() const
+    using ValueType = decltype(T() + T());
+
+    auto value() const
     {
         auto v = m_current_value * (1 - m_factor) + m_next_value * m_factor;
         return v;
     }
 
-    operator T() const { return value(); }
+    operator ValueType() const { return value(); }
 
 private:
     T m_next_value {};
