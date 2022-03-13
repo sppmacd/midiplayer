@@ -271,6 +271,31 @@ Add a `foo` label as track name:
 add_event Text(text="foo")
 ```
 
+## `if` statement
+The `if` statement works (and looks) similarly to `on` statement, except it is checked only once, when statement is run.
+
+This won't work as expected if the condition is `time` because of that
+
+### Examples
+
+Do something only if mode is realtime:
+```ini
+if (mode=realtime) set {
+    # These statements are executed only once, even though
+    # the mode is "realtime" all the time.
+    scale 1.0
+    background_image "test2.png"
+}
+```
+
+Invalid use of `if` with `time` condition:
+```ini
+if (time=5s) set {
+    # This won't ever run because it is checked only once at startup.
+    background_image "test2.png"
+}
+```
+
 ## `every` statement
 The `every` statement can be used to execute action in intervals.
 

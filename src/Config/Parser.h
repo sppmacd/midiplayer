@@ -100,6 +100,7 @@ private:
     ParserErrorOr<std::unique_ptr<Statement>> parse_statement();
     ParserErrorOr<std::unique_ptr<OnStatement>> parse_on_statement();
     ParserErrorOr<std::unique_ptr<EveryStatement>> parse_every_statement();
+    ParserErrorOr<std::unique_ptr<IfStatement>> parse_if_statement();
     ParserErrorOr<std::unique_ptr<PropertyStatement>> parse_property_statement();
 
     explicit Parser(Info& info, std::vector<Token> const& in)

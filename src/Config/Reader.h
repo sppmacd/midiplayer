@@ -30,6 +30,7 @@ public:
     bool has_transition() const { return !m_transition_stack.empty(); }
 
     size_t time_offset() { return m_time_offset; }
+    void set_time_offset(size_t v) { m_time_offset = v; }
 
     void add_transition(Transition transition, std::function<void(double)> handler);
 

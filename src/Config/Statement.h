@@ -59,4 +59,17 @@ private:
     std::shared_ptr<Action> m_action;
 };
 
+class IfStatement : public Statement
+{
+public:
+    IfStatement(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action)
+    : m_condition(std::move(condition)), m_action(std::move(action)) {}
+
+    virtual bool execute(Reader& reader) const override;
+
+private:
+    std::shared_ptr<Condition> m_condition;
+    std::shared_ptr<Action> m_action;
+};
+
 }

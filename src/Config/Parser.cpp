@@ -377,6 +377,8 @@ ParserErrorOr<std::unique_ptr<Statement>> Parser::parse_statement()
         return parse_on_statement();
     if(identifier->value() == "every")
         return parse_every_statement();
+    if(identifier->value() == "if")
+        return parse_if_statement();
     return parse_property_statement();
 }
 
@@ -415,6 +417,25 @@ ParserErrorOr<std::unique_ptr<EveryStatement>> Parser::parse_every_statement()
 
     auto action = TRY(parse_action());
     return std::make_unique<EveryStatement>(interval, action);
+}
+
+ParserErrorOr<std::unique_ptr<IfStatement>> Parser::parse_if_statement()
+{
+    get_next_token(); // "if"
+
+    auto bl = get_next_token_of_type(Token::Type::BracketLeft);
+    if(!bl)
+        return parser_error("expected '(' in 'if' statement");
+
+    // TODO: Multiple conditions
+    auto condition = TRY(parse_condition());
+
+    auto br = get_next_token_of_type(Token::Type::BracketRight);
+    if(!br)
+        return parser_error("expected closing ')'");
+
+    auto action = TRY(parse_action());
+    return std::make_unique<IfStatement>(condition, action);
 }
 
 ParserErrorOr<std::unique_ptr<PropertyStatement>> Parser::parse_property_statement()
