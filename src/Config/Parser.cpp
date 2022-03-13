@@ -267,6 +267,17 @@ ParserErrorOr<std::shared_ptr<Condition>> Parser::parse_condition()
         auto value = TRY(parse_time());
         return std::make_shared<TimeCondition>(value);
     }
+    if(identifier->value() == "mode")
+    {
+        if(!get_next_token_of_type(Token::Type::EqualSign))
+            return parser_error("expected '='");
+        auto value = TRY(get_string());
+        if(value == "realtime")
+            return std::make_shared<ModeCondition>(ModeCondition::Mode::Realtime);
+        if(value == "play")
+            return std::make_shared<ModeCondition>(ModeCondition::Mode::Play);
+        return parser_error("invalid mode: {}, valid are 'play', 'realtime'", value);
+    }
     return parser_error("invalid condition: {}", identifier->value());
 }
 
