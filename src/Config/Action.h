@@ -14,6 +14,7 @@ class Reader;
 class Action
 {
 public:
+    virtual ~Action() = default;
     virtual void execute(Reader&) const = 0;
 };
 

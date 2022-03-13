@@ -10,6 +10,7 @@ class Reader;
 class Condition
 {
 public:
+    virtual ~Condition() = default;
     virtual bool is_met(Reader& reader) const = 0;
 };
 

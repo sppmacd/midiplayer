@@ -18,7 +18,8 @@ public:
     Selector() = default;
     Selector(Selector const&) = delete;
     Selector& operator=(Selector const&) = delete;
-
+    virtual ~Selector() = default;
+    
     virtual bool matches(MIDIPlayer const& player, NoteEvent const& event) = 0;
 
     static std::unique_ptr<Selector> read(std::istream&);

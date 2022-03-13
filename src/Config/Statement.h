@@ -14,6 +14,7 @@ class Reader;
 class Statement
 {
 public:
+    virtual ~Statement() = default;
     virtual bool execute(Reader& reader) const = 0;
 };
 

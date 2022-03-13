@@ -8,6 +8,7 @@
 class MatchExpression
 {
 public:
+    virtual ~MatchExpression() = default;
     virtual bool matches(int value) const = 0;
     virtual std::string to_string() const = 0;
 };
