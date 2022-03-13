@@ -42,9 +42,12 @@ ParserErrorOr<float> Parser::get_number()
 ParserErrorOr<std::string> Parser::get_string()
 {
     auto token = get_next_token_of_type(Token::Type::String);
-    if(!token)
-        return parser_error("expected string");
-    return token->value();
+    if(token)
+        return token->value();
+    token = get_next_token_of_type(Token::Type::Identifier);
+    if(token)
+        return token->value();
+    return parser_error("expected string");
 }
 
 ParserErrorOr<int> Parser::get_int()
