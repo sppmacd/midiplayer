@@ -45,7 +45,7 @@ Background color
 ### `background_image <path: string>`
 Path to background image
 
-### `color <selectors: SelectorList> <color: Color<RGBA>)`
+### `color <selectors: SelectorList> <color: Color<RGBA>>`
 Key tile color, applied only to tiles matching `selector`
 
 ### `default_color <color: Color<RGBA>>`
@@ -193,7 +193,7 @@ Just set `background_color`:
 }
 ```
 
-Set `background_color` with 1 second transition and ease-in-out-quad timing functnio:
+Set `background_color` with 1 second transition and ease-in-out-quad timing function:
 ```ini
 [...] set(transition=1s,function="ease-in-out-quad") {
     background_color 255 255 255
