@@ -59,7 +59,7 @@ enum class Mode
 int main(int argc, char* argv[])
 {
     g_exec_name = argv[0];
-    
+
     print_version();
 
     Mode mode {};
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
                         try
                         {
                             // FIXME: stdc++, make consistent std::string_view support finally!!
-                            value = std::stoi(std::string{filename_sv});
+                            value = std::stoi(std::string { filename_sv });
                         }
                         catch(...)
                         {
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
 
     sf::Clock fps_clock;
     sf::Time last_fps_time;
-    
+
     player.start_timer();
     while(player.playing())
     {
@@ -274,12 +274,17 @@ int main(int argc, char* argv[])
             {
                 if(event.type == sf::Event::Closed)
                     player.set_playing(false);
-                else if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F11)
+                else if(event.type == sf::Event::KeyPressed)
                 {
-                    if(is_fullscreen)
-                        create_windowed();
-                    else
-                        create_fullscreen();
+                    if(event.key.code == sf::Keyboard::F11)
+                    {
+                        if(is_fullscreen)
+                            create_windowed();
+                        else
+                            create_fullscreen();
+                    }
+                    else if(event.key.code == sf::Keyboard::F3)
+                        should_render_debug_info_in_preview = !should_render_debug_info_in_preview;
                 }
             }
         }
