@@ -1,7 +1,6 @@
 #pragma once
 
 #include "AttributeValue.h"
-#include "Selector.h"
 #include "Time.h"
 #include <SFML/Graphics.hpp>
 #include <cassert>
@@ -13,6 +12,7 @@ namespace Config
 {
 
 class PropertyParameter;
+class Selector;
 
 enum class PropertyType
 {

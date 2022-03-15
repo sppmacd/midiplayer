@@ -4,6 +4,7 @@
 #include <memory>
 #include <variant>
 
+#include "../Event.h"
 #include "AttributeValue.h"
 
 class MIDIPlayer;
@@ -19,8 +20,8 @@ public:
     Selector(Selector const&) = delete;
     Selector& operator=(Selector const&) = delete;
     virtual ~Selector() = default;
-    
-    virtual bool matches(MIDIPlayer const& player, NoteEvent const& event) = 0;
+
+    virtual bool matches(NoteEvent::TransitionUnit event) const = 0;
 
     static std::unique_ptr<Selector> read(std::istream&);
 };
@@ -39,7 +40,7 @@ public:
     AttributeSelector(Attribute attr, AttributeValue&& value)
     : m_attribute(attr), m_value(std::move(value)) {}
 
-    virtual bool matches(MIDIPlayer const& player, NoteEvent const& event) override;
+    virtual bool matches(NoteEvent::TransitionUnit event) const override;
 
 private:
     Attribute m_attribute {};

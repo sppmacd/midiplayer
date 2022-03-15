@@ -17,11 +17,11 @@ MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
     m_info.register_property("color",
         "Key tile color, applied only to tiles matching `selector`",
         { { Config::PropertyType::SelectorList, "selectors" }, { Config::PropertyType::ColorRGBA, "color" } },
-        [&](Config::ArgumentList const& arglist, double) -> bool
+        [&](Config::ArgumentList const& arglist, double transition) -> bool
         {
             auto& selectors = arglist[0].as_selector_list();
             auto color = arglist[1].as_color();
-            m_properties.channel_colors.push_front({ std::move(selectors), color });
+            m_reader.player().update_note_transitions(selectors, color, transition);
             return true;
         });
     m_info.register_property("default_color",
@@ -180,25 +180,6 @@ bool MIDIPlayerConfig::reload(std::string const& path)
 void MIDIPlayerConfig::display_help() const
 {
     m_info.display_help();
-}
-
-sf::Color MIDIPlayerConfig::resolve_color(MIDIPlayer const& player, NoteEvent& event) const
-{
-    for(auto const& pair : m_properties.channel_colors)
-    {
-        bool matched = true;
-        for(auto const& selector : pair.first)
-        {
-            if(!selector->matches(player, event))
-            {
-                matched = false;
-                break;
-            }
-        }
-        if(matched)
-            return pair.second;
-    }
-    return m_properties.default_color;
 }
 
 void MIDIPlayerConfig::set_property(std::string const& name, std::vector<Config::PropertyParameter> const& params)

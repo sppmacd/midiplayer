@@ -47,9 +47,9 @@ public:
     virtual void serialize(std::ostream& stream) const override
     {
         std::cerr << "Writing EndOfTrack" << std::endl;
-        stream.put(-1); // Meta-event
+        stream.put(-1);   // Meta-event
         stream.put(0x2f); // End Of Track
-        stream.put(0); // size: vlq 1
+        stream.put(0);    // size: vlq 1
     }
 
     virtual std::unique_ptr<Event> clone() const override { return std::make_unique<EndOfTrackEvent>(*this); }
@@ -112,9 +112,9 @@ public:
     virtual void serialize(std::ostream& stream) const override
     {
         std::cerr << "Writing SetTempo" << std::endl;
-        stream.put(-1); // Meta-event
+        stream.put(-1);   // Meta-event
         stream.put(0x51); // Set Tempo
-        stream.put(3); // size: vlq 3
+        stream.put(3);    // size: vlq 3
         stream.put((m_microseconds_per_quarter_note >> 16) & 0xff);
         stream.put((m_microseconds_per_quarter_note >> 8) & 0xff);
         stream.put(m_microseconds_per_quarter_note & 0xff);
@@ -136,15 +136,17 @@ public:
     {
         std::cerr << "Time Signature Event " << static_cast<int>(m_numerator) << "/" << static_cast<int>(m_denominator) << std::endl;
     }
-    virtual void execute(MIDIPlayer&) override { /* TODO */ }
+    virtual void execute(MIDIPlayer&) override
+    { /* TODO */
+    }
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
         std::cerr << "Writing TimeSignature" << std::endl;
-        stream.put(-1); // Meta-event
+        stream.put(-1);   // Meta-event
         stream.put(0x58); // Time Signature
-        stream.put(4); // size: vlq 4
+        stream.put(4);    // size: vlq 4
         stream.put(m_numerator);
         stream.put(std::countr_zero(m_denominator));
         stream.put(m_clocks_per_metronome_click);
@@ -165,7 +167,17 @@ using MIDIChannel = uint8_t;
 class NoteEvent : public Event
 {
 public:
-    enum class Type { On, Off };
+    enum class Type
+    {
+        On,
+        Off
+    };
+
+    struct TransitionUnit
+    {
+        MIDIKey key;
+        MIDIChannel channel;
+    };
 
     NoteEvent(Type type, MIDIChannel channel, MIDIKey key, uint8_t velocity)
     : m_type(type), m_channel(channel), m_key(key), m_velocity(velocity) {}
@@ -173,7 +185,7 @@ public:
     virtual void dump() const override
     {
         std::cerr << tick() << ": Note " << (m_type == Type::On ? "On" : "Off") << " Event channel=" << (int)m_channel
-                    << ", key=" << (int)m_key << ", velocity=" << (int)m_velocity << std::endl;
+                  << ", key=" << (int)m_key << ", velocity=" << (int)m_velocity << std::endl;
     }
 
     virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
@@ -182,6 +194,7 @@ public:
     MIDIChannel channel() const { return m_channel; }
     MIDIKey key() const { return m_key; }
     uint8_t velocity() const { return m_velocity; }
+    TransitionUnit transition_unit() const { return { m_key, m_channel }; }
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
@@ -197,12 +210,25 @@ public:
     virtual std::unique_ptr<Event> clone() const override { return std::make_unique<NoteEvent>(*this); }
 
 private:
-    mutable std::optional<sf::Color> m_cached_color;
     Type m_type;
     MIDIChannel m_channel;
     MIDIKey m_key;
     uint8_t m_velocity;
 };
+
+template<>
+struct std::hash<NoteEvent::TransitionUnit>
+{
+    size_t operator()(NoteEvent::TransitionUnit const& tu) const
+    {
+        return (tu.channel << 8) | tu.key.code();
+    }
+};
+
+inline bool operator==(NoteEvent::TransitionUnit const& l, NoteEvent::TransitionUnit const& r)
+{
+    return l.channel == r.channel && l.key == r.key;
+}
 
 class ControlChangeEvent : public Event
 {
@@ -262,13 +288,15 @@ public:
         std::cerr << tick() << ": Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec << ", value=" << (int)m_value << std::endl;
     }
 
-    virtual void execute(MIDIPlayer&) override { /* TODO */ }
+    virtual void execute(MIDIPlayer&) override
+    { /* TODO */
+    }
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
         stream.put((uint8_t)(0xb0 + m_channel)); // Control Change
-        stream.put((uint8_t)m_number); // Number
+        stream.put((uint8_t)m_number);           // Number
         stream.put(m_value);
     }
 
@@ -291,7 +319,9 @@ public:
         std::cerr << "Program Change Event channel=" << (int)m_channel << ", data=" << std::hex << (int)m_value << std::dec << std::endl;
     }
 
-    virtual void execute(MIDIPlayer&) override { /* TODO */ }
+    virtual void execute(MIDIPlayer&) override
+    { /* TODO */
+    }
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
@@ -342,10 +372,12 @@ public:
     virtual void dump() const override
     {
         std::cerr << "Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec
-                    << "(" << (m_byte_index == ByteIndex::MSB ? "MSB" : "LSB") << "), value=" << (int)m_value << std::endl;
+                  << "(" << (m_byte_index == ByteIndex::MSB ? "MSB" : "LSB") << "), value=" << (int)m_value << std::endl;
     }
 
-    virtual void execute(MIDIPlayer&) override { /* TODO */ }
+    virtual void execute(MIDIPlayer&) override
+    { /* TODO */
+    }
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override

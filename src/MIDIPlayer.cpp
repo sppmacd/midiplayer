@@ -90,6 +90,49 @@ void MIDIPlayer::start_timer()
     m_in_loop = true;
 }
 
+sf::Color MIDIPlayer::resolve_color(NoteEvent& event)
+{
+    auto maybe_pending_transition = m_note_transitions.find(event.transition_unit());
+    if(maybe_pending_transition != m_note_transitions.end())
+        return maybe_pending_transition->second;
+    return m_config.default_color();
+}
+
+void MIDIPlayer::update_note_transitions(Config::SelectorList const& selectors, sf::Color color, double transition)
+{
+    // FIXME: Very naive and not the best.
+    for(uint8_t key = 0; key < 128; key++)
+    {
+        for(uint8_t channel = 0; channel < 16; channel++)
+        {
+            NoteEvent::TransitionUnit transition_unit { key, channel };
+            bool matches = false;
+            if(selectors.empty())
+                matches = true;
+            else
+            {
+                for(auto& selector : selectors)
+                {
+                    if(selector->matches(transition_unit))
+                    {
+                        matches = true;
+                        break;
+                    }
+                }
+            }
+            if(!matches)
+                continue;
+
+            auto maybe_pending_transition = m_note_transitions.find(transition_unit);
+            if(maybe_pending_transition != m_note_transitions.end())
+                maybe_pending_transition->second.set_value_with_factor(color, transition);
+            Config::AnimatableProperty<sf::Color> color_animatable { std::move(color) };
+            color_animatable.set_value_with_factor(color, transition);
+            m_note_transitions.insert(std::make_pair(transition_unit, std::move(color_animatable)));
+        }
+    }
+}
+
 bool MIDIPlayer::load_config_file(std::string const& path)
 {
     m_config_file_path = path;

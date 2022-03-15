@@ -42,7 +42,6 @@ public:
     int label_fade_time() const { return m_properties.label_fade_time; }
     BlendedBackground background_image() const { return m_properties.background_image; }
 
-    sf::Color resolve_color(MIDIPlayer const& player, NoteEvent& event) const;
     void set_property(std::string const& name, std::vector<Config::PropertyParameter> const& params);
 
     void dump_stats(std::ostream&) const;
@@ -54,7 +53,6 @@ private:
     struct Properties
     {
         std::string display_font;
-        std::list<std::pair<Config::SelectorList, sf::Color>> channel_colors;
         sf::Color default_color { 255, 100, 100 };
         Config::AnimatableProperty<sf::Color> background_color { sf::Color(10, 10, 10) };
         sf::Color overlay_color { 5, 5, 5 };

@@ -12,18 +12,18 @@ using namespace std::literals;
 namespace Config
 {
 
-bool AttributeSelector::matches(MIDIPlayer const& player, NoteEvent const& event)
+bool AttributeSelector::matches(NoteEvent::TransitionUnit transition_unit) const
 {
     switch(m_attribute)
     {
         case Attribute::Channel:
-            return m_value.matches(event.channel());
+            return m_value.matches(transition_unit.channel);
         case Attribute::Note:
-            return m_value.matches(event.key());
+            return m_value.matches(transition_unit.key);
         case Attribute::WhiteKey:
-            return m_value.matches(event.key().white_key_index());
+            return m_value.matches(transition_unit.key.white_key_index());
         case Attribute::BlackKey:
-            return m_value.matches(event.key().black_key_index());
+            return m_value.matches(transition_unit.key.black_key_index());
     }
     abort();
 }

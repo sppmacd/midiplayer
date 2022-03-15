@@ -8,6 +8,7 @@ public:
     MIDIKey(uint8_t code)
     : m_code(code) {}
 
+    uint8_t code() const { return m_code; }
     bool is_black() const;
     float to_piano_position() const;
     int white_key_index() const;

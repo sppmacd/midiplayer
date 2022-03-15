@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Config/Property.h"
 #include "Event.h"
 #include "FileWatcher.h"
 #include "MIDIOutput.h"
@@ -101,7 +102,8 @@ public:
 
     int particle_count() const { return m_config.particle_count(); }
     double scale() const { return m_config.scale(); }
-    sf::Color resolve_color(NoteEvent& event) const { return m_config.resolve_color(*this, event); }
+    sf::Color resolve_color(NoteEvent& event);
+    void update_note_transitions(Config::SelectorList const& selectors, sf::Color color, double transition);
 
     bool load_config_file(std::string const& path);
     void print_config_help() const;
@@ -181,6 +183,8 @@ private:
 
     std::map<MIDIKey, NoteEvent> m_started_notes;
     std::map<MIDIKey, std::optional<NoteEvent>> m_ended_notes;
+
+    std::unordered_map<NoteEvent::TransitionUnit, Config::AnimatableProperty<sf::Color>> m_note_transitions;
 
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
     std::unique_ptr<MIDIInput> m_midi_input;

@@ -84,9 +84,8 @@ void SetTempoEvent::execute(MIDIPlayer& player)
 
 void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 {
-    if(!m_cached_color.has_value())
-        m_cached_color = player.resolve_color(*this);
-    auto color = m_cached_color.value();
+    // FIXME: Bring back color caching
+    auto color = player.resolve_color(*this);
     auto size = target.getView().getSize();
     const float scale = player.scale();
 
