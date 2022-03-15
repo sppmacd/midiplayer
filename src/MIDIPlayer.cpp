@@ -234,17 +234,17 @@ bool MIDIPlayer::is_in_interval_frame(Config::Time interval, size_t offset_in_fr
     return false;
 }
 
-size_t MIDIPlayer::frame_count_for_time(Config::Time time) const
+size_t MIDIPlayer::frame_count_for_time(Config::Time time, size_t offset_in_frames) const
 {
     switch(time.unit())
     {
         case Config::Time::Unit::Ticks:
             // FIXME: This should have its converter function
-            return time.value() * fps() / (microseconds_per_quarter_note() / (double)m_midi_input->ticks_per_quarter_note()) / 1000000.0;
+            return time.value() * fps() / (microseconds_per_quarter_note() / (double)m_midi_input->ticks_per_quarter_note()) / 1000000.0 + offset_in_frames;
         case Config::Time::Unit::Frames:
-            return time.value();
+            return time.value() + offset_in_frames;
         case Config::Time::Unit::Seconds:
-            return time.value() * fps();
+            return time.value() * fps() + offset_in_frames;
     }
     return 0;
 }

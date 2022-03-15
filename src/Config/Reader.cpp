@@ -84,6 +84,10 @@ void Reader::update()
     }
     std::erase_if(m_ongoing_transitions, [&](auto const& e)
         { return player_frame >= e.start_frame + e.length; });
+    std::erase_if(m_conditional_actions, [&](auto const& action) {
+        m_time_offset = action.add_frame;
+        return action.condition->has_expired(*this);
+    });
 }
 
 void Reader::add_transition(Transition transition, std::function<void(double)> handler)
@@ -92,7 +96,7 @@ void Reader::add_transition(Transition transition, std::function<void(double)> h
     OngoingTransition ongoing_transition {
         .function = transition.function(),
         .start_frame = m_player.current_frame(),
-        .length = m_player.frame_count_for_time(transition.time()),
+        .length = m_player.frame_count_for_time(transition.time(), 0),
         .handler = std::move(handler),
     };
     m_ongoing_transitions.push_back(ongoing_transition);
