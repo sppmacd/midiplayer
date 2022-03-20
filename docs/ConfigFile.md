@@ -39,6 +39,9 @@ every(5s) add_event Text(text="foo")
 
 This list may not be up to date. The up-to-date list can be found by running `midi --config-help`.
 
+### `animate_color <selectors: SelectorList> <color: Color<RGBA>>`
+Apply transition of tile color. Applies only to tiles matching `selector`. Some attributes (marked as non-animatable attributes) don't work with this property; use `color` instead. Is always overridden by `color`.
+
 ### `background_color <color: Color<RGB>>`
 Background color. The plain-color background is always covered by background image if it is specified.
 
@@ -46,7 +49,7 @@ Background color. The plain-color background is always covered by background ima
 Path to background image.
 
 ### `color <selectors: SelectorList> <color: Color<RGBA>>`
-Key tile color, applied only to tiles matching all of `selectors`.
+Tile color, applied only to tiles matching `selector`. Is not affected by transitions. This overrides `animate_color`.
 
 ### `default_color <color: Color<RGBA>>`
 Default key tile color. Used when no selector specified in `color` matches a tile.
@@ -143,6 +146,7 @@ Available selector attributes:
 * `note` - Note value, as stored in MIDI
 * `white_key` - Index of white key (A0 key is `0`, B0 is `1` etc.). `-1` if key is black.
 * `black_key` - Index of black key, (A♯0 key is `0`, C♯1 is `1` etc.). `-1` if key is white.
+* `time` (non-animatable) - A MIDI tick the event is played.
 
 ## `on` Statement
 You can execute an action only when a condition is met, e.g. with some delay. This is possible with `on` statement, which looks like this:

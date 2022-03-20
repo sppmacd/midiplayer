@@ -92,9 +92,19 @@ void MIDIPlayer::start_timer()
 
 sf::Color MIDIPlayer::resolve_color(NoteEvent& event)
 {
+    for(auto const& selector_list: m_static_tile_colors)
+    {
+        for(auto const& selector : selector_list.first)
+        {
+            if(selector->matches(event.transition_unit(), &event))
+                return selector_list.second;
+        }
+    }
+
     auto maybe_pending_transition = m_note_transitions.find(event.transition_unit());
     if(maybe_pending_transition != m_note_transitions.end())
         return maybe_pending_transition->second;
+
     return m_config.default_color();
 }
 
@@ -113,7 +123,7 @@ void MIDIPlayer::update_note_transitions(Config::SelectorList const& selectors, 
             {
                 for(auto& selector : selectors)
                 {
-                    if(selector->matches(transition_unit))
+                    if(selector->matches(transition_unit, nullptr))
                     {
                         matches = true;
                         break;
@@ -131,6 +141,11 @@ void MIDIPlayer::update_note_transitions(Config::SelectorList const& selectors, 
             m_note_transitions.insert(std::make_pair(transition_unit, std::move(color_animatable)));
         }
     }
+}
+
+void MIDIPlayer::add_static_tile_color(Config::SelectorList const& selectors, sf::Color color)
+{
+    m_static_tile_colors.push_back({selectors, color});
 }
 
 bool MIDIPlayer::load_config_file(std::string const& path)
@@ -455,6 +470,7 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
         oss << "\n\n";
         oss << std::to_string(1.f / debug_info.last_fps_time.asSeconds()) + " fps\n";
         oss << m_particles.size() << " particles" << std::endl;
+        oss << "StaticTileColors: " << m_static_tile_colors.size() << std::endl;
         m_config.dump_stats(oss);
 
         if(!m_winds.empty())

@@ -104,6 +104,7 @@ public:
     double scale() const { return m_config.scale(); }
     sf::Color resolve_color(NoteEvent& event);
     void update_note_transitions(Config::SelectorList const& selectors, sf::Color color, double transition);
+    void add_static_tile_color(Config::SelectorList const& selectors, sf::Color color);
 
     bool load_config_file(std::string const& path);
     void print_config_help() const;
@@ -151,6 +152,7 @@ private:
     std::list<Wind> m_winds;
     bool m_real_time { false };
     std::list<Particle> m_particles;
+    std::vector<std::pair<Config::SelectorList, sf::Color>> m_static_tile_colors;
 
     struct Label
     {

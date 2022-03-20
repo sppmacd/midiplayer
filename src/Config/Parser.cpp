@@ -211,6 +211,8 @@ ParserErrorOr<std::shared_ptr<Selector>> Parser::parse_selector()
         return std::make_shared<AttributeSelector>(AttributeSelector::Attribute::WhiteKey, std::move(value));
     if(attribute_name->value() == "black_key")
         return std::make_shared<AttributeSelector>(AttributeSelector::Attribute::BlackKey, std::move(value));
+    if(attribute_name->value() == "time")
+        return std::make_shared<AttributeSelector>(AttributeSelector::Attribute::Time, std::move(value));
     return parser_error("invalid attribute: {}", attribute_name->value());
 }
 

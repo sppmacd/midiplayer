@@ -15,7 +15,17 @@ MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
 {
     // FIXME: There is a copy here which could be omitted, but this makes shared_ptr needed.
     m_info.register_property("color",
-        "Key tile color, applied only to tiles matching `selector`",
+        "Tile color, applied only to tiles matching `selector`.",
+        { { Config::PropertyType::SelectorList, "selectors" }, { Config::PropertyType::ColorRGBA, "color" } },
+        [&](Config::ArgumentList const& arglist, double) -> bool
+        {
+            auto& selectors = arglist[0].as_selector_list();
+            auto color = arglist[1].as_color();
+            m_reader.player().add_static_tile_color(selectors, color);
+            return true;
+        });
+    m_info.register_property("animate_color",
+        "Apply transition of tile color. Applies only to tiles matching `selector`.",
         { { Config::PropertyType::SelectorList, "selectors" }, { Config::PropertyType::ColorRGBA, "color" } },
         [&](Config::ArgumentList const& arglist, double transition) -> bool
         {

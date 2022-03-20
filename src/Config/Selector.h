@@ -21,7 +21,7 @@ public:
     Selector& operator=(Selector const&) = delete;
     virtual ~Selector() = default;
 
-    virtual bool matches(NoteEvent::TransitionUnit event) const = 0;
+    virtual bool matches(NoteEvent::TransitionUnit, NoteEvent const*) const = 0;
 
     static std::unique_ptr<Selector> read(std::istream&);
 };
@@ -34,13 +34,14 @@ public:
         Channel,
         Note,
         WhiteKey,
-        BlackKey
+        BlackKey,
+        Time
     };
 
     AttributeSelector(Attribute attr, AttributeValue&& value)
     : m_attribute(attr), m_value(std::move(value)) {}
 
-    virtual bool matches(NoteEvent::TransitionUnit event) const override;
+    virtual bool matches(NoteEvent::TransitionUnit, NoteEvent const*) const override;
 
 private:
     Attribute m_attribute {};
