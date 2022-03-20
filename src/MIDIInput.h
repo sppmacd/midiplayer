@@ -22,30 +22,44 @@ public:
     virtual void update(MIDIPlayer&) {}
 
     template<class Callback>
-    void for_each_event(Callback callback)
+    void for_first_events_starting_from(size_t start, size_t max, Callback callback)
     {
-        for(auto& track: m_tracks)
+        for(auto& track : m_tracks)
         {
-            for(auto& event: track.events())
-                callback(*event.second);
+            size_t counter = 0;
+            auto& events = track.events();
+            for(auto it = events.lower_bound(start); it != events.end(); it++)
+            {
+                callback(*it->second);
+                counter++;
+                if(counter >= max)
+                    break;
+            }
         }
     }
 
     template<class Callback>
-    void for_each_event_backwards(Callback callback)
+    void for_first_events_starting_from_backwards(size_t start, size_t max, Callback callback)
     {
-        for(auto& track: m_tracks)
+        for(auto& track : m_tracks)
         {
+            size_t counter = 0;
             auto& events = track.events();
-            for(auto it = events.rbegin(); it != events.rend(); it++)
+            for(auto it = events.upper_bound(start); it != events.begin();)
+            {
+                --it;
                 callback(*it->second);
+                counter++;
+                if(counter >= max)
+                    break;
+            }
         }
     }
 
     template<class Callback>
     void for_each_track(Callback callback)
     {
-        for(auto& track: m_tracks)
+        for(auto& track : m_tracks)
             callback(track);
     }
 

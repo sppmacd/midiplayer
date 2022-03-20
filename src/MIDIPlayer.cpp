@@ -535,14 +535,14 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     {
         for(auto& it : m_ended_notes)
             it.reset();
-        m_midi_input->for_each_event_backwards([&](Event& event)
+        m_midi_input->for_first_events_starting_from_backwards(current_tick(), 4096, [&](Event& event)
             { event.render(*this, target); });
     }
     else
     {
         for(auto& it : m_started_notes)
             it.reset();
-        m_midi_input->for_each_event([&](Event& event)
+        m_midi_input->for_first_events_starting_from(current_tick() < 4096 ? 0 : current_tick() - 4096, 8192, [&](Event& event)
             { event.render(*this, target); });
     }
     render_particles(target);
