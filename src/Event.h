@@ -111,13 +111,14 @@ public:
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
-        std::cerr << "Writing SetTempo" << std::endl;
+        // FIXME: This glitches real MIDI devices.
+        /*std::cerr << "Writing SetTempo" << std::endl;
         stream.put(-1);   // Meta-event
         stream.put(0x51); // Set Tempo
         stream.put(3);    // size: vlq 3
         stream.put((m_microseconds_per_quarter_note >> 16) & 0xff);
         stream.put((m_microseconds_per_quarter_note >> 8) & 0xff);
-        stream.put(m_microseconds_per_quarter_note & 0xff);
+        stream.put(m_microseconds_per_quarter_note & 0xff);*/
     }
 
     virtual std::unique_ptr<Event> clone() const override { return std::make_unique<SetTempoEvent>(*this); }
