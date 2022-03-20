@@ -45,8 +45,8 @@ void TextEvent::execute(MIDIPlayer& player)
 Config::NamedFormalParameters TextEvent::formal_parameters() const
 {
     return {
-        {"type", Config::PropertyFormalParameter(Config::PropertyType::String, "type")},
-        {"text", Config::PropertyFormalParameter(Config::PropertyType::String, "text")},
+        { "type", Config::PropertyFormalParameter(Config::PropertyType::String, "type") },
+        { "text", Config::PropertyFormalParameter(Config::PropertyType::String, "text") },
     };
 }
 
@@ -80,16 +80,18 @@ void SetTempoEvent::execute(MIDIPlayer& player)
 void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 {
     // FIXME: Bring back color caching
-    auto color = player.resolve_color(*this);
     auto size = target.getView().getSize();
     const float scale = player.scale();
 
-    auto render_note = [&](float y_start, float y_size, sf::Color const& color)
+    auto is_visible = [&](float y_start, float y_size)
     {
         float real_y_start = (y_start + (player.real_time() ? -static_cast<int64_t>(player.current_tick()) : static_cast<int64_t>(player.current_tick()))) * scale;
+        return !(real_y_start > 0 || real_y_start + y_size < -size.y);
+    };
 
-        if(real_y_start > 0 || real_y_start + y_size < -size.y)
-            return;
+    auto render_note = [&](float y_start, float y_size, sf::Color color)
+    {
+        float real_y_start = (y_start + (player.real_time() ? -static_cast<int64_t>(player.current_tick()) : static_cast<int64_t>(player.current_tick()))) * scale;
         auto black = m_key.is_black();
         float key_size = black ? 0.5 : 1;
         RoundedEdgeRectangleShape rs({ key_size * size.x / MIDIPlayer::view_size_x, y_size }, 0.2f);
@@ -112,9 +114,15 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
             if(start_note != player.started_notes().end())
             {
                 int note_size_y = tick() - start_note->second.tick();
-                if(player.current_tick() > start_note->second.tick() && player.current_tick() < tick())
-                    player.spawn_random_particles(target, m_key, color, start_note->second.velocity());
-                render_note((size.y * scale - static_cast<int>(tick())), note_size_y * scale, color);
+                auto y_start = size.y * scale - static_cast<int>(tick());
+                auto y_size = note_size_y * scale;
+                if(is_visible(y_start, y_size))
+                {
+                    auto color = player.resolve_color(*this);
+                    if(player.current_tick() > start_note->second.tick() && player.current_tick() < tick())
+                        player.spawn_random_particles(target, m_key, color, start_note->second.velocity());
+                    render_note(y_start, y_size, color);
+                }
                 player.started_notes().erase(start_note);
             }
         }
@@ -129,9 +137,15 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
             auto note_size_y = static_cast<float>(player.current_tick() - tick());
             if(end_note != player.ended_notes().end() && end_note->second.has_value())
                 note_size_y = std::min(static_cast<float>(end_note->second.value().tick() - tick()), note_size_y);
-            render_note(tick(), note_size_y * scale, color);
-            if(end_note == player.ended_notes().end() || !end_note->second.has_value())
-                player.spawn_random_particles(target, m_key, color, velocity());
+            auto y_start = tick();
+            auto y_size = note_size_y * scale;
+            if(is_visible(y_start, y_size))
+            {
+                auto color = player.resolve_color(*this);
+                render_note(tick(), note_size_y * scale, color);
+                if(end_note == player.ended_notes().end() || !end_note->second.has_value())
+                    player.spawn_random_particles(target, m_key, color, velocity());
+            }
             if(end_note != player.ended_notes().end())
                 player.ended_notes().erase(end_note);
         }
