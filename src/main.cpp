@@ -34,6 +34,7 @@ static void print_usage_and_exit(Brief brief = Brief::Yes)
         std::cerr << "    --config-help      Print help for Config Files" << std::endl;
         std::cerr << "    --debug            Enable debug info rendering" << std::endl;
         std::cerr << "    --help             Print this message" << std::endl;
+        std::cerr << "    --markers [file]   Enable markers; save them to `file` (add them with number keys)" << std::endl;
         std::cerr << "    --version          Print MIDIPlayer version" << std::endl;
     }
     exit(1);
@@ -67,7 +68,8 @@ int main(int argc, char* argv[])
     bool render_to_stdout = false;
     bool should_render_debug_info_in_preview = false;
     std::string midi_output;
-    std::string config_file_path = "";
+    std::string config_file_path;
+    std::string marker_file_name;
 
     MIDIPlayer player;
 
@@ -108,6 +110,15 @@ int main(int argc, char* argv[])
                     should_render_debug_info_in_preview = true;
                 else if(opt_sv == "-help")
                     print_usage_and_exit(Brief::No);
+                else if(opt_sv == "-markers")
+                {
+                    if(++i == argc)
+                    {
+                        logger::error("--markers requires an argument");
+                        return 1;
+                    }
+                    marker_file_name = argv[i];
+                }
                 else if(opt_sv == "-version")
                 {
                     print_version(Brief::No);
@@ -265,6 +276,18 @@ int main(int argc, char* argv[])
     sf::Clock fps_clock;
     sf::Time last_fps_time;
 
+    std::ofstream marker_file { marker_file_name, std::ios::app };
+    if(!marker_file_name.empty() && marker_file.fail())
+        logger::warning("Failed to open marker file '{}'. Markers will not be saved.", marker_file_name);
+    marker_file << "# markers " << time(nullptr) << std::endl;
+    auto write_marker = [&](std::string name)
+    {
+        if(marker_file_name.empty())
+            return;
+        logger::info("Adding marker {} at {} to {}", name, player.current_tick(), marker_file_name);
+        marker_file << name << ": " << player.current_tick() << std::endl;
+    };
+
     player.start_timer();
     while(player.playing())
     {
@@ -285,6 +308,10 @@ int main(int argc, char* argv[])
                     }
                     else if(event.key.code == sf::Keyboard::F3)
                         should_render_debug_info_in_preview = !should_render_debug_info_in_preview;
+                    else if(event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9)
+                        write_marker(std::to_string(event.key.code - sf::Keyboard::Num0));
+                    else if(event.key.code >= sf::Keyboard::Numpad0 && event.key.code <= sf::Keyboard::Numpad9)
+                        write_marker(std::to_string(event.key.code - sf::Keyboard::Numpad0));
                 }
             }
         }
@@ -304,6 +331,6 @@ int main(int argc, char* argv[])
 
         last_fps_time = fps_clock.restart();
     }
-
+    write_marker("end");
     return 0;
 }
