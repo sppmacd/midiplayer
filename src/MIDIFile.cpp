@@ -7,6 +7,11 @@
 
 using namespace std::literals;
 
+void MIDIFileInput::update(MIDIPlayer& player)
+{
+    m_tick += ticks_per_quarter_note() * 1000000.0 / player.microseconds_per_quarter_note() / player.fps();
+}
+
 void MIDIFileInput::dump() const
 {
     std::cerr << "MIDI file format=" << static_cast<int>(m_format) << ", smpte=" << m_is_smpte << std::endl;
@@ -33,11 +38,6 @@ bool MIDIFileInput::read_midi(std::istream& in)
     }
 
     return true;
-}
-
-size_t MIDIFileInput::current_tick_for_current_frame(MIDIPlayer& player) const
-{
-    return (ticks_per_quarter_note() * 1000000.0) / (player.microseconds_per_quarter_note() * player.fps()) * player.current_frame();
 }
 
 #define ERROR(msg)                                         \
