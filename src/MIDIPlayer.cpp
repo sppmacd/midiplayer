@@ -211,7 +211,7 @@ void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing, sf::Co
     m_notes[index].color = color;
 }
 
-size_t MIDIPlayer::current_tick() const
+size_t MIDIPlayer::calculate_current_tick() const
 {
     return m_midi_input->current_tick(*this);
 }
@@ -266,14 +266,14 @@ size_t MIDIPlayer::frame_count_for_time(Config::Time time, size_t offset_in_fram
 
 void MIDIPlayer::update()
 {
+    auto previous_current_tick = m_current_tick;
+    m_midi_input->update(*this);
+    m_current_tick = calculate_current_tick();
+
     if(m_config_file_watcher.file_was_modified())
         reload_config_file();
 
     m_config.update();
-
-    auto previous_current_tick = m_current_tick;
-    m_midi_input->update(*this);
-    m_current_tick = current_tick();
     auto events = m_midi_input->find_events_in_range(previous_current_tick, m_current_tick);
 
     for(auto const& it : events)

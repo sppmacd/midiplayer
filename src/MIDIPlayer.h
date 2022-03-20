@@ -68,8 +68,8 @@ public:
     bool playing() const { return m_playing; }
     void set_playing(bool playing) { m_playing = playing; }
     bool real_time() const { return m_real_time; }
-    size_t current_tick() const;
     size_t current_frame() const { return m_current_frame; }
+    size_t current_tick() const { return m_current_tick; }
     bool current_time_is(Config::Time, size_t offset_in_frames) const;
     bool is_in_interval_frame(Config::Time, size_t offset_in_frames) const;
     size_t frame_count_for_time(Config::Time time, size_t offset_in_frames) const;
@@ -119,6 +119,7 @@ public:
 
 private:
     void generate_particle_texture();
+    size_t calculate_current_tick() const;
 
     void render_particles(sf::RenderTarget& target) const;
     void render_overlay(sf::RenderTarget& target) const;
