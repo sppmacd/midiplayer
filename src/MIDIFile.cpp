@@ -51,7 +51,7 @@ size_t MIDIFileInput::current_tick_for_current_frame(MIDIPlayer& player) const
 // 1.3 - Chunks
 bool MIDIFileInput::read_chunk(std::istream& in)
 {
-    char type[4];
+    char type[5] {};
     uint32_t length;
     if(!in.read(type, 4))
         return in.eof();
