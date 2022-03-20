@@ -55,8 +55,14 @@ std::unique_ptr<Event> MIDIInput::read_channeled_event(std::istream& in, uint8_t
             return std::make_unique<ProgramChangeEvent>(channel, program);
         }
         case 0xd0: // Channel Pressure (Aftertouch)
+            // TODO
+            if(!in.ignore(1))
+                return {};
             break;
         case 0xe0: // Pitch Wheel Change
+            // TODO
+            if(!in.ignore(2))
+                return {};
             break;
     }
     return std::make_unique<InvalidEvent>(type);
