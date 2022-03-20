@@ -108,8 +108,15 @@ std::vector<Token> Lexer::lex()
         }
         else if(std::isdigit(next))
         {
+            bool is_first = true;
             std::string result = consume_while([&](char c)
-                { return c == '-' || c == '+' || std::isdigit(c) || c == '.' || c == 'e' || c == 'E'; });
+                {
+                    if(is_first)
+                    {
+                        is_first = false;
+                        return c == '-' || c == '+' || std::isdigit(c) || c == '.' || c == 'e' || c == 'E';
+                    }
+                    return std::isdigit(c) || c == '.' || c == 'e' || c == 'E'; });
 
             tokens.push_back(Token(Token::Type::Number, start_location, m_location.index - start_location.index, result));
         }
@@ -120,9 +127,9 @@ std::vector<Token> Lexer::lex()
         }
     }
 
-    for(auto const& token: tokens)
+    for(auto const& token : tokens)
         std::cout << (int)token.type() << " = " << token.value() << " at " << token.location().line << ":" << token.location().column << std::endl;
-    
+
     return tokens;
 }
 
