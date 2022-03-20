@@ -16,11 +16,6 @@ std::unique_ptr<Event> Event::create_event_from_name(std::string_view name)
     return nullptr;
 }
 
-void EndOfTrackEvent::execute(MIDIPlayer& player)
-{
-    player.stop();
-}
-
 void EndOfTrackEvent::render(MIDIPlayer&, sf::RenderTarget& target)
 {
     sf::RectangleShape rs({ target.getView().getSize().x, 5 });

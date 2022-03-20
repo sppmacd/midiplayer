@@ -327,6 +327,10 @@ void MIDIPlayer::update()
         { return label.remaining_duration <= 0; });
 
     m_current_frame++;
+
+    auto end_tick = m_midi_input->end_tick();
+    if(end_tick.has_value() && current_tick() > end_tick.value())
+        set_playing(false);
 }
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
@@ -463,8 +467,8 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
         << std::setw(2) << (int)elapsed_seconds % 60;
     if(debug_info.full_info)
         oss << " (Tick=" << tick << " Frame=" << current_frame() << " Second=" << std::fixed << std::setprecision(2) << elapsed_seconds << ")";
-    if(!m_real_time && end_tick != 0)
-        oss << "/" << end_tick << " (" << 100 * tick / end_tick << "%)";
+    if(!m_real_time && end_tick.has_value())
+        oss << "/" << end_tick.value() << " (" << 100 * tick / end_tick.value() << "%)";
     if(debug_info.full_info)
     {
         oss << "\n\n";

@@ -23,7 +23,7 @@ public:
 
     virtual uint16_t ticks_per_quarter_note() const override { return 192; }
     virtual size_t current_tick(MIDIPlayer const&) const override;
-    virtual size_t end_tick() const override { return 0; }
+    virtual std::optional<size_t> end_tick() const override { return {}; }
 
 private:
     std::queue<std::unique_ptr<Event>> m_event_queue;

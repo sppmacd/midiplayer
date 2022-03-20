@@ -39,9 +39,9 @@ private:
 class EndOfTrackEvent : public Event
 {
 public:
-    virtual void dump() const override { std::cerr << "End Of Track Event" << std::endl; }
+    virtual void dump() const override { std::cerr << tick() << ": End Of Track Event" << std::endl; }
     virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
-    virtual void execute(MIDIPlayer&) override;
+    virtual void execute(MIDIPlayer&) override {}
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override

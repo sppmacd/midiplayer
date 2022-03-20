@@ -23,7 +23,7 @@ public:
     virtual bool is_valid() const override { return m_valid; }
     virtual void update(MIDIPlayer& player) override { m_tick = current_tick_for_current_frame(player); }
     virtual size_t current_tick(MIDIPlayer const&) const override { return m_tick; }
-    virtual size_t end_tick() const override { return m_end_tick; }
+    virtual std::optional<size_t> end_tick() const override { return m_end_tick; }
 
     size_t current_tick_for_current_frame(MIDIPlayer& player) const;
 
