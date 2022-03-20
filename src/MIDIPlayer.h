@@ -97,8 +97,10 @@ public:
     sf::Shader& note_shader() const { return m_render_resources->note_shader; }
     sf::Shader& particle_shader() const { return m_render_resources->particle_shader; }
 
-    std::map<MIDIKey, NoteEvent>& started_notes() { return m_started_notes; }
-    std::map<MIDIKey, std::optional<NoteEvent>>& ended_notes() { return m_ended_notes; }
+    using StartedNote = NoteEvent;
+    std::array<std::optional<StartedNote>, 128>& started_notes() { return m_started_notes; }
+    using EndedNote = std::optional<NoteEvent>;
+    std::array<std::optional<EndedNote>, 128>& ended_notes() { return m_ended_notes; }
 
     int particle_count() const { return m_config.particle_count(); }
     double scale() const { return m_config.scale(); }
@@ -183,8 +185,8 @@ private:
     std::string m_config_file_path;
     FileWatcher m_config_file_watcher;
 
-    std::map<MIDIKey, NoteEvent> m_started_notes;
-    std::map<MIDIKey, std::optional<NoteEvent>> m_ended_notes;
+    std::array<std::optional<StartedNote>, 128> m_started_notes;
+    std::array<std::optional<EndedNote>, 128> m_ended_notes;
 
     std::unordered_map<NoteEvent::TransitionUnit, Config::AnimatableProperty<sf::Color>> m_note_transitions;
 

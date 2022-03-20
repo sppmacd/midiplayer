@@ -107,50 +107,50 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 
     if(!player.real_time())
     {
-        auto start_note = player.started_notes().find(m_key);
+        auto& start_note = player.started_notes()[m_key];
 
         if(m_type == Type::Off)
         {
-            if(start_note != player.started_notes().end())
+            if(start_note.has_value())
             {
-                int note_size_y = tick() - start_note->second.tick();
+                int note_size_y = tick() - start_note.value().tick();
                 auto y_start = size.y * scale - static_cast<int>(tick());
                 auto y_size = note_size_y * scale;
                 if(is_visible(y_start, y_size))
                 {
                     auto color = player.resolve_color(*this);
-                    if(player.current_tick() > start_note->second.tick() && player.current_tick() < tick())
-                        player.spawn_random_particles(target, m_key, color, start_note->second.velocity());
+                    if(player.current_tick() > start_note.value().tick() && player.current_tick() < tick())
+                        player.spawn_random_particles(target, m_key, color, start_note.value().velocity());
                     render_note(y_start, y_size, color);
                 }
-                player.started_notes().erase(start_note);
+                player.started_notes()[m_key].reset();
             }
         }
-        else if(start_note == player.started_notes().end())
-            player.started_notes().insert({ m_key, *this });
+        else if(!start_note.has_value())
+            player.started_notes()[m_key] = *this;
     }
     else
     {
-        auto end_note = player.ended_notes().find(m_key);
+        auto end_note = player.ended_notes()[m_key];
         if(m_type == Type::On)
         {
             auto note_size_y = static_cast<float>(player.current_tick() - tick());
-            if(end_note != player.ended_notes().end() && end_note->second.has_value())
-                note_size_y = std::min(static_cast<float>(end_note->second.value().tick() - tick()), note_size_y);
+            if(end_note.has_value() && end_note.value().has_value())
+                note_size_y = std::min(static_cast<float>(end_note.value().value().tick() - tick()), note_size_y);
             auto y_start = tick();
             auto y_size = note_size_y * scale;
             if(is_visible(y_start, y_size))
             {
                 auto color = player.resolve_color(*this);
                 render_note(tick(), note_size_y * scale, color);
-                if(end_note == player.ended_notes().end() || !end_note->second.has_value())
+                if(!end_note.has_value() || !end_note.value().has_value())
                     player.spawn_random_particles(target, m_key, color, velocity());
             }
-            if(end_note != player.ended_notes().end())
-                player.ended_notes().erase(end_note);
+            if(end_note.has_value())
+                player.ended_notes()[m_key].reset();
         }
-        else if(end_note == player.ended_notes().end())
-            player.ended_notes().insert({ m_key, *this });
+        else if(!end_note.has_value())
+            player.ended_notes()[m_key] = *this;
     }
 }
 

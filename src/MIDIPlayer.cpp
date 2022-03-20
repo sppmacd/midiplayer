@@ -92,7 +92,7 @@ void MIDIPlayer::start_timer()
 
 sf::Color MIDIPlayer::resolve_color(NoteEvent& event)
 {
-    for(auto const& selector_list: m_static_tile_colors)
+    for(auto const& selector_list : m_static_tile_colors)
     {
         for(auto const& selector : selector_list.first)
         {
@@ -145,7 +145,7 @@ void MIDIPlayer::update_note_transitions(Config::SelectorList const& selectors, 
 
 void MIDIPlayer::add_static_tile_color(Config::SelectorList const& selectors, sf::Color color)
 {
-    m_static_tile_colors.push_back({selectors, color});
+    m_static_tile_colors.push_back({ selectors, color });
 }
 
 bool MIDIPlayer::load_config_file(std::string const& path)
@@ -533,13 +533,15 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     target.setView(view);
     if(m_real_time)
     {
-        ended_notes().clear();
+        for(auto& it : m_ended_notes)
+            it.reset();
         m_midi_input->for_each_event_backwards([&](Event& event)
             { event.render(*this, target); });
     }
     else
     {
-        started_notes().clear();
+        for(auto& it : m_started_notes)
+            it.reset();
         m_midi_input->for_each_event([&](Event& event)
             { event.render(*this, target); });
     }
