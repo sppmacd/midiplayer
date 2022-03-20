@@ -2,7 +2,8 @@
 
 **MIDI Player** (probably needs some better name) is a "beautiful" MIDI renderer. It's free and open source (BSD 2-Clause license).
 
-Some basic features:
+## Some basic features
+
 * Input/output from/to .mid files and MIDI devices
 * Rendering:
     * Raw frames for now, needs `ffmpeg` to actually turn into a video - see [example script](./render.sh)
@@ -15,19 +16,23 @@ Some basic features:
     * Particle properties (count, size, glow size)
     * Label font, fade time
     * And more...
+* Marking timestamps that you can use for configuration
+* WIP: Inserting custom events (so that you can make e.g. subtitles)
+    * Only TextEvents are supported
+* Changing styling when the track is playing (e.g at some time)
 
 Only Linux is supported as the target platform for now.
 
-Things that I (want to) work on:
-* Other platforms
-* Inserting custom events (so that you can make e.g. subtitles)
-* Changing styling when the track is playing (e.g at some time or when a key is pressed)
+## Things that I (want to) work on
+
+* Other platforms than Linux
 * Customization of video format (framerate, resolution,...)
+* Event triggers (so you can change styling when e.g a piano key is pressed)
 
 ![Defaults](./docs/screenshots/defaults.png)
 ![Selectors](./docs/screenshots/selectors.png)
 
-The app is still in development, it has probably many dumb bugs and is definitely not fully functional.
+The app is still in development. It probably contains many dumb bugs and is definitely not fully functional.
 
 ## Building / Installing
 
