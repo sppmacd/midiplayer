@@ -12,8 +12,7 @@
 #include <stop_token>
 #include <thread>
 
-class MIDIDeviceInput : public MIDIInput
-{
+class MIDIDeviceInput : public MIDIInput {
 public:
     MIDIDeviceInput(int port);
 
@@ -33,8 +32,7 @@ private:
     RtMidiIn m_input;
 };
 
-class MIDIDeviceOutput : public MIDIOutput
-{
+class MIDIDeviceOutput : public MIDIOutput {
 public:
     MIDIDeviceOutput(int port);
 
@@ -46,8 +44,7 @@ private:
     bool m_valid { false };
 };
 
-namespace MIDI
-{
+namespace MIDI {
 
 void print_available_ports();
 

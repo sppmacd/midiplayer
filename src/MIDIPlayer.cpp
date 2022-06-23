@@ -26,10 +26,9 @@ MIDIPlayer::MIDIPlayer()
 MIDIPlayer::~MIDIPlayer()
 {
     // Don't add bloat to MIDI files. These events are sent by device output anyway.
-    if(!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
+    if (!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
         return;
-    for(size_t s = 0; s < 16; s++)
-    {
+    for (size_t s = 0; s < 16; s++) {
         ControlChangeEvent c1(s, ControlChangeEvent::Number::AllSoundOff, 0);
         m_midi_output->write_event(c1);
         ControlChangeEvent c2(s, ControlChangeEvent::Number::AllNotesOff, 0);
@@ -40,13 +39,11 @@ MIDIPlayer::~MIDIPlayer()
 bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output)
 {
     // FIXME: This would need real error propagation instead of this. Maybe just use exceptions.
-    if(input && !input->is_valid())
-    {
+    if (input && !input->is_valid()) {
         logger::error("Invalid MIDI input");
         return false;
     }
-    if(output && !output->is_valid())
-    {
+    if (output && !output->is_valid()) {
         logger::error("Invalid MIDI output");
         return false;
     }
@@ -65,20 +62,19 @@ void MIDIPlayer::setup()
 
     auto resource_path = find_resource_path();
     logger::info("Resource path: {}", resource_path);
-    if(
+    if (
         m_render_resources->gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
         && m_render_resources->note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
         && m_render_resources->particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
         logger::info("Shaders loaded");
 
-    if(m_render_resources->debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
+    if (m_render_resources->debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
         logger::info("Font loaded");
 
     // Don't add bloat to MIDI files. These events are sent by device output anyway.
-    if(!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
+    if (!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
         return;
-    for(size_t s = 0; s < 16; s++)
-    {
+    for (size_t s = 0; s < 16; s++) {
         ControlChangeEvent c1(s, ControlChangeEvent::Number::ResetAllControllers, 0);
         m_midi_output->write_event(c1);
     }
@@ -92,17 +88,15 @@ void MIDIPlayer::start_timer()
 
 sf::Color MIDIPlayer::resolve_color(NoteEvent& event)
 {
-    for(auto const& selector_list : m_static_tile_colors)
-    {
-        for(auto const& selector : selector_list.first)
-        {
-            if(selector->matches(event.transition_unit(), &event))
+    for (auto const& selector_list : m_static_tile_colors) {
+        for (auto const& selector : selector_list.first) {
+            if (selector->matches(event.transition_unit(), &event))
                 return selector_list.second;
         }
     }
 
     auto maybe_pending_transition = m_note_transitions.find(event.transition_unit());
-    if(maybe_pending_transition != m_note_transitions.end())
+    if (maybe_pending_transition != m_note_transitions.end())
         return maybe_pending_transition->second;
 
     return m_config.default_color();
@@ -111,30 +105,25 @@ sf::Color MIDIPlayer::resolve_color(NoteEvent& event)
 void MIDIPlayer::update_note_transitions(Config::SelectorList const& selectors, sf::Color color, double transition)
 {
     // FIXME: Very naive and not the best.
-    for(uint8_t key = 0; key < 128; key++)
-    {
-        for(uint8_t channel = 0; channel < 16; channel++)
-        {
+    for (uint8_t key = 0; key < 128; key++) {
+        for (uint8_t channel = 0; channel < 16; channel++) {
             NoteEvent::TransitionUnit transition_unit { key, channel };
             bool matches = false;
-            if(selectors.empty())
+            if (selectors.empty())
                 matches = true;
-            else
-            {
-                for(auto& selector : selectors)
-                {
-                    if(selector->matches(transition_unit, nullptr))
-                    {
+            else {
+                for (auto& selector : selectors) {
+                    if (selector->matches(transition_unit, nullptr)) {
                         matches = true;
                         break;
                     }
                 }
             }
-            if(!matches)
+            if (!matches)
                 continue;
 
             auto maybe_pending_transition = m_note_transitions.find(transition_unit);
-            if(maybe_pending_transition != m_note_transitions.end())
+            if (maybe_pending_transition != m_note_transitions.end())
                 maybe_pending_transition->second.set_value_with_factor(color, transition);
             Config::AnimatableProperty<sf::Color> color_animatable { std::move(color) };
             color_animatable.set_value_with_factor(color, transition);
@@ -163,23 +152,18 @@ bool MIDIPlayer::reload_config_file()
     generate_particle_texture();
 
     logger::info("Loading display font: {}", m_config.display_font());
-    if(m_config.display_font().empty())
-    {
+    if (m_config.display_font().empty()) {
         logger::warning("No display font is specified. Using debug font.");
         m_render_resources->display_font = m_render_resources->debug_font;
-    }
-    else if(!m_render_resources->display_font.loadFromFile(m_config.display_font()))
-    {
+    } else if (!m_render_resources->display_font.loadFromFile(m_config.display_font())) {
         logger::error("Failed to load display font from {}.", m_config.display_font());
         success = false;
     }
 
-    if(m_real_time)
-    {
-        m_midi_input->for_each_track([this](Track& trk)
-            { trk.set_max_events(config().max_events_per_track()); });
+    if (m_real_time) {
+        m_midi_input->for_each_track([this](Track& trk) { trk.set_max_events(config().max_events_per_track()); });
     }
-    if(!success)
+    if (!success)
         return false;
     logger::info("Config file successfully reloaded from {}", m_config_file_path);
     return true;
@@ -218,10 +202,8 @@ size_t MIDIPlayer::calculate_current_tick() const
 
 bool MIDIPlayer::current_time_is(Config::Time time, size_t offset_in_frames) const
 {
-    switch(time.unit())
-    {
-        case Config::Time::Unit::Ticks:
-        {
+    switch (time.unit()) {
+        case Config::Time::Unit::Ticks: {
             // FIXME: This should have its converter function
             auto offset_in_ticks = offset_in_frames * fps() / (microseconds_per_quarter_note() / (double)m_midi_input->ticks_per_quarter_note()) / 1000000.0;
             return current_tick() == time.value() + offset_in_ticks;
@@ -236,8 +218,7 @@ bool MIDIPlayer::current_time_is(Config::Time time, size_t offset_in_frames) con
 
 bool MIDIPlayer::is_in_interval_frame(Config::Time interval, size_t offset_in_frames) const
 {
-    switch(interval.unit())
-    {
+    switch (interval.unit()) {
         case Config::Time::Unit::Ticks:
             // FIXME: Implement this
             return false;
@@ -251,8 +232,7 @@ bool MIDIPlayer::is_in_interval_frame(Config::Time interval, size_t offset_in_fr
 
 size_t MIDIPlayer::frame_count_for_time(Config::Time time, size_t offset_in_frames) const
 {
-    switch(time.unit())
-    {
+    switch (time.unit()) {
         case Config::Time::Unit::Ticks:
             // FIXME: This should have its converter function
             return time.value() * fps() / (microseconds_per_quarter_note() / (double)m_midi_input->ticks_per_quarter_note()) / 1000000.0 + offset_in_frames;
@@ -270,45 +250,40 @@ void MIDIPlayer::update()
     m_midi_input->update(*this);
     m_current_tick = calculate_current_tick();
 
-    if(m_config_file_watcher.file_was_modified())
+    if (m_config_file_watcher.file_was_modified())
         reload_config_file();
 
     m_config.update();
     auto events = m_midi_input->find_events_in_range(previous_current_tick, m_current_tick);
 
-    for(auto const& it : events)
-    {
+    for (auto const& it : events) {
         it->execute(*this);
-        if(m_midi_output)
+        if (m_midi_output)
             m_midi_output->write_event(*it);
     }
 
     static std::default_random_engine engine;
-    if(rand() % 20 == 0)
-    {
+    if (rand() % 20 == 0) {
         float rand_speed = std::uniform_real_distribution<float>(-2, 2)(engine);
         float rand_pos_x = std::uniform_real_distribution<float>(0, 128)(engine);
         float rand_pos_y = std::uniform_real_distribution<float>(-128, 0)(engine);
         int rand_time = std::uniform_int_distribution<int>(30, 45)(engine);
         m_winds.push_back({ 0, rand_speed, { rand_pos_x, rand_pos_y }, rand_time, rand_time });
     }
-    for(auto& wind : m_winds)
-    {
+    for (auto& wind : m_winds) {
         double change_factor = wind.target_speed / (wind.start_time / 2.f);
-        if(wind.time > wind.start_time / 2)
+        if (wind.time > wind.start_time / 2)
             wind.speed += change_factor;
         else
             wind.speed -= change_factor;
         wind.time--;
     }
 
-    for(auto& particle : m_particles)
-    {
+    for (auto& particle : m_particles) {
         particle.position += { particle.motion.x, particle.motion.y };
         particle.motion.x /= 1.05f;
         particle.motion.y /= 1.01f;
-        for(auto const& wind : m_winds)
-        {
+        for (auto const& wind : m_winds) {
             float dstx = particle.position.x - wind.pos.x;
             float dsty = particle.position.y - wind.pos.y;
             particle.motion.x -= std::min(0.00225, std::max(-0.00225, wind.speed / dsty / dsty));
@@ -316,33 +291,29 @@ void MIDIPlayer::update()
         particle.lifetime--;
     }
 
-    for(auto& label : m_labels)
+    for (auto& label : m_labels)
         label.remaining_duration--;
 
-    std::erase_if(m_particles, [](auto const& particle)
-        { return particle.lifetime <= 0; });
-    std::erase_if(m_winds, [](auto const& wind)
-        { return wind.time <= 0; });
-    std::erase_if(m_labels, [](auto const& label)
-        { return label.remaining_duration <= 0; });
+    std::erase_if(m_particles, [](auto const& particle) { return particle.lifetime <= 0; });
+    std::erase_if(m_winds, [](auto const& wind) { return wind.time <= 0; });
+    std::erase_if(m_labels, [](auto const& label) { return label.remaining_duration <= 0; });
 
     m_current_frame++;
 
     auto end_tick = m_midi_input->end_tick();
-    if(end_tick.has_value() && current_tick() > end_tick.value())
+    if (end_tick.has_value() && current_tick() > end_tick.value())
         set_playing(false);
 }
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
-    if(m_particles.empty())
+    if (m_particles.empty())
         return;
 
     // TODO: This probably can be further optimized
     sf::VertexArray varr(sf::Triangles, m_particles.size() * 6);
     size_t counter = 0;
-    for(auto const& particle : m_particles)
-    {
+    for (auto const& particle : m_particles) {
         auto color = particle.color;
         color.a = particle.lifetime * 255 / particle.start_lifetime;
 
@@ -391,8 +362,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         target.draw(rs, sf::RenderStates { &m_render_resources->gradient_shader });
 
         // Labels
-        for(auto const& label : m_labels)
-        {
+        for (auto const& label : m_labels) {
             sf::Text text(label.text, m_render_resources->display_font, config().label_font_size());
             auto bounds = text.getLocalBounds();
             float padding_left_right = config().label_font_size() * 100.f / 45.f;
@@ -400,11 +370,10 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
             RoundedEdgeRectangleShape rs { { bounds.width + padding_left_right, bounds.height + padding_top_bottom }, 10.f };
             rs.setPosition({ target_size.x / 2.f, target_size.y / 2.f + config().label_font_size() / 4.6f });
             rs.setOrigin(rs.getSize() / 2.f);
-            auto calculate_alpha = [&](uint8_t max_alpha) -> uint8_t
-            {
-                if(label.remaining_duration < config().label_fade_time())
+            auto calculate_alpha = [&](uint8_t max_alpha) -> uint8_t {
+                if (label.remaining_duration < config().label_fade_time())
                     return label.remaining_duration * max_alpha / config().label_fade_time();
-                if(label.remaining_duration > label.total_duration - config().label_fade_time())
+                if (label.remaining_duration > label.total_duration - config().label_fade_time())
                     return (label.total_duration - label.remaining_duration) * max_alpha / config().label_fade_time();
                 return max_alpha;
             };
@@ -426,11 +395,9 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
     auto upper_y_to_view_pos = target.mapPixelToCoords({ 0, static_cast<int>(target.getSize().y - piano_size_px) }).y;
     auto lower_y_to_view_pos = target.mapPixelToCoords({ 0, static_cast<int>(target.getSize().y) }).y;
     // a0 -- c8
-    for(size_t s = 21; s <= 108; s++)
-    {
+    for (size_t s = 21; s <= 108; s++) {
         MIDIKey key { static_cast<uint8_t>(s) };
-        if(!key.is_black())
-        {
+        if (!key.is_black()) {
             sf::RectangleShape rs { { 1.f, (lower_y_to_view_pos - upper_y_to_view_pos) } };
             rs.setPosition(key.to_piano_position(), 0.f);
             rs.setFillColor(m_notes[key].is_played ? m_notes[key].color : sf::Color(230, 230, 230));
@@ -439,11 +406,9 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
             target.draw(rs);
         }
     }
-    for(size_t s = 21; s <= 108; s++)
-    {
+    for (size_t s = 21; s <= 108; s++) {
         MIDIKey key { static_cast<uint8_t>(s) };
-        if(key.is_black())
-        {
+        if (key.is_black()) {
             sf::RectangleShape rs { { 0.7f, (lower_y_to_view_pos - upper_y_to_view_pos) * 3 / 5.f } };
             rs.setPosition(key.to_piano_position() - 0.15f, -0.1f);
             rs.setFillColor(m_notes[key].is_played ? m_notes[key].color * sf::Color(200, 200, 200) : sf::Color(50, 50, 50));
@@ -461,26 +426,24 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     std::ostringstream oss;
     auto elapsed_seconds = (double)current_frame() / fps();
     oss << std::setfill('0');
-    if(elapsed_seconds > 3600)
+    if (elapsed_seconds > 3600)
         oss << std::setw(2) << (int)elapsed_seconds / 3600 << ":" << std::setw(2); // The last setw is for minutes
     oss << ((int)elapsed_seconds / 60) % 60 << ":"
         << std::setw(2) << (int)elapsed_seconds % 60;
-    if(debug_info.full_info)
+    if (debug_info.full_info)
         oss << " (Tick=" << tick << " Frame=" << current_frame() << " Second=" << std::fixed << std::setprecision(2) << elapsed_seconds << ")";
-    if(!m_real_time && end_tick.has_value())
+    if (!m_real_time && end_tick.has_value())
         oss << "/" << end_tick.value() << " (" << 100 * tick / end_tick.value() << "%)";
-    if(debug_info.full_info)
-    {
+    if (debug_info.full_info) {
         oss << "\n\n";
         oss << std::to_string(1.f / debug_info.last_fps_time.asSeconds()) + " fps\n";
         oss << m_particles.size() << " particles" << std::endl;
         oss << "StaticTileColors: " << m_static_tile_colors.size() << std::endl;
         m_config.dump_stats(oss);
 
-        if(!m_winds.empty())
-        {
+        if (!m_winds.empty()) {
             oss << "WIND:\n";
-            for(auto const& wind : m_winds)
+            for (auto const& wind : m_winds)
                 oss << "    [" << wind.pos.x << "," << wind.pos.y << "] " << wind.speed << " " << wind.time << "\n";
         }
     }
@@ -499,8 +462,7 @@ void MIDIPlayer::spawn_random_particles(sf::RenderTarget& target, MIDIKey key, s
 {
     auto size = target.getView().getSize();
     static std::default_random_engine engine;
-    for(int i = 0; i < particle_count(); i++)
-    {
+    for (int i = 0; i < particle_count(); i++) {
         float velocity_factor = (velocity - 64) / 800.f + 0.03f;
         float rand_x_speed = (std::binomial_distribution<int>(100, 0.5)(engine) - 50) / 250.0;
         float rand_y_speed = -std::binomial_distribution<int>(100, 0.1)(engine) / 500.0 - velocity_factor;
@@ -531,19 +493,14 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
     auto view = sf::View { sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect) };
     target.setView(view);
-    if(m_real_time)
-    {
-        for(auto& it : m_ended_notes)
+    if (m_real_time) {
+        for (auto& it : m_ended_notes)
             it.reset();
-        m_midi_input->for_first_events_starting_from_backwards(current_tick(), 4096, [&](Event& event)
-            { event.render(*this, target); });
-    }
-    else
-    {
-        for(auto& it : m_started_notes)
+        m_midi_input->for_first_events_starting_from_backwards(current_tick(), 4096, [&](Event& event) { event.render(*this, target); });
+    } else {
+        for (auto& it : m_started_notes)
             it.reset();
-        m_midi_input->for_first_events_starting_from(current_tick() < 4096 ? 0 : current_tick() - 4096, 8192, [&](Event& event)
-            { event.render(*this, target); });
+        m_midi_input->for_first_events_starting_from(current_tick() < 4096 ? 0 : current_tick() - 4096, 8192, [&](Event& event) { event.render(*this, target); });
     }
     render_particles(target);
     render_overlay(target);
@@ -557,16 +514,14 @@ void MIDIPlayer::print_config_help() const
 
 sf::Texture* MIDIPlayer::get_background_image(std::string const& filename)
 {
-    if(!filename.empty())
-    {
+    if (!filename.empty()) {
         auto maybe_existing_texture = m_render_resources->background_textures.find(filename);
-        if(maybe_existing_texture != m_render_resources->background_textures.end())
+        if (maybe_existing_texture != m_render_resources->background_textures.end())
             return &maybe_existing_texture->second;
 
         auto new_texture = m_render_resources->background_textures.emplace(std::make_pair(filename, sf::Texture()));
         assert(new_texture.second);
-        if(!new_texture.first->second.loadFromFile(filename))
-        {
+        if (!new_texture.first->second.loadFromFile(filename)) {
             logger::error("Failed to load background image from {}.", filename);
             return nullptr;
         }

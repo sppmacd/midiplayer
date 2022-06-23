@@ -2,8 +2,7 @@
 
 class Event;
 
-class MIDIOutput
-{
+class MIDIOutput {
 public:
     virtual ~MIDIOutput() = default;
     virtual bool is_valid() const = 0;

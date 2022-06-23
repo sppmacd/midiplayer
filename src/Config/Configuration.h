@@ -8,13 +8,11 @@
 #include "Property.h"
 #include "Statement.h"
 
-namespace Config
-{
+namespace Config {
 
 class Reader;
 
-class Configuration
-{
+class Configuration {
 public:
     void add_statement(std::unique_ptr<Statement>);
 

@@ -3,8 +3,7 @@
 #include <functional>
 #include <iostream>
 
-class FileWatcher
-{
+class FileWatcher {
 public:
     FileWatcher() = default;
     explicit FileWatcher(std::string const& path);
@@ -17,6 +16,6 @@ public:
     bool file_was_modified() const;
 
 private:
-    int m_watcher_fd {-1};
-    int m_watcher_wd {-1};
+    int m_watcher_fd { -1 };
+    int m_watcher_wd { -1 };
 };

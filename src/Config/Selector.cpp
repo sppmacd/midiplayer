@@ -9,13 +9,11 @@
 
 using namespace std::literals;
 
-namespace Config
-{
+namespace Config {
 
 bool AttributeSelector::matches(NoteEvent::TransitionUnit transition_unit, NoteEvent const* event) const
 {
-    switch(m_attribute)
-    {
+    switch (m_attribute) {
         case Attribute::Channel:
             return m_value.matches(transition_unit.channel);
         case Attribute::Note:
@@ -25,8 +23,8 @@ bool AttributeSelector::matches(NoteEvent::TransitionUnit transition_unit, NoteE
         case Attribute::BlackKey:
             return m_value.matches(transition_unit.key.black_key_index());
         case Attribute::Time:
-            if(!event)
-                // TODO: Warn the user if he uses nonanimatable property in animate_property 
+            if (!event)
+                // TODO: Warn the user if he uses nonanimatable property in animate_property
                 //       instead of silently failing.
                 return false;
             return m_value.matches(event->tick());

@@ -5,8 +5,7 @@
 #include <memory>
 #include <vector>
 
-class Track
-{
+class Track {
 public:
     void add_event(std::unique_ptr<Event>&& data);
     std::vector<Event*> find_events_in_range(size_t start_tick, size_t end_tick) const;

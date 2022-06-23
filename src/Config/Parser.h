@@ -1,11 +1,11 @@
 #pragma once
 
+#include "Action.h"
 #include "Configuration.h"
 #include "Info.h"
 #include "Lexer.h"
 #include "Property.h"
 #include "Selector.h"
-#include "Action.h"
 
 #include <SFML/Graphics.hpp>
 #include <functional>
@@ -15,39 +15,41 @@
 #include <string>
 #include <type_traits>
 
-namespace Config
-{
+namespace Config {
 
-struct SourceRange
-{
+struct SourceRange {
     SourceLocation location;
     size_t size;
 };
 
-struct ParserError
-{
+struct ParserError {
     SourceRange range;
     std::string message;
 };
 
 template<class T>
-class [[nodiscard]] ParserErrorOr
-{
+class [[nodiscard]] ParserErrorOr {
 public:
     ParserErrorOr(T&& t)
-    : m_value(std::move(t)) {}
+        : m_value(std::move(t))
+    {
+    }
 
     ParserErrorOr(ParserError&& t)
-    : m_error(std::move(t)) {}
+        : m_error(std::move(t))
+    {
+    }
 
     template<class U>
     ParserErrorOr(U&& u)
-    : m_value(std::move(u)) {}
+        : m_value(std::move(u))
+    {
+    }
 
     template<class U>
     ParserErrorOr(ParserErrorOr<U>&& u)
     {
-        if(u.has_error())
+        if (u.has_error())
             m_error = u.release_error();
         else
             m_value = u.release_value();
@@ -67,11 +69,9 @@ private:
     std::optional<ParserError> m_error;
 };
 
-class Parser
-{
+class Parser {
 public:
-    enum class ColorAlphaMode
-    {
+    enum class ColorAlphaMode {
         DontAllow, // #(<r> <g> <b>)
         Allow,     // #(<r> <g> <b> [a])
         Require    // #(<r> <g> <b> <a>)
@@ -104,11 +104,14 @@ private:
     ParserErrorOr<std::unique_ptr<PropertyStatement>> parse_property_statement();
 
     explicit Parser(Info& info, std::vector<Token> const& in)
-    : m_info(info), m_tokens(in) {}
+        : m_info(info)
+        , m_tokens(in)
+    {
+    }
 
     Token const* peek_next_token()
     {
-        if(m_offset >= m_tokens.size())
+        if (m_offset >= m_tokens.size())
             return nullptr;
         return &m_tokens[m_offset];
     }
@@ -123,8 +126,7 @@ private:
     Token const* get_next_token_of_type(Token::Type type)
     {
         auto token = peek_next_token();
-        if(token && token->type() == type)
-        {
+        if (token && token->type() == type) {
             m_offset++;
             return token;
         }

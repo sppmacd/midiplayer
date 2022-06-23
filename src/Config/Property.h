@@ -8,14 +8,12 @@
 #include <string>
 #include <variant>
 
-namespace Config
-{
+namespace Config {
 
 class PropertyParameter;
 class Selector;
 
-enum class PropertyType
-{
+enum class PropertyType {
     Invalid,
     Int,
     Float,
@@ -26,13 +24,16 @@ enum class PropertyType
     Time
 };
 
-class PropertyFormalParameter
-{
+class PropertyFormalParameter {
 public:
     /// \param name is used only for help string
     // FIXME: Figure out how to get rid of this shared_ptr
     PropertyFormalParameter(PropertyType type, std::string_view name, std::shared_ptr<MatchExpression> match_expression = nullptr)
-    : m_type(type), m_name(name), m_match_expression(std::move(match_expression)) {}
+        : m_type(type)
+        , m_name(name)
+        , m_match_expression(std::move(match_expression))
+    {
+    }
 
     PropertyType type() const { return m_type; }
     std::string_view name() const { return m_name; }
@@ -49,12 +50,13 @@ private:
 using SelectorList = std::vector<std::shared_ptr<Selector>>;
 using PropertyParameterBase = std::variant<int, float, std::string, sf::Color, SelectorList, Time>;
 
-class PropertyParameter : public PropertyParameterBase
-{
+class PropertyParameter : public PropertyParameterBase {
 public:
     template<class T>
     PropertyParameter(T&& value)
-    : PropertyParameterBase(std::forward<T>(value)) {}
+        : PropertyParameterBase(std::forward<T>(value))
+    {
+    }
 
     float as_int() const
     {
@@ -88,11 +90,12 @@ public:
     }
 };
 
-class ArgumentList
-{
+class ArgumentList {
 public:
     ArgumentList(std::vector<PropertyParameter> args)
-    : m_args(args) {}
+        : m_args(args)
+    {
+    }
 
     PropertyParameter const& operator[](size_t i) const
     {

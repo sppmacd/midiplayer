@@ -1,7 +1,6 @@
 #include "Configuration.h"
 
-namespace Config
-{
+namespace Config {
 
 void Configuration::add_statement(std::unique_ptr<Statement> statement)
 {
@@ -11,7 +10,7 @@ void Configuration::add_statement(std::unique_ptr<Statement> statement)
 bool Configuration::execute(Reader& reader) const
 {
     bool success = true;
-    for(auto& statement : m_statements)
+    for (auto& statement : m_statements)
         success &= statement->execute(reader);
     return success;
 }

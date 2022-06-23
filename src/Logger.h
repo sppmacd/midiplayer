@@ -3,8 +3,7 @@
 #include <fmt/color.h>
 #include <fmt/format.h>
 
-namespace logger
-{
+namespace logger {
 
 template<class... Args>
 void log(fmt::terminal_color style, std::string str, fmt::format_string<Args...> fmtstr, Args... args)

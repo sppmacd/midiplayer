@@ -12,8 +12,7 @@ using namespace std::literals;
 
 std::string_view g_exec_name;
 
-enum class Brief
-{
+enum class Brief {
     Yes,
     No
 };
@@ -21,8 +20,7 @@ enum class Brief
 static void print_usage_and_exit(Brief brief = Brief::Yes)
 {
     std::cerr << "Usage: " << g_exec_name << " [options...] [list-midi-devices|<play <MIDI file>|<realtime <MIDI device>>>]" << std::endl;
-    if(brief == Brief::No)
-    {
+    if (brief == Brief::No) {
         std::cerr << "Modes:" << std::endl;
         std::cerr << "    list-midi-devices  Print a list of MIDI input/output devices." << std::endl;
         std::cerr << "    play [file]        Play pre-recorded .mid file. Supports output to MIDI device with -m option." << std::endl;
@@ -45,14 +43,13 @@ const char* VERSION_STRING = "dev";
 static void print_version(Brief brief = Brief::Yes)
 {
     // This is based on gcc's --version output
-    if(brief == Brief::No)
+    if (brief == Brief::No)
         std::cerr << "Copyright (C) 2021-2022 sppmacd" << std::endl;
     else
         std::cerr << "\e[1m" << g_exec_name << " (MIDIPlayer) " << VERSION_STRING << "\e[0m (" << __DATE__ << " " << __TIME__ << ")" << std::endl;
 }
 
-enum class Mode
-{
+enum class Mode {
     Realtime,
     Play
 };
@@ -74,131 +71,96 @@ int main(int argc, char* argv[])
     MIDIPlayer player;
 
     // FIXME: This is very messy. Factor it out to a nice API or just get a library for argsparse :)
-    if(argc < 2)
+    if (argc < 2)
         print_usage_and_exit(Brief::No);
-    else
-    {
-        for(int i = 1; i < argc; i++)
-        {
+    else {
+        for (int i = 1; i < argc; i++) {
             std::string_view arg_sv { argv[i] };
-            if(arg_sv.starts_with('-'))
-            {
+            if (arg_sv.starts_with('-')) {
                 std::string_view opt_sv = arg_sv.substr(1);
-                if(opt_sv == "c"sv)
-                {
-                    if(++i == argc)
-                    {
+                if (opt_sv == "c"sv) {
+                    if (++i == argc) {
                         logger::error("-c requires an argument");
                         return 1;
                     }
                     config_file_path = argv[i];
-                }
-                else if(opt_sv == "m"sv)
-                {
-                    if(++i == argc)
-                    {
+                } else if (opt_sv == "m"sv) {
+                    if (++i == argc) {
                         logger::error("-m requires an argument");
                         return 1;
                     }
                     midi_output = argv[i];
-                }
-                else if(opt_sv == "o"sv)
+                } else if (opt_sv == "o"sv)
                     render_to_stdout = true;
-                else if(opt_sv == "-config-help")
+                else if (opt_sv == "-config-help")
                     print_config_help = true;
-                else if(opt_sv == "-debug")
+                else if (opt_sv == "-debug")
                     should_render_debug_info_in_preview = true;
-                else if(opt_sv == "-help")
+                else if (opt_sv == "-help")
                     print_usage_and_exit(Brief::No);
-                else if(opt_sv == "-markers")
-                {
-                    if(++i == argc)
-                    {
+                else if (opt_sv == "-markers") {
+                    if (++i == argc) {
                         logger::error("--markers requires an argument");
                         return 1;
                     }
                     marker_file_name = argv[i];
-                }
-                else if(opt_sv == "-version")
-                {
+                } else if (opt_sv == "-version") {
                     print_version(Brief::No);
                     return 0;
-                }
-                else
+                } else
                     logger::warning("WARNING: Ignoring invalid option: {}", arg_sv);
-            }
-            else
-            {
-                if(player.is_initialized())
-                {
+            } else {
+                if (player.is_initialized()) {
                     logger::error("Only one mode may be active at once");
                     return 1;
                 }
 
-                if(arg_sv == "realtime"sv || arg_sv == "play"sv)
-                {
-                    if(++i >= argc)
-                    {
+                if (arg_sv == "realtime"sv || arg_sv == "play"sv) {
+                    if (++i >= argc) {
                         logger::error("Expected name for {} mode", arg_sv);
                         return 1;
                     }
                     std::string_view filename_sv { argv[i] };
-                    if(arg_sv == "realtime"sv)
-                    {
+                    if (arg_sv == "realtime"sv) {
                         int value = 0;
-                        try
-                        {
+                        try {
                             // FIXME: stdc++, make consistent std::string_view support finally!!
                             value = std::stoi(std::string { filename_sv });
-                        }
-                        catch(...)
-                        {
+                        } catch (...) {
                             logger::error("Expected port number. See midieditor list-midi-devices for a list of MIDI devices.");
                             return 1;
                         }
-                        if(!player.initialize(MIDIPlayer::RealTime::Yes, std::make_unique<MIDIDeviceInput>(value),
-                               midi_output.empty() ? nullptr : std::make_unique<MIDIFileOutput>(midi_output)))
+                        if (!player.initialize(MIDIPlayer::RealTime::Yes, std::make_unique<MIDIDeviceInput>(value),
+                                midi_output.empty() ? nullptr : std::make_unique<MIDIFileOutput>(midi_output)))
                             return 1;
-                    }
-                    else if(arg_sv == "play"sv)
-                    {
+                    } else if (arg_sv == "play"sv) {
                         std::ifstream stream(std::string { filename_sv }, std::ios::binary);
-                        if(stream.fail())
-                        {
+                        if (stream.fail()) {
                             logger::error("Failed to open file");
                             return 1;
                         }
                         auto midi_file = std::make_unique<MIDIFileInput>(stream);
-                        if(!midi_file->is_valid())
-                        {
+                        if (!midi_file->is_valid()) {
                             logger::error("Failed to read MIDI");
                             return 1;
                         }
                         int value = 0;
-                        if(!midi_output.empty())
-                        {
-                            try
-                            {
+                        if (!midi_output.empty()) {
+                            try {
                                 value = std::stoi(midi_output);
-                            }
-                            catch(...)
-                            {
+                            } catch (...) {
                                 logger::error("Expected port number. See midieditor list-midi-devices for a list of MIDI devices.");
                                 return 1;
                             }
                         }
-                        if(!player.initialize(MIDIPlayer::RealTime::No, std::move(midi_file),
-                               midi_output.empty() ? nullptr : std::make_unique<MIDIDeviceOutput>(value)))
+                        if (!player.initialize(MIDIPlayer::RealTime::No, std::move(midi_file),
+                                midi_output.empty() ? nullptr : std::make_unique<MIDIDeviceOutput>(value)))
                             return 1;
                     }
-                }
-                else if(arg_sv == "list-midi-devices"sv)
-                {
+                } else if (arg_sv == "list-midi-devices"sv) {
                     MIDI::print_available_ports();
                     return 0;
-                }
-                else
-                {
+                } else {
                     logger::error("Unknown mode: {}", arg_sv);
                     print_usage_and_exit();
                 }
@@ -206,47 +168,40 @@ int main(int argc, char* argv[])
         }
     }
 
-    if(print_config_help)
-    {
+    if (print_config_help) {
         player.print_config_help();
         return 0;
     }
 
-    if(!player.is_initialized())
-    {
+    if (!player.is_initialized()) {
         logger::error("No mode was given. You need to specify either 'play' or 'realtime'. See --help for details.");
         return 1;
     }
 
     player.setup();
 
-    if(config_file_path.empty())
+    if (config_file_path.empty())
         player.load_config_file("config.cfg");
-    else if(!player.load_config_file(config_file_path))
-    {
+    else if (!player.load_config_file(config_file_path)) {
         logger::error("Failed to load config file: {}", config_file_path);
         return 1;
     }
 
-    std::unique_ptr<sf::RenderTexture> render_texture = [&]() -> std::unique_ptr<sf::RenderTexture>
-    {
-        if(render_to_stdout)
-        {
-            if(isatty(STDOUT_FILENO))
-            {
+    std::unique_ptr<sf::RenderTexture> render_texture = [&]() -> std::unique_ptr<sf::RenderTexture> {
+        if (render_to_stdout) {
+            if (isatty(STDOUT_FILENO)) {
                 logger::error("stdout is a terminal, refusing to print binary data");
                 return nullptr;
             }
 
             auto texture = std::make_unique<sf::RenderTexture>();
             // TODO: Support custom resolution/FPS/format/...
-            if(!texture->create(1920, 1080))
-            {
+            if (!texture->create(1920, 1080)) {
                 logger::error("Failed to create render texture, ignoring");
                 return nullptr;
             }
             logger::info("Rendering to stdout (RGBA24 1920x1080 60fps)");
-            if(mode == Mode::Realtime)
+            if (mode == Mode::Realtime)
                 logger::warning("Realtime mode is not recommended for rendering, consider recording it to MIDI file first and playing");
             return texture;
         }
@@ -255,19 +210,17 @@ int main(int argc, char* argv[])
 
     bool is_fullscreen = false;
     sf::RenderWindow window;
-    auto create_windowed = [&]()
-    {
+    auto create_windowed = [&]() {
         is_fullscreen = false;
         window.create(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings { 0, 0, 1 });
-        if(!render_texture)
+        if (!render_texture)
             window.setFramerateLimit(60);
         window.setMouseCursorVisible(true);
     };
-    auto create_fullscreen = [&]()
-    {
+    auto create_fullscreen = [&]() {
         is_fullscreen = true;
         window.create(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Fullscreen, sf::ContextSettings { 0, 0, 1 });
-        if(!render_texture)
+        if (!render_texture)
             window.setFramerateLimit(60);
         window.setMouseCursorVisible(false);
     };
@@ -277,40 +230,34 @@ int main(int argc, char* argv[])
     sf::Time last_fps_time;
 
     std::ofstream marker_file { marker_file_name, std::ios::app };
-    if(!marker_file_name.empty() && marker_file.fail())
+    if (!marker_file_name.empty() && marker_file.fail())
         logger::warning("Failed to open marker file '{}'. Markers will not be saved.", marker_file_name);
     marker_file << "# markers " << time(nullptr) << std::endl;
-    auto write_marker = [&](std::string name)
-    {
-        if(marker_file_name.empty())
+    auto write_marker = [&](std::string name) {
+        if (marker_file_name.empty())
             return;
         logger::info("Adding marker {} at {} to {}", name, player.current_tick(), marker_file_name);
         marker_file << name << ": " << player.current_tick() << std::endl;
     };
 
     player.start_timer();
-    while(player.playing())
-    {
+    while (player.playing()) {
         {
             sf::Event event;
-            while(window.pollEvent(event))
-            {
-                if(event.type == sf::Event::Closed)
+            while (window.pollEvent(event)) {
+                if (event.type == sf::Event::Closed)
                     player.set_playing(false);
-                else if(event.type == sf::Event::KeyPressed)
-                {
-                    if(event.key.code == sf::Keyboard::F11)
-                    {
-                        if(is_fullscreen)
+                else if (event.type == sf::Event::KeyPressed) {
+                    if (event.key.code == sf::Keyboard::F11) {
+                        if (is_fullscreen)
                             create_windowed();
                         else
                             create_fullscreen();
-                    }
-                    else if(event.key.code == sf::Keyboard::F3)
+                    } else if (event.key.code == sf::Keyboard::F3)
                         should_render_debug_info_in_preview = !should_render_debug_info_in_preview;
-                    else if(event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9)
+                    else if (event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9)
                         write_marker(std::to_string(event.key.code - sf::Keyboard::Num0));
-                    else if(event.key.code >= sf::Keyboard::Numpad0 && event.key.code <= sf::Keyboard::Numpad9)
+                    else if (event.key.code >= sf::Keyboard::Numpad0 && event.key.code <= sf::Keyboard::Numpad9)
                         write_marker(std::to_string(event.key.code - sf::Keyboard::Numpad0));
                 }
             }
@@ -319,8 +266,7 @@ int main(int argc, char* argv[])
         // FIXME: Last FPS should be stored in MIDIPlayer somehow!
         player.render(window, { .full_info = should_render_debug_info_in_preview, .last_fps_time = last_fps_time });
         window.display();
-        if(render_texture)
-        {
+        if (render_texture) {
             player.render(*render_texture, { .full_info = false, .last_fps_time = last_fps_time });
             render_texture->display();
             auto image = render_texture->getTexture().copyToImage();

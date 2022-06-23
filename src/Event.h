@@ -11,8 +11,7 @@
 
 class MIDIPlayer;
 
-class Event
-{
+class Event {
 public:
     virtual ~Event() = default;
 
@@ -20,11 +19,11 @@ public:
     size_t tick() const { return m_tick; }
 
     virtual void dump() const = 0;
-    virtual void render(MIDIPlayer&, sf::RenderTarget&) {}
+    virtual void render(MIDIPlayer&, sf::RenderTarget&) { }
     virtual void execute(MIDIPlayer&) = 0;
 
     virtual bool is_serializable() const { return false; }
-    virtual void serialize(std::ostream&) const {}
+    virtual void serialize(std::ostream&) const { }
 
     virtual std::unique_ptr<Event> clone() const = 0;
     virtual Config::NamedFormalParameters formal_parameters() const { return {}; }
@@ -36,12 +35,11 @@ private:
     size_t m_tick { 0 };
 };
 
-class EndOfTrackEvent : public Event
-{
+class EndOfTrackEvent : public Event {
 public:
     virtual void dump() const override { std::cerr << tick() << ": End Of Track Event" << std::endl; }
     virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
-    virtual void execute(MIDIPlayer&) override {}
+    virtual void execute(MIDIPlayer&) override { }
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
@@ -55,14 +53,15 @@ public:
     virtual std::unique_ptr<Event> clone() const override { return std::make_unique<EndOfTrackEvent>(*this); }
 };
 
-class InvalidEvent : public Event
-{
+class InvalidEvent : public Event {
 public:
     InvalidEvent(uint8_t type)
-    : m_type(type) {}
+        : m_type(type)
+    {
+    }
 
     virtual void dump() const override { std::cerr << "Invalid Event " << std::hex << (int)m_type << std::dec << std::endl; }
-    virtual void execute(MIDIPlayer&) override {}
+    virtual void execute(MIDIPlayer&) override { }
 
     virtual std::unique_ptr<Event> clone() const override { return std::make_unique<InvalidEvent>(*this); }
 
@@ -70,11 +69,9 @@ private:
     uint8_t m_type;
 };
 
-class TextEvent : public Event
-{
+class TextEvent : public Event {
 public:
-    enum class Type
-    {
+    enum class Type {
         Text,
         Copyright,
         TrackName,
@@ -85,7 +82,10 @@ public:
     };
 
     TextEvent(Type type = {}, std::string const& text = {})
-    : m_type(type), m_text(text) {}
+        : m_type(type)
+        , m_text(text)
+    {
+    }
 
     virtual void dump() const override { std::cerr << "Text Event " << static_cast<int>(m_type) << ": " << m_text << std::endl; }
     virtual void execute(MIDIPlayer&) override;
@@ -99,11 +99,12 @@ private:
     std::string m_text;
 };
 
-class SetTempoEvent : public Event
-{
+class SetTempoEvent : public Event {
 public:
     SetTempoEvent(uint32_t microseconds_per_quarter_note)
-    : m_microseconds_per_quarter_note(microseconds_per_quarter_note) {}
+        : m_microseconds_per_quarter_note(microseconds_per_quarter_note)
+    {
+    }
 
     virtual void dump() const override { std::cerr << "Set Tempo Event " << m_microseconds_per_quarter_note << std::endl; }
     virtual void execute(MIDIPlayer&) override;
@@ -127,11 +128,15 @@ private:
     uint32_t m_microseconds_per_quarter_note;
 };
 
-class TimeSignatureEvent : public Event
-{
+class TimeSignatureEvent : public Event {
 public:
     TimeSignatureEvent(unsigned numerator, unsigned denominator, uint8_t clocks_per_metronome_click, uint8_t _32s_in_quarter_note)
-    : m_numerator(numerator), m_denominator(denominator), m_clocks_per_metronome_click(clocks_per_metronome_click), m_32s_in_quarter_note(_32s_in_quarter_note) {}
+        : m_numerator(numerator)
+        , m_denominator(denominator)
+        , m_clocks_per_metronome_click(clocks_per_metronome_click)
+        , m_32s_in_quarter_note(_32s_in_quarter_note)
+    {
+    }
 
     virtual void dump() const override
     {
@@ -165,23 +170,25 @@ private:
 
 using MIDIChannel = uint8_t;
 
-class NoteEvent : public Event
-{
+class NoteEvent : public Event {
 public:
-    enum class Type
-    {
+    enum class Type {
         On,
         Off
     };
 
-    struct TransitionUnit
-    {
+    struct TransitionUnit {
         MIDIKey key;
         MIDIChannel channel;
     };
 
     NoteEvent(Type type, MIDIChannel channel, MIDIKey key, uint8_t velocity)
-    : m_type(type), m_channel(channel), m_key(key), m_velocity(velocity) {}
+        : m_type(type)
+        , m_channel(channel)
+        , m_key(key)
+        , m_velocity(velocity)
+    {
+    }
 
     virtual void dump() const override
     {
@@ -200,7 +207,7 @@ public:
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
-        if(m_type == Type::On)
+        if (m_type == Type::On)
             stream << (uint8_t)(0x90 + m_channel);
         else
             stream << (uint8_t)(0x80 + m_channel);
@@ -218,8 +225,7 @@ private:
 };
 
 template<>
-struct std::hash<NoteEvent::TransitionUnit>
-{
+struct std::hash<NoteEvent::TransitionUnit> {
     size_t operator()(NoteEvent::TransitionUnit const& tu) const
     {
         return (tu.channel << 8) | tu.key.code();
@@ -231,12 +237,10 @@ inline bool operator==(NoteEvent::TransitionUnit const& l, NoteEvent::Transition
     return l.channel == r.channel && l.key == r.key;
 }
 
-class ControlChangeEvent : public Event
-{
+class ControlChangeEvent : public Event {
 public:
     // Appendix 1.2 - Table of MIDI Controller Messages (Data Bytes)
-    enum class Number : uint8_t
-    {
+    enum class Number : uint8_t {
         // 0x0 - 0x3f handled by LMControlChangeEvent
         DamperPedal = 0x40,
         Portamento,
@@ -282,7 +286,11 @@ public:
     };
 
     ControlChangeEvent(MIDIChannel channel, Number number, uint8_t value)
-    : m_channel(channel), m_number(number), m_value(value) {}
+        : m_channel(channel)
+        , m_number(number)
+        , m_value(value)
+    {
+    }
 
     virtual void dump() const override
     {
@@ -309,11 +317,13 @@ private:
     uint8_t m_value;
 };
 
-class ProgramChangeEvent : public Event
-{
+class ProgramChangeEvent : public Event {
 public:
     ProgramChangeEvent(MIDIChannel channel, uint8_t value)
-    : m_channel(channel), m_value(value) {}
+        : m_channel(channel)
+        , m_value(value)
+    {
+    }
 
     virtual void dump() const override
     {
@@ -338,11 +348,9 @@ private:
     uint8_t m_value;
 };
 
-class LMControlChangeEvent : public Event
-{
+class LMControlChangeEvent : public Event {
 public:
-    enum class Number
-    {
+    enum class Number {
         BankSelect,
         ModulationWheel,
         BreathControl,
@@ -361,14 +369,18 @@ public:
         GeneralPurposeController4,
     };
 
-    enum class ByteIndex
-    {
+    enum class ByteIndex {
         MSB,
         LSB
     };
 
     LMControlChangeEvent(MIDIChannel channel, ByteIndex byte_index, Number number, uint8_t value)
-    : m_channel(channel), m_byte_index(byte_index), m_number(number), m_value(value) {}
+        : m_channel(channel)
+        , m_byte_index(byte_index)
+        , m_number(number)
+        , m_value(value)
+    {
+    }
 
     virtual void dump() const override
     {

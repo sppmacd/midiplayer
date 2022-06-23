@@ -12,8 +12,7 @@
 #include <list>
 
 class MIDIInput;
-struct Particle
-{
+struct Particle {
     sf::Vector2f position;
     sf::Vector2f motion;
     sf::Color color;
@@ -22,19 +21,16 @@ struct Particle
 };
 
 template<>
-struct std::hash<sf::Color>
-{
+struct std::hash<sf::Color> {
     std::size_t operator()(sf::Color const& s) const noexcept
     {
         return s.r ^ (s.g << 1) ^ (s.b << 2) ^ (s.a << 3);
     }
 };
 
-class MIDIPlayer
-{
+class MIDIPlayer {
 public:
-    enum class RealTime
-    {
+    enum class RealTime {
         Yes,
         No
     };
@@ -80,14 +76,12 @@ public:
     void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
     void spawn_random_particles(sf::RenderTarget& target, MIDIKey key, sf::Color color, int velocity);
 
-    enum class LabelType
-    {
+    enum class LabelType {
         TrackName
     };
     void display_label(LabelType, std::string text, int duration);
 
-    struct DebugInfo
-    {
+    struct DebugInfo {
         bool full_info;
         sf::Time last_fps_time;
     };
@@ -136,8 +130,7 @@ private:
     bool m_initialized { false };
     bool m_in_loop { false };
 
-    struct Wind
-    {
+    struct Wind {
         double speed = 0;
         double target_speed = 0;
         sf::Vector2f pos;
@@ -145,8 +138,7 @@ private:
         int start_time = 0;
     };
 
-    struct Note
-    {
+    struct Note {
         bool is_played { false };
         sf::Color color;
     };
@@ -157,8 +149,7 @@ private:
     std::list<Particle> m_particles;
     std::vector<std::pair<Config::SelectorList, sf::Color>> m_static_tile_colors;
 
-    struct Label
-    {
+    struct Label {
         LabelType type;
         std::string text;
         int remaining_duration;
@@ -169,8 +160,7 @@ private:
 
     // This is moved out of MIDIPlayer to shorten startup delay.
     // FIXME: Should be probably moved to separate Renderer class.
-    struct RenderResources
-    {
+    struct RenderResources {
         mutable sf::Shader gradient_shader;
         mutable sf::Shader note_shader;
         mutable sf::Shader particle_shader;

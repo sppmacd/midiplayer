@@ -7,15 +7,13 @@
 
 // Based on https://www.cs.cmu.edu/~music/cmsip/readings/Standard-MIDI-file-format-updated.pdf
 
-enum class MIDIFileFormat
-{
+enum class MIDIFileFormat {
     SingleMultichannelTrack,
     SimultaneousTracks,
     SequentiallyIndependentTracks,
     Invalid
 };
-class MIDIFileInput : public MIDIInput
-{
+class MIDIFileInput : public MIDIInput {
 public:
     MIDIFileInput(std::istream& in) { m_valid = read_midi(in); }
 
@@ -53,8 +51,7 @@ private:
     std::unique_ptr<Event> read_meta_event(std::istream& in, uint8_t type);
 };
 
-class MIDIFileOutput : public MIDIOutput
-{
+class MIDIFileOutput : public MIDIOutput {
 public:
     explicit MIDIFileOutput(std::string path);
     ~MIDIFileOutput();

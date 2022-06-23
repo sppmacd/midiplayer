@@ -3,8 +3,7 @@
 #include "../MIDIPlayer.h"
 #include "Reader.h"
 
-namespace Config
-{
+namespace Config {
 
 bool StartupCondition::is_met(Reader& reader) const
 {

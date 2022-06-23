@@ -6,14 +6,15 @@
 
 #include <stack>
 
-namespace Config
-{
+namespace Config {
 
-class Reader
-{
+class Reader {
 public:
     explicit Reader(Info& info, MIDIPlayer& player)
-    : m_info(info), m_player(player) {}
+        : m_info(info)
+        , m_player(player)
+    {
+    }
 
     Info& info() { return m_info; }
     MIDIPlayer& player() { return m_player; }
@@ -39,15 +40,13 @@ public:
     void dump_stats(std::ostream& out) const;
 
 private:
-    struct ConditionalAction
-    {
+    struct ConditionalAction {
         std::shared_ptr<Condition> condition;
         std::shared_ptr<Action> action;
         size_t add_frame;
     };
 
-    struct PeriodicAction
-    {
+    struct PeriodicAction {
         Time interval;
         std::shared_ptr<Action> action;
         size_t add_frame;
@@ -60,8 +59,7 @@ private:
     std::stack<Transition> m_transition_stack;
     size_t m_time_offset = 0;
 
-    struct OngoingTransition
-    {
+    struct OngoingTransition {
         Transition::Function function;
         size_t start_frame {};
         size_t length {};

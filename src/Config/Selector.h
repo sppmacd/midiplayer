@@ -10,11 +10,9 @@
 class MIDIPlayer;
 class NoteEvent;
 
-namespace Config
-{
+namespace Config {
 
-class Selector
-{
+class Selector {
 public:
     Selector() = default;
     Selector(Selector const&) = delete;
@@ -26,11 +24,9 @@ public:
     static std::unique_ptr<Selector> read(std::istream&);
 };
 
-class AttributeSelector : public Selector
-{
+class AttributeSelector : public Selector {
 public:
-    enum class Attribute
-    {
+    enum class Attribute {
         Channel,
         Note,
         WhiteKey,
@@ -39,7 +35,10 @@ public:
     };
 
     AttributeSelector(Attribute attr, AttributeValue&& value)
-    : m_attribute(attr), m_value(std::move(value)) {}
+        : m_attribute(attr)
+        , m_value(std::move(value))
+    {
+    }
 
     virtual bool matches(NoteEvent::TransitionUnit, NoteEvent const*) const override;
 

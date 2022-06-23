@@ -17,8 +17,7 @@ MIDIDeviceInput::MIDIDeviceInput(int port)
     m_tracks.resize(1);
 
     m_input.setClientName("MIDIPlayer");
-    m_input.setCallback([](double, std::vector<uint8_t>* data, void* user_data)
-        {
+    m_input.setCallback([](double, std::vector<uint8_t>* data, void* user_data) {
             assert(user_data);
             assert(data);
             MIDIDeviceInput* this_ = reinterpret_cast<MIDIDeviceInput*>(user_data);
@@ -39,12 +38,9 @@ MIDIDeviceInput::MIDIDeviceInput(int port)
             std::lock_guard lock{this_->m_event_queue_mutex};
             this_->m_event_queue.push(std::move(event)); },
         this);
-    try
-    {
+    try {
         m_input.openPort(port);
-    }
-    catch(...)
-    {
+    } catch (...) {
         return;
     }
     // FIXME: RtMidi what if it is actually NOT valid?
@@ -54,7 +50,7 @@ MIDIDeviceInput::MIDIDeviceInput(int port)
 std::unique_ptr<Event> MIDIDeviceInput::read_event()
 {
     std::lock_guard lock { m_event_queue_mutex };
-    if(m_event_queue.empty())
+    if (m_event_queue.empty())
         return nullptr;
     auto event = std::move(m_event_queue.front());
     m_event_queue.pop();
@@ -64,10 +60,9 @@ std::unique_ptr<Event> MIDIDeviceInput::read_event()
 void MIDIDeviceInput::update(MIDIPlayer& player)
 {
     m_player = &player;
-    while(auto event = read_event())
-    {
+    while (auto event = read_event()) {
         // Do not store invalid events
-        if(dynamic_cast<InvalidEvent*>(event.get()))
+        if (dynamic_cast<InvalidEvent*>(event.get()))
             continue;
         m_tracks[0].add_event(std::move(event));
     }
@@ -94,7 +89,7 @@ void MIDIDeviceOutput::write_event(Event const& event)
 {
     std::ostringstream oss;
     event.serialize(oss);
-    if(oss.str().size() == 0)
+    if (oss.str().size() == 0)
         return;
 
     // FIXME: This copy is unnecessary, but RtMidi expects data in form of std::vector.
@@ -104,19 +99,18 @@ void MIDIDeviceOutput::write_event(Event const& event)
     m_output.sendMessage(&data);
 }
 
-namespace MIDI
-{
+namespace MIDI {
 
 void print_available_ports()
 {
     std::cerr << "Input: " << std::endl;
     RtMidiIn in;
-    for(int i = 0; i < in.getPortCount(); i++)
+    for (int i = 0; i < in.getPortCount(); i++)
         std::cerr << i << ": " << in.getPortName(i) << std::endl;
 
     std::cerr << "Output: " << std::endl;
     RtMidiOut out;
-    for(int i = 0; i < in.getPortCount(); i++)
+    for (int i = 0; i < in.getPortCount(); i++)
         std::cerr << i << ": " << out.getPortName(i) << std::endl;
 }
 

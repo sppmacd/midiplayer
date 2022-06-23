@@ -20,8 +20,7 @@ inline sf::Color operator*(sf::Color const& left, double right)
         static_cast<sf::Uint8>(left.a * right) };
 }
 
-class MIDIPlayerConfig
-{
+class MIDIPlayerConfig {
 public:
     MIDIPlayerConfig(MIDIPlayer& player);
 
@@ -50,8 +49,7 @@ private:
     Config::Info m_info;
     Config::Reader m_reader;
 
-    struct Properties
-    {
+    struct Properties {
         std::string display_font;
         sf::Color default_color { 255, 100, 100 };
         Config::AnimatableProperty<sf::Color> background_color { sf::Color(10, 10, 10) };

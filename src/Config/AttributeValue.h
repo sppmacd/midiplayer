@@ -5,21 +5,20 @@
 #include <string>
 #include <variant>
 
-class MatchExpression
-{
+class MatchExpression {
 public:
     virtual ~MatchExpression() = default;
     virtual bool matches(int value) const = 0;
     virtual std::string to_string() const = 0;
 };
 
-class Range : public MatchExpression
-{
+class Range : public MatchExpression {
 public:
     Range(int min, int max)
-    : m_min(min), m_max(max)
+        : m_min(min)
+        , m_max(max)
     {
-        if(m_max < m_min)
+        if (m_max < m_min)
             std::swap(m_min, m_max);
     }
 
@@ -32,11 +31,13 @@ private:
 };
 
 // an + b
-class LinearEquation : public MatchExpression
-{
+class LinearEquation : public MatchExpression {
 public:
     LinearEquation(int a, int b)
-    : m_a(a), m_b(b) {}
+        : m_a(a)
+        , m_b(b)
+    {
+    }
 
     virtual bool matches(int value) const override { return (m_a <= 1 && value > 0) || (value - m_b >= 0 && (value - m_b) % m_a == 0); }
     virtual std::string to_string() const override { return fmt::format("equation {}n{:+}", m_a, m_b); }
@@ -47,16 +48,23 @@ private:
 };
 
 using AttributeValueBase = std::variant<std::monostate, std::string, int, std::unique_ptr<MatchExpression>>;
-struct AttributeValue : public AttributeValueBase
-{
+struct AttributeValue : public AttributeValueBase {
     AttributeValue()
-    : AttributeValueBase() {}
+        : AttributeValueBase()
+    {
+    }
     AttributeValue(std::string const& value)
-    : AttributeValueBase(value) {}
+        : AttributeValueBase(value)
+    {
+    }
     AttributeValue(int value)
-    : AttributeValueBase(value) {}
+        : AttributeValueBase(value)
+    {
+    }
     AttributeValue(std::unique_ptr<MatchExpression>&& value)
-    : AttributeValueBase(std::move(value)) {}
+        : AttributeValueBase(std::move(value))
+    {
+    }
 
     bool is_empty() const { return holds_alternative<std::monostate>(*this); }
 

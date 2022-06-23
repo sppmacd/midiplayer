@@ -1,13 +1,10 @@
 #pragma once
 
-namespace Config
-{
+namespace Config {
 
-class Time
-{
+class Time {
 public:
-    enum class Unit
-    {
+    enum class Unit {
         Seconds,
         Ticks,
         Frames,
@@ -16,7 +13,10 @@ public:
     Time() = default;
 
     Time(double value, Unit unit)
-    : m_value(value), m_unit(unit) {}
+        : m_value(value)
+        , m_unit(unit)
+    {
+    }
 
     double value() const { return m_value; }
     Unit unit() const { return m_unit; }

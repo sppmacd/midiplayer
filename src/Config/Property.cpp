@@ -1,23 +1,21 @@
 #include "Property.h"
 
-namespace Config
-{
+namespace Config {
 
 bool PropertyFormalParameter::value_matches(PropertyParameter const& param) const
 {
-    if(!m_match_expression)
+    if (!m_match_expression)
         return true;
-    if(type() == PropertyType::Float)
+    if (type() == PropertyType::Float)
         return m_match_expression->matches(param.as_float());
-    if(type() == PropertyType::Int)
+    if (type() == PropertyType::Int)
         return m_match_expression->matches(param.as_int());
     return true; // Not supported for now. All values matches.
 }
 
 std::string_view PropertyFormalParameter::type_string() const
 {
-    switch(type())
-    {
+    switch (type()) {
         case PropertyType::Int:
             return "int";
         case PropertyType::Float:

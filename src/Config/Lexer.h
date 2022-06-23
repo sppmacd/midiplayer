@@ -4,21 +4,17 @@
 #include <istream>
 #include <vector>
 
-namespace Config
-{
+namespace Config {
 
-struct SourceLocation
-{
+struct SourceLocation {
     size_t index {};
-    size_t line {1};
-    size_t column {1};
+    size_t line { 1 };
+    size_t column { 1 };
 };
 
-class Token
-{
+class Token {
 public:
-    enum class Type
-    {
+    enum class Type {
         Invalid,
         Number,
         String,
@@ -36,7 +32,12 @@ public:
     };
 
     Token(Type type, SourceLocation start, size_t size, std::string value)
-    : m_type(type), m_value(value), m_start(start), m_size(size) {}
+        : m_type(type)
+        , m_value(value)
+        , m_start(start)
+        , m_size(size)
+    {
+    }
 
     Type type() const { return m_type; }
     std::string value() const { return m_value; }
@@ -50,11 +51,12 @@ private:
     size_t m_size {};
 };
 
-class Lexer
-{
+class Lexer {
 public:
     Lexer(std::istream& input)
-    : m_input(input) {}
+        : m_input(input)
+    {
+    }
 
     std::vector<Token> lex();
 
@@ -64,8 +66,7 @@ private:
     {
         std::string string;
         char c = m_input.peek();
-        while(predicate(c) && !m_input.eof())
-        {
+        while (predicate(c) && !m_input.eof()) {
             consume_one();
             string += c;
             c = m_input.peek();

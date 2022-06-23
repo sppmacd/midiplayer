@@ -9,8 +9,7 @@
 #include "Track.h"
 
 // Based on https://www.cs.cmu.edu/~music/cmsip/readings/Standard-MIDI-file-format-updated.pdf
-class MIDIInput
-{
+class MIDIInput {
 public:
     virtual ~MIDIInput() = default;
 
@@ -19,20 +18,18 @@ public:
     virtual uint16_t ticks_per_quarter_note() const = 0;
     virtual size_t current_tick(MIDIPlayer const&) const = 0;
     virtual std::optional<size_t> end_tick() const = 0;
-    virtual void update(MIDIPlayer&) {}
+    virtual void update(MIDIPlayer&) { }
 
     template<class Callback>
     void for_first_events_starting_from(size_t start, size_t max, Callback callback)
     {
-        for(auto& track : m_tracks)
-        {
+        for (auto& track : m_tracks) {
             size_t counter = 0;
             auto& events = track.events();
-            for(auto it = events.lower_bound(start); it != events.end(); it++)
-            {
+            for (auto it = events.lower_bound(start); it != events.end(); it++) {
                 callback(*it->second);
                 counter++;
-                if(counter >= max)
+                if (counter >= max)
                     break;
             }
         }
@@ -41,16 +38,14 @@ public:
     template<class Callback>
     void for_first_events_starting_from_backwards(size_t start, size_t max, Callback callback)
     {
-        for(auto& track : m_tracks)
-        {
+        for (auto& track : m_tracks) {
             size_t counter = 0;
             auto& events = track.events();
-            for(auto it = events.upper_bound(start); it != events.begin();)
-            {
+            for (auto it = events.upper_bound(start); it != events.begin();) {
                 --it;
                 callback(*it->second);
                 counter++;
-                if(counter >= max)
+                if (counter >= max)
                     break;
             }
         }
@@ -59,7 +54,7 @@ public:
     template<class Callback>
     void for_each_track(Callback callback)
     {
-        for(auto& track : m_tracks)
+        for (auto& track : m_tracks)
             callback(track);
     }
 

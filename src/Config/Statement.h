@@ -6,23 +6,23 @@
 #include "Condition.h"
 #include "Property.h"
 
-namespace Config
-{
+namespace Config {
 
 class Reader;
 
-class Statement
-{
+class Statement {
 public:
     virtual ~Statement() = default;
     virtual bool execute(Reader& reader) const = 0;
 };
 
-class PropertyStatement : public Statement
-{
+class PropertyStatement : public Statement {
 public:
     PropertyStatement(std::string name, std::vector<PropertyParameter> args)
-    : m_name(std::move(name)), m_args(std::move(args)) {}
+        : m_name(std::move(name))
+        , m_args(std::move(args))
+    {
+    }
 
     virtual bool execute(Reader& reader) const override;
 
@@ -33,11 +33,13 @@ private:
 
 class Action;
 
-class OnStatement : public Statement
-{
+class OnStatement : public Statement {
 public:
     OnStatement(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action)
-    : m_condition(std::move(condition)), m_action(std::move(action)) {}
+        : m_condition(std::move(condition))
+        , m_action(std::move(action))
+    {
+    }
 
     virtual bool execute(Reader& reader) const override;
 
@@ -46,11 +48,13 @@ private:
     std::shared_ptr<Action> m_action;
 };
 
-class EveryStatement : public Statement
-{
+class EveryStatement : public Statement {
 public:
     EveryStatement(Time interval, std::shared_ptr<Action> action)
-    : m_interval(std::move(interval)), m_action(std::move(action)) {}
+        : m_interval(std::move(interval))
+        , m_action(std::move(action))
+    {
+    }
 
     virtual bool execute(Reader& reader) const override;
 
@@ -59,11 +63,13 @@ private:
     std::shared_ptr<Action> m_action;
 };
 
-class IfStatement : public Statement
-{
+class IfStatement : public Statement {
 public:
     IfStatement(std::shared_ptr<Condition> condition, std::shared_ptr<Action> action)
-    : m_condition(std::move(condition)), m_action(std::move(action)) {}
+        : m_condition(std::move(condition))
+        , m_action(std::move(action))
+    {
+    }
 
     virtual bool execute(Reader& reader) const override;
 

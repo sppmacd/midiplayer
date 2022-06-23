@@ -5,11 +5,12 @@
 class BlendedBackground;
 
 // A background sprite that is compatible with AnimatableProperty.
-class AnimatableBackground
-{
+class AnimatableBackground {
 public:
     explicit AnimatableBackground(sf::Texture const* texture = nullptr)
-    : m_texture(std::move(texture)) {}
+        : m_texture(std::move(texture))
+    {
+    }
 
     AnimatableBackground operator*(double value) const;
     BlendedBackground operator+(AnimatableBackground const&) const;
@@ -26,11 +27,13 @@ private:
 // AnimatableBackgrouns blended into each other.
 // Currently, it only supports opacity. More transition modes will
 // be added in the future.
-class BlendedBackground : public sf::Drawable
-{
+class BlendedBackground : public sf::Drawable {
 public:
     BlendedBackground(AnimatableBackground old_image, AnimatableBackground new_image)
-    : m_old_image(std::move(old_image)), m_new_image(std::move(new_image)) {}
+        : m_old_image(std::move(old_image))
+        , m_new_image(std::move(new_image))
+    {
+    }
 
     virtual void draw(sf::RenderTarget&, sf::RenderStates) const override;
 

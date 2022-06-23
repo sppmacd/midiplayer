@@ -6,11 +6,9 @@
 #include <functional>
 #include <span>
 
-namespace Config
-{
+namespace Config {
 
-class Info
-{
+class Info {
 public:
     using OnSetPropertyFunction = std::function<bool(ArgumentList const&, double)>;
 
@@ -21,8 +19,7 @@ public:
     std::span<PropertyFormalParameter const> property_formal_parameters(std::string const& name) const;
 
 private:
-    struct Property
-    {
+    struct Property {
         std::string description;
         std::vector<PropertyFormalParameter> parameters;
         OnSetPropertyFunction on_set_property;

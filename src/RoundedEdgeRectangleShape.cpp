@@ -21,8 +21,7 @@ sf::Vector2f RoundedEdgeRectangleShape::getPoint(std::size_t index) const
 
     sf::Vector2f offset { std::cos(angle) * radius, std::sin(angle) * radius };
     sf::Vector2f base;
-    switch(side)
-    {
+    switch (side) {
         case 0:
             base = { m_size.x - radius, m_size.y - radius };
             break;

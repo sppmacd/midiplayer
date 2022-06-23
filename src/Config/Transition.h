@@ -2,15 +2,12 @@
 
 #include "Time.h"
 
-namespace Config
-{
+namespace Config {
 
-class Transition
-{
+class Transition {
 public:
     // TODO: Add here all CSS timing functions
-    enum class Function
-    {
+    enum class Function {
         Constant0,
         Constant1,
         Linear,
@@ -20,7 +17,10 @@ public:
     Transition() = default;
 
     Transition(Time time, Function function)
-    : m_time(time), m_function(function) {}
+        : m_time(time)
+        , m_function(function)
+    {
+    }
 
     Time time() const { return m_time; }
     Function function() const { return m_function; }
