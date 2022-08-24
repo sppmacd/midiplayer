@@ -241,8 +241,11 @@ std::unique_ptr<Event> MIDIFileInput::read_meta_event(std::istream& in, uint8_t 
             break;
         case 0x58: // Time Signature
         {
-            uint8_t numerator, denominator, clocks_per_metronome_click, _32s_in_quarter_note;
-            if (!(in >> numerator >> denominator >> clocks_per_metronome_click >> _32s_in_quarter_note))
+            uint8_t numerator = in.get();
+            uint8_t denominator = in.get();
+            uint8_t clocks_per_metronome_click = in.get();
+            uint8_t _32s_in_quarter_note = in.get();
+            if (!in.good())
                 return {};
             // FIXME: The denominator is a negative power of two: 2 represents a quarter-note, 3 represents an eighth-note
             return std::make_unique<TimeSignatureEvent>(numerator, 1 << denominator, clocks_per_metronome_click, _32s_in_quarter_note);
