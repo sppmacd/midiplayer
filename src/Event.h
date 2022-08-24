@@ -150,7 +150,7 @@ public:
     virtual void serialize(std::ostream& stream) const override
     {
         std::cerr << "Writing TimeSignature" << std::endl;
-        stream.put(-1);   // Meta-event
+        stream.put(0xff);   // Meta-event
         stream.put(0x58); // Time Signature
         stream.put(4);    // size: vlq 4
         stream.put(m_numerator);
