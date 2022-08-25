@@ -6,6 +6,7 @@
 #include "MIDIOutput.h"
 #include "MIDIPlayerConfig.h"
 #include <SFML/Graphics.hpp>
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -64,7 +65,10 @@ public:
     void update();
 
     bool playing() const { return m_playing; }
+
+    // NOTE: This is the only thread-safe thing here!
     void set_playing(bool playing) { m_playing = playing; }
+
     bool real_time() const { return m_real_time; }
     size_t current_frame() const { return m_current_frame; }
     size_t current_tick() const { return m_current_tick; }
@@ -128,7 +132,7 @@ private:
     unsigned m_fps { 60 };
     size_t m_current_tick { 0 };
     size_t m_current_frame { 0 };
-    bool m_playing { true };
+    std::atomic<bool> m_playing { true };
     bool m_initialized { false };
     bool m_in_loop { false };
 
