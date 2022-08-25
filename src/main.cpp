@@ -4,6 +4,7 @@
 #include "MIDIPlayer.h"
 
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <signal.h>
 #include <sys/stat.h>
@@ -28,6 +29,7 @@ static void print_usage_and_exit(Brief brief = Brief::Yes)
         std::cerr << "Options:" << std::endl;
         std::cerr << "    -c [path]          Specify alternative config file" << std::endl;
         std::cerr << "    -d                 Headless mode (don't open a window, works in text mode)" << std::endl;
+        std::cerr << "    -f                 Force overwriting output files" << std::endl;
         std::cerr << "    -m [file/port]     Specify MIDI output (file in realtime mode, port number in play mode)" << std::endl;
         std::cerr << "    -o                 Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
         std::cerr << "    --config-help      Print help for Config Files" << std::endl;
@@ -65,6 +67,7 @@ int main(int argc, char* argv[])
     bool print_config_help = false;
     bool render_to_stdout = false;
     bool should_render_debug_info_in_preview = false;
+    bool force_overwrite = false;
     std::string midi_output;
     std::string config_file_path;
     std::string marker_file_name;
@@ -87,6 +90,8 @@ int main(int argc, char* argv[])
                     config_file_path = argv[i];
                 } else if (opt_sv == "d"sv) {
                     player.set_headless();
+                } else if (opt_sv == "f"sv) {
+                    force_overwrite = true;
                 } else if (opt_sv == "m"sv) {
                     if (++i == argc) {
                         logger::error("-m requires an argument");
@@ -133,6 +138,12 @@ int main(int argc, char* argv[])
                             logger::error("Expected port number. See midieditor list-midi-devices for a list of MIDI devices.");
                             return 1;
                         }
+
+                        if (!force_overwrite && std::filesystem::exists(midi_output)) {
+                            logger::error("Output file '{}' already exists. Use -f flag to force overwrite.", midi_output);
+                            return 1;
+                        }
+
                         if (!player.initialize(MIDIPlayer::RealTime::Yes, std::make_unique<MIDIDeviceInput>(value),
                                 midi_output.empty() ? nullptr : std::make_unique<MIDIFileOutput>(midi_output)))
                             return 1;
