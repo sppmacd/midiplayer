@@ -441,15 +441,28 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     auto end_tick = m_midi_input->end_tick();
     std::ostringstream oss;
     auto elapsed_seconds = (double)current_frame() / fps();
-    oss << std::setfill('0');
-    if (elapsed_seconds > 3600)
-        oss << std::setw(2) << (int)elapsed_seconds / 3600 << ":" << std::setw(2); // The last setw is for minutes
-    oss << ((int)elapsed_seconds / 60) % 60 << ":"
-        << std::setw(2) << (int)elapsed_seconds % 60;
+
+    auto print_time = [&oss](uint64_t seconds) {
+        oss << std::setfill('0');
+        if (seconds > 3600)
+            oss << std::setw(2) << (int)seconds / 3600 << ":" << std::setw(2); // The last setw is for minutes
+        oss << ((int)seconds / 60) % 60 << ":"
+            << std::setw(2) << (int)seconds % 60;
+    };
+
+    print_time(elapsed_seconds);
+
     if (debug_info.full_info)
         oss << " (Tick=" << tick << " Frame=" << current_frame() << " Second=" << std::fixed << std::setprecision(2) << elapsed_seconds << ")";
-    if (!m_real_time && end_tick.has_value())
-        oss << "/" << end_tick.value() << " (" << 100 * tick / end_tick.value() << "%)";
+
+    if (!m_real_time && end_tick.has_value()) {
+        oss << " / ";
+        print_time(end_tick.value() * microseconds_per_quarter_note() / m_midi_input->ticks_per_quarter_note() / 1000000);
+        if (debug_info.full_info)
+            oss << " (Ticks=" << end_tick.value() << ")";
+        oss << " (" << 100 * tick / end_tick.value() << "%)";
+    }
+
     if (debug_info.full_info) {
         oss << "\n\n";
         oss << std::to_string(1.f / debug_info.last_fps_time.asSeconds()) + " fps\n";
