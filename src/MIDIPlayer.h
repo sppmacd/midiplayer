@@ -43,6 +43,8 @@ public:
     MIDIPlayer();
     ~MIDIPlayer();
 
+    static MIDIPlayer& the();
+
     // Initialize the MIDIPlayer object: open MIDI devices/files.
     bool initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output);
 

@@ -19,8 +19,12 @@
 
 using namespace std::literals;
 
+static MIDIPlayer* s_the = nullptr;
+
 MIDIPlayer::MIDIPlayer()
 {
+    assert(!s_the);
+    s_the = this;
 }
 
 MIDIPlayer::~MIDIPlayer()
@@ -34,6 +38,13 @@ MIDIPlayer::~MIDIPlayer()
         ControlChangeEvent c2(s, ControlChangeEvent::Number::AllNotesOff, 0);
         m_midi_output->write_event(c2);
     }
+    s_the = nullptr;
+}
+
+MIDIPlayer& MIDIPlayer::the()
+{
+    assert(s_the);
+    return *s_the;
 }
 
 bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output)
