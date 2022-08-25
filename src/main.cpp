@@ -240,6 +240,10 @@ int main(int argc, char* argv[])
         marker_file << name << ": " << player.current_tick() << std::endl;
     };
 
+    signal(SIGINT, [](int) {
+        MIDIPlayer::the().set_playing(false);
+    });
+
     player.start_timer();
     while (player.playing()) {
         {
