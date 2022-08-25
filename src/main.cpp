@@ -1,11 +1,11 @@
-#include <cstring>
-#include <fstream>
-
 #include "Logger.h"
 #include "MIDIDevice.h"
 #include "MIDIFile.h"
 #include "MIDIPlayer.h"
 
+#include <cstring>
+#include <fstream>
+#include <signal.h>
 #include <sys/stat.h>
 
 using namespace std::literals;
@@ -27,6 +27,7 @@ static void print_usage_and_exit(Brief brief = Brief::Yes)
         std::cerr << "    realtime [port]    Display MIDI device input in realtime. Supports output to .mid file with -m option." << std::endl;
         std::cerr << "Options:" << std::endl;
         std::cerr << "    -c [path]          Specify alternative config file" << std::endl;
+        std::cerr << "    -d                 Headless mode (don't open a window, works in text mode)" << std::endl;
         std::cerr << "    -m [file/port]     Specify MIDI output (file in realtime mode, port number in play mode)" << std::endl;
         std::cerr << "    -o                 Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
         std::cerr << "    --config-help      Print help for Config Files" << std::endl;
@@ -84,6 +85,8 @@ int main(int argc, char* argv[])
                         return 1;
                     }
                     config_file_path = argv[i];
+                } else if (opt_sv == "d"sv) {
+                    player.set_headless();
                 } else if (opt_sv == "m"sv) {
                     if (++i == argc) {
                         logger::error("-m requires an argument");
@@ -188,7 +191,7 @@ int main(int argc, char* argv[])
     }
 
     std::unique_ptr<sf::RenderTexture> render_texture = [&]() -> std::unique_ptr<sf::RenderTexture> {
-        if (render_to_stdout) {
+        if (!player.is_headless() && render_to_stdout) {
             if (isatty(STDOUT_FILENO)) {
                 logger::error("stdout is a terminal, refusing to print binary data");
                 return nullptr;
@@ -209,22 +212,25 @@ int main(int argc, char* argv[])
     }();
 
     bool is_fullscreen = false;
-    sf::RenderWindow window;
+
+    std::optional<sf::RenderWindow> window;
+
     auto create_windowed = [&]() {
         is_fullscreen = false;
-        window.create(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings { 0, 0, 1 });
+        window.emplace(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings { 0, 0, 1 });
         if (!render_texture)
-            window.setFramerateLimit(60);
-        window.setMouseCursorVisible(true);
+            window->setFramerateLimit(60);
+        window->setMouseCursorVisible(true);
     };
     auto create_fullscreen = [&]() {
         is_fullscreen = true;
-        window.create(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Fullscreen, sf::ContextSettings { 0, 0, 1 });
+        window.emplace(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Fullscreen, sf::ContextSettings { 0, 0, 1 });
         if (!render_texture)
-            window.setFramerateLimit(60);
-        window.setMouseCursorVisible(false);
+            window->setFramerateLimit(60);
+        window->setMouseCursorVisible(false);
     };
-    create_windowed();
+    if (!player.is_headless())
+        create_windowed();
 
     sf::Clock fps_clock;
     sf::Time last_fps_time;
@@ -246,9 +252,9 @@ int main(int argc, char* argv[])
 
     player.start_timer();
     while (player.playing()) {
-        {
+        if (!player.is_headless()) {
             sf::Event event;
-            while (window.pollEvent(event)) {
+            while (window->pollEvent(event)) {
                 if (event.type == sf::Event::Closed)
                     player.set_playing(false);
                 else if (event.type == sf::Event::KeyPressed) {
@@ -266,19 +272,24 @@ int main(int argc, char* argv[])
                 }
             }
         }
+
         player.update();
-        // FIXME: Last FPS should be stored in MIDIPlayer somehow!
-        player.render(window, { .full_info = should_render_debug_info_in_preview, .last_fps_time = last_fps_time });
-        window.display();
-        if (render_texture) {
-            player.render(*render_texture, { .full_info = false, .last_fps_time = last_fps_time });
-            render_texture->display();
-            auto image = render_texture->getTexture().copyToImage();
+        if (!player.is_headless()) {
+            // FIXME: Last FPS should be stored in MIDIPlayer somehow!
+            player.render(*window, { .full_info = should_render_debug_info_in_preview, .last_fps_time = last_fps_time });
+            window->display();
 
-            // NOTE: RGBA only!
-            fwrite(image.getPixelsPtr(), 4, image.getSize().x * image.getSize().y, stdout);
+            if (render_texture) {
+                player.render(*render_texture, { .full_info = false, .last_fps_time = last_fps_time });
+                render_texture->display();
+                auto image = render_texture->getTexture().copyToImage();
+
+                // NOTE: RGBA only!
+                fwrite(image.getPixelsPtr(), 4, image.getSize().x * image.getSize().y, stdout);
+            }
+        } else {
+            sf::sleep(sf::seconds(1.f / player.fps()) - fps_clock.getElapsedTime());
         }
-
         last_fps_time = fps_clock.restart();
     }
     write_marker("end");

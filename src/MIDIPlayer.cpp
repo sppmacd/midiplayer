@@ -69,18 +69,20 @@ bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& inp
 
 void MIDIPlayer::setup()
 {
-    m_render_resources = std::make_unique<RenderResources>();
+    if (!m_headless) {
+        m_render_resources = std::make_unique<RenderResources>();
 
-    auto resource_path = find_resource_path();
-    logger::info("Resource path: {}", resource_path);
-    if (
-        m_render_resources->gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
-        && m_render_resources->note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
-        && m_render_resources->particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
-        logger::info("Shaders loaded");
+        auto resource_path = find_resource_path();
+        logger::info("Resource path: {}", resource_path);
+        if (
+            m_render_resources->gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
+            && m_render_resources->note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
+            && m_render_resources->particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag"))
+            logger::info("Shaders loaded");
 
-    if (m_render_resources->debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
-        logger::info("Font loaded");
+        if (m_render_resources->debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
+            logger::info("Font loaded");
+    }
 
     // Don't add bloat to MIDI files. These events are sent by device output anyway.
     if (!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
@@ -157,18 +159,21 @@ bool MIDIPlayer::load_config_file(std::string const& path)
 
 bool MIDIPlayer::reload_config_file()
 {
-    assert(m_render_resources);
+    if (!m_headless)
+        assert(m_render_resources);
     bool success = m_config.reload(m_config_file_path);
 
-    generate_particle_texture();
+    if (!m_headless) {
+        generate_particle_texture();
 
-    logger::info("Loading display font: {}", m_config.display_font());
-    if (m_config.display_font().empty()) {
-        logger::warning("No display font is specified. Using debug font.");
-        m_render_resources->display_font = m_render_resources->debug_font;
-    } else if (!m_render_resources->display_font.loadFromFile(m_config.display_font())) {
-        logger::error("Failed to load display font from {}.", m_config.display_font());
-        success = false;
+        logger::info("Loading display font: {}", m_config.display_font());
+        if (m_config.display_font().empty()) {
+            logger::warning("No display font is specified. Using debug font.");
+            m_render_resources->display_font = m_render_resources->debug_font;
+        } else if (!m_render_resources->display_font.loadFromFile(m_config.display_font())) {
+            logger::error("Failed to load display font from {}.", m_config.display_font());
+            success = false;
+        }
     }
 
     if (m_real_time) {
