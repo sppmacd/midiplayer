@@ -109,7 +109,7 @@ public:
     virtual void dump() const override { std::cerr << "Set Tempo Event " << m_microseconds_per_quarter_note << std::endl; }
     virtual void execute(MIDIPlayer&) override;
 
-    virtual bool is_serializable() const override { return true; }
+    virtual bool is_serializable() const override { return false; }
     virtual void serialize(std::ostream& stream) const override
     {
         // FIXME: This glitches real MIDI devices.
