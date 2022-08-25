@@ -65,6 +65,7 @@ void MIDIDeviceInput::update(MIDIPlayer& player)
         if (dynamic_cast<InvalidEvent*>(event.get()))
             continue;
         m_tracks[0].add_event(std::move(event));
+        player.did_read_events(1);
     }
 }
 

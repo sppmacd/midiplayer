@@ -118,6 +118,9 @@ public:
     MIDIOutput* midi_output() { return m_midi_output.get(); }
 
     sf::Texture* get_background_image(std::string const& filename);
+    std::string get_stats_string(bool full) const;
+
+    void did_read_events(size_t count) { m_events_read += count; }
 
 private:
     void generate_particle_texture();
@@ -193,4 +196,8 @@ private:
     std::chrono::time_point<std::chrono::system_clock> m_start_time;
     std::unique_ptr<MIDIInput> m_midi_input;
     std::unique_ptr<MIDIOutput> m_midi_output;
+
+    size_t m_events_executed = 0;
+    size_t m_events_read = 0;
+    size_t m_events_written = 0;
 };

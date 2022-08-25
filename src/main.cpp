@@ -147,6 +147,11 @@ int main(int argc, char* argv[])
                             logger::error("Failed to read MIDI");
                             return 1;
                         }
+
+                        midi_file->for_each_track([&player](auto const& track) {
+                            player.did_read_events(track.events().size());
+                        });
+
                         int value = 0;
                         if (!midi_output.empty()) {
                             try {
@@ -233,6 +238,7 @@ int main(int argc, char* argv[])
         create_windowed();
 
     sf::Clock fps_clock;
+    sf::Clock periodic_stats_clock;
     sf::Time last_fps_time;
 
     std::ofstream marker_file { marker_file_name, std::ios::app };
@@ -291,6 +297,11 @@ int main(int argc, char* argv[])
             sf::sleep(sf::seconds(1.f / player.fps()) - fps_clock.getElapsedTime());
         }
         last_fps_time = fps_clock.restart();
+
+        if (periodic_stats_clock.getElapsedTime() > sf::seconds(1) && isatty(STDOUT_FILENO)) {
+            periodic_stats_clock.restart();
+            std::cout << player.get_stats_string(true) << std::endl;
+        }
     }
     write_marker("end");
     return 0;
