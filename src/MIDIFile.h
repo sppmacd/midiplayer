@@ -42,6 +42,8 @@ private:
     double m_tick {};
     size_t m_end_tick {};
 
+    uint8_t m_running_status = 0;
+
     bool read_midi(std::istream& in);
     bool read_chunk(std::istream& in);
     bool read_header(std::istream& in);

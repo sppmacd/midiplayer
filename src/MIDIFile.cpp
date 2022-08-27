@@ -139,9 +139,21 @@ bool MIDIFileInput::read_track_data(std::istream& in, size_t length)
         current_tick += delta_time.value();
 
         auto event = [&]() -> std::unique_ptr<Event> {
-            uint8_t status = 0;
-            if (!(in.read((char*)&status, 1)))
-                ERROR("read status");
+            uint8_t status = in.peek();
+            if (in.eof())
+                ERROR("peek status");
+
+            // Running status is used: status bytes of MIDI channel messages may be
+            // omitted if the preceding event is a MIDI channel message with the
+            // same status.
+            if (status & 0x80) {
+                if (!(in.read((char*)&status, 1)))
+                    ERROR("read status");
+                m_running_status = status;
+            } else {
+                status = m_running_status;
+            }
+
             // 3 - Meta-Events
             if (status == 0xff) {
                 uint8_t type = 0;
