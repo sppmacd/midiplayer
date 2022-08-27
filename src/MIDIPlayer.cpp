@@ -494,6 +494,9 @@ std::string MIDIPlayer::get_stats_string(bool full) const
 
     if (full)
         oss << "  " << m_events_read << "R " << m_events_written << "W " << m_events_executed << "X";
+    else if (m_real_time && m_midi_output) {
+        oss << " (Recording)";
+    }
 
     return oss.str();
 }
