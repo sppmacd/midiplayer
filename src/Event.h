@@ -150,7 +150,7 @@ public:
     virtual void serialize(std::ostream& stream) const override
     {
         std::cerr << "Writing TimeSignature" << std::endl;
-        stream.put(0xff);   // Meta-event
+        stream.put(0xff); // Meta-event
         stream.put(0x58); // Time Signature
         stream.put(4);    // size: vlq 4
         stream.put(m_numerator);
@@ -203,6 +203,7 @@ public:
     MIDIKey key() const { return m_key; }
     uint8_t velocity() const { return m_velocity; }
     TransitionUnit transition_unit() const { return { m_key, m_channel }; }
+    Type type() const { return m_type; }
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
