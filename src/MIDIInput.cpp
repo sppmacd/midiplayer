@@ -1,5 +1,6 @@
 #include "MIDIInput.h"
 
+#include "Event.h"
 #include "Logger.h"
 
 std::unique_ptr<Event> MIDIInput::read_channeled_event(std::istream& in, uint8_t type, uint8_t channel)
@@ -14,7 +15,7 @@ std::unique_ptr<Event> MIDIInput::read_channeled_event(std::istream& in, uint8_t
             uint8_t velocity = 0;
             if (!in.read((char*)&velocity, 1))
                 return {};
-            return std::make_unique<NoteEvent>(type == 0x80 ? NoteEvent::Type::Off : NoteEvent::Type::On, channel, key & 0x7f, velocity & 0x7f);
+            return std::make_unique<NoteEvent>(type == 0x80 || velocity == 0 ? NoteEvent::Type::Off : NoteEvent::Type::On, channel, key & 0x7f, velocity & 0x7f);
         }
         case 0xa0: // Polyphonic Key Pressure (Aftertouch)
         {
