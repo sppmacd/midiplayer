@@ -7,6 +7,7 @@
 #include <linux/limits.h>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <utility>
 
 FileWatcher::FileWatcher(std::string const& path)
 {
