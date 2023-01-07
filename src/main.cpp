@@ -266,6 +266,9 @@ int main(int argc, char* argv[])
     signal(SIGINT, [](int) {
         MIDIPlayer::the().set_playing(false);
     });
+    signal(SIGTERM, [](int) {
+        MIDIPlayer::the().set_playing(false);
+    });
 
     player.start_timer();
     while (player.playing()) {
