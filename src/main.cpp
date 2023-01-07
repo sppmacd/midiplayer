@@ -283,12 +283,18 @@ int main(int argc, char* argv[])
                             create_windowed();
                         else
                             create_fullscreen();
-                    } else if (event.key.code == sf::Keyboard::F3)
+                    } else if (event.key.code == sf::Keyboard::F3) {
                         should_render_debug_info_in_preview = !should_render_debug_info_in_preview;
-                    else if (event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9)
+                    } else if (event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9) {
                         write_marker(std::to_string(event.key.code - sf::Keyboard::Num0));
-                    else if (event.key.code >= sf::Keyboard::Numpad0 && event.key.code <= sf::Keyboard::Numpad9)
+                    } else if (event.key.code >= sf::Keyboard::Numpad0 && event.key.code <= sf::Keyboard::Numpad9) {
                         write_marker(std::to_string(event.key.code - sf::Keyboard::Numpad0));
+                    } else if (event.key.code == sf::Keyboard::Right) {
+                        auto input = dynamic_cast<MIDIFileInput*>(player.midi_input());
+                        if (input) {
+                            input->move_forward(event.key.control);
+                        }
+                    }
                 }
             }
         }

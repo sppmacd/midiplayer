@@ -25,6 +25,8 @@ public:
 
     void dump() const;
 
+    void move_forward(bool to_next_note);
+
 private:
     bool m_valid { false };
     bool m_header_encountered { false };

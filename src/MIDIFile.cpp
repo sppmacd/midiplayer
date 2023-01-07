@@ -272,6 +272,23 @@ std::unique_ptr<Event> MIDIFileInput::read_meta_event(std::istream& in, uint8_t 
     return std::make_unique<InvalidEvent>(type);
 }
 
+void MIDIFileInput::move_forward(bool to_next_event)
+{
+    if (to_next_event) {
+        size_t tick = 0;
+        for (auto const& track : m_tracks) {
+            for (auto const& event : track.events()) {
+                if (event.first > m_tick && (event.first < tick || tick == 0)) {
+                    tick = event.first;
+                }
+            }
+        }
+        m_tick = tick - 10;
+    } else {
+        m_tick += 10;
+    }
+}
+
 ////////////
 // OUTPUT //
 ////////////
