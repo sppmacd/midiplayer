@@ -294,6 +294,8 @@ int main(int argc, char* argv[])
                         if (input) {
                             input->move_forward(event.key.control);
                         }
+                    } else if (event.key.code == sf::Keyboard::Space) {
+                        player.set_paused(!player.is_paused());
                     }
                 }
             }

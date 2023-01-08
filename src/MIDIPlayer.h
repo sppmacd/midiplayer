@@ -63,6 +63,8 @@ public:
     void set_tempo(uint32_t microseconds_per_quarter_note) { m_microseconds_per_quarter_note = microseconds_per_quarter_note; }
     void set_sound_playing(int index, int velocity, bool playing, sf::Color color);
     void stop() { m_playing = false; }
+    void set_paused(bool b) { m_paused = b; }
+    bool is_paused() const { return m_paused; }
 
     void update();
 
@@ -138,6 +140,7 @@ private:
     size_t m_current_tick { 0 };
     size_t m_current_frame { 0 };
     std::atomic<bool> m_playing { true };
+    bool m_paused = false;
     bool m_initialized { false };
     bool m_in_loop { false };
     bool m_headless { false };

@@ -262,24 +262,28 @@ size_t MIDIPlayer::frame_count_for_time(Config::Time time, size_t offset_in_fram
 
 void MIDIPlayer::update()
 {
-    auto previous_current_tick = m_current_tick;
-    m_midi_input->update(*this);
-    m_current_tick = calculate_current_tick();
+    if (!is_paused()) {
+        auto previous_current_tick = m_current_tick;
+        m_midi_input->update(*this);
+        m_current_tick = calculate_current_tick();
 
-    if (m_config_file_watcher.file_was_modified())
-        reload_config_file();
+        if (m_config_file_watcher.file_was_modified())
+            reload_config_file();
 
-    m_config.update();
-    auto events = m_midi_input->find_events_in_range(previous_current_tick, m_current_tick);
+        m_config.update();
+        auto events = m_midi_input->find_events_in_range(previous_current_tick, m_current_tick);
 
-    m_events_executed += events.size();
+        m_events_executed += events.size();
 
-    for (auto const& it : events) {
-        it->execute(*this);
-        if (m_midi_output) {
-            m_events_written++;
-            m_midi_output->write_event(*it);
+        for (auto const& it : events) {
+            it->execute(*this);
+            if (m_midi_output) {
+                m_events_written++;
+                m_midi_output->write_event(*it);
+            }
         }
+    } else {
+        m_current_tick = calculate_current_tick();
     }
 
     static std::default_random_engine engine;
