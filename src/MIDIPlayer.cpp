@@ -469,7 +469,7 @@ std::string MIDIPlayer::get_stats_string(bool full) const
     auto end_tick = m_midi_input->end_tick();
 
     std::ostringstream oss;
-    auto elapsed_seconds = (double)current_frame() / fps();
+    auto elapsed_seconds = (double)tick / m_midi_input->ticks_per_second(*this);
 
     auto print_time = [&oss](uint64_t seconds) {
         oss << std::setfill('0');
@@ -486,7 +486,7 @@ std::string MIDIPlayer::get_stats_string(bool full) const
 
     if (!m_real_time && end_tick.has_value()) {
         oss << " / ";
-        print_time(end_tick.value() * microseconds_per_quarter_note() / m_midi_input->ticks_per_quarter_note() / 1000000);
+        print_time(end_tick.value() / m_midi_input->ticks_per_second(*this));
         if (full)
             oss << " (Ticks=" << end_tick.value() << ")";
         oss << " (" << 100 * tick / end_tick.value() << "%)";

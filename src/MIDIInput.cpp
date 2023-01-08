@@ -2,6 +2,12 @@
 
 #include "Event.h"
 #include "Logger.h"
+#include "MIDIPlayer.h"
+
+float MIDIInput::ticks_per_second(MIDIPlayer const& player) const
+{
+    return static_cast<float>(ticks_per_quarter_note()) / player.microseconds_per_quarter_note() * 1000000;
+}
 
 std::unique_ptr<Event> MIDIInput::read_channeled_event(std::istream& in, uint8_t type, uint8_t channel)
 {

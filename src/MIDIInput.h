@@ -20,6 +20,8 @@ public:
     virtual std::optional<size_t> end_tick() const = 0;
     virtual void update(MIDIPlayer&) { }
 
+    float ticks_per_second(MIDIPlayer const&) const;
+
     template<class Callback>
     void for_first_events_starting_from(size_t start, size_t max, Callback callback)
     {
