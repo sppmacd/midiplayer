@@ -132,6 +132,7 @@ private:
     void render_overlay(sf::RenderTarget& target) const;
     void render_background(sf::RenderTarget& target) const;
     void render_debug_info(sf::RenderTarget& target, DebugInfo const& debug_info) const;
+    void render_progress_bar(sf::RenderTarget& target) const;
 
     bool reload_config_file();
 

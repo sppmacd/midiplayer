@@ -447,19 +447,17 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     target.setView(sf::View({ 0, 0, target_size.x, target_size.y }));
 
     std::ostringstream oss;
-    oss << get_stats_string(debug_info.full_info);
-    if (debug_info.full_info) {
-        oss << "\n\n";
-        oss << std::to_string(1.f / debug_info.last_fps_time.asSeconds()) + " fps\n";
-        oss << m_particles.size() << " particles" << std::endl;
-        oss << "StaticTileColors: " << m_static_tile_colors.size() << std::endl;
-        m_config.dump_stats(oss);
+    oss << get_stats_string(true);
+    oss << "\n\n";
+    oss << std::to_string(1.f / debug_info.last_fps_time.asSeconds()) + " fps\n";
+    oss << m_particles.size() << " particles" << std::endl;
+    oss << "StaticTileColors: " << m_static_tile_colors.size() << std::endl;
+    m_config.dump_stats(oss);
 
-        if (!m_winds.empty()) {
-            oss << "WIND:\n";
-            for (auto const& wind : m_winds)
-                oss << "    [" << wind.pos.x << "," << wind.pos.y << "] " << wind.speed << " " << wind.time << "\n";
-        }
+    if (!m_winds.empty()) {
+        oss << "WIND:\n";
+        for (auto const& wind : m_winds)
+            oss << "    [" << wind.pos.x << "," << wind.pos.y << "] " << wind.speed << " " << wind.time << "\n";
     }
 
     sf::Text text { oss.str(), m_render_resources->debug_font, 10 };
@@ -467,41 +465,87 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     target.draw(text);
 }
 
-std::string MIDIPlayer::get_stats_string(bool full) const
+static std::string pretty_time(uint64_t seconds)
+{
+    std::ostringstream oss;
+    oss << std::setfill('0');
+    if (seconds > 3600)
+        oss << std::setw(2) << (int)seconds / 3600 << ":" << std::setw(2); // The last setw is for minutes
+    oss << ((int)seconds / 60) % 60 << ":"
+        << std::setw(2) << (int)seconds % 60;
+    return oss.str();
+};
+
+void MIDIPlayer::render_progress_bar(sf::RenderTarget& target) const
+{
+    sf::Vector2f target_size { target.getSize() };
+    target.setView(sf::View({ 0, 0, target_size.x, target_size.y }));
+
+    auto end_tick = m_midi_input->end_tick();
+    if (end_tick) {
+        constexpr float height = 12.f;
+        const float width = target_size.x * 1.f / 3;
+
+        float current_time = (double)current_tick() / m_midi_input->ticks_per_second(*this);
+        float total_time = m_midi_input->end_tick().value() / m_midi_input->ticks_per_second(*this);
+
+        RoundedEdgeRectangleShape rect { { width, height }, height / 2 };
+        rect.setPosition({ target_size.x / 2.f - width / 2, 25 - height / 2 });
+        rect.setFillColor(sf::Color { 100, 100, 100, 150 });
+        target.draw(rect);
+
+        rect.setFillColor(sf::Color { 0, 160, 0, 150 });
+        {
+            auto old_view = target.getView();
+            auto new_view = sf::View { { { rect.getPosition().x, 0 }, { width * current_time / total_time, target_size.y } } };
+            new_view.setViewport({ 1 / 3.f, 0, current_time / total_time / 3.f, 1 });
+            target.setView(new_view);
+            target.draw(rect);
+            target.setView(old_view);
+        }
+
+        sf::Text text_left { pretty_time(current_time), m_render_resources->display_font, 14 };
+        text_left.setPosition(std::floor(target_size.x / 2.f - width / 2.f - text_left.getLocalBounds().width - 10 - text_left.getLocalBounds().left),
+            std::floor(25 - text_left.getLocalBounds().height / 2.f - text_left.getLocalBounds().top));
+        target.draw(text_left);
+
+        sf::Text text_right { pretty_time(total_time), m_render_resources->display_font, 14 };
+        text_right.setPosition(std::floor(target_size.x / 2.f + width / 2.f + 10),
+            std::floor(25 - text_right.getLocalBounds().height / 2.f - text_left.getLocalBounds().top));
+        target.draw(text_right);
+    } else {
+        sf::Text text { pretty_time((double)current_tick() / m_midi_input->ticks_per_second(*this)),
+            m_render_resources->display_font, 14 };
+        text.setPosition(std::floor(target_size.x / 2.f - text.getLocalBounds().width / 2.f), 10);
+        target.draw(text);
+
+        if (m_real_time && m_midi_output) {
+            sf::CircleShape recording_circle { 6 };
+            recording_circle.setPosition(10, 10);
+            recording_circle.setFillColor(sf::Color::Red);
+            target.draw(recording_circle);
+        }
+    }
+}
+
+std::string MIDIPlayer::get_stats_string(bool) const
 {
     auto tick = current_tick();
     auto end_tick = m_midi_input->end_tick();
 
     std::ostringstream oss;
     auto elapsed_seconds = (double)tick / m_midi_input->ticks_per_second(*this);
-
-    auto print_time = [&oss](uint64_t seconds) {
-        oss << std::setfill('0');
-        if (seconds > 3600)
-            oss << std::setw(2) << (int)seconds / 3600 << ":" << std::setw(2); // The last setw is for minutes
-        oss << ((int)seconds / 60) % 60 << ":"
-            << std::setw(2) << (int)seconds % 60;
-    };
-
-    print_time(elapsed_seconds);
-
-    if (full)
-        oss << " (Tick=" << tick << " Frame=" << current_frame() << " Second=" << std::fixed << std::setprecision(2) << elapsed_seconds << ")";
+    oss << pretty_time(elapsed_seconds);
+    oss << " (Tick=" << tick << " Frame=" << current_frame() << " Second=" << std::fixed << std::setprecision(2) << elapsed_seconds << ")";
 
     if (!m_real_time && end_tick.has_value()) {
         oss << " / ";
-        print_time(end_tick.value() / m_midi_input->ticks_per_second(*this));
-        if (full)
-            oss << " (Ticks=" << end_tick.value() << ")";
+        oss << pretty_time(end_tick.value() / m_midi_input->ticks_per_second(*this));
+        oss << " (Ticks=" << end_tick.value() << ")";
         oss << " (" << 100 * tick / end_tick.value() << "%)";
     }
 
-    if (full)
-        oss << "  " << m_events_read << "R " << m_events_written << "W " << m_events_executed << "X";
-    else if (m_real_time && m_midi_output) {
-        oss << " (Recording)";
-    }
-
+    oss << "  " << m_events_read << "R " << m_events_written << "W " << m_events_executed << "X";
     return oss.str();
 }
 
@@ -556,7 +600,11 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     }
     render_particles(target);
     render_overlay(target);
-    render_debug_info(target, debug_info);
+    if (debug_info.full_info) {
+        render_debug_info(target, debug_info);
+    } else {
+        render_progress_bar(target);
+    }
 }
 
 void MIDIPlayer::print_config_help() const
