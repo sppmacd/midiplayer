@@ -32,6 +32,7 @@ static void print_usage_and_exit(Brief brief = Brief::Yes)
         std::cerr << "    -f                 Force overwriting output files" << std::endl;
         std::cerr << "    -m [file/port]     Specify MIDI output (file in realtime mode, port number in play mode)" << std::endl;
         std::cerr << "    -o                 Print render to stdout (may be used for rendering with ffmpeg)" << std::endl;
+        std::cerr << "    -r                 Remove empty MIDI file if nothing was written (only for realtime mode)" << std::endl;
         std::cerr << "    --config-help      Print help for Config Files" << std::endl;
         std::cerr << "    --debug            Enable debug info rendering" << std::endl;
         std::cerr << "    --help             Print this message" << std::endl;
@@ -68,6 +69,7 @@ int main(int argc, char* argv[])
     bool render_to_stdout = false;
     bool should_render_debug_info_in_preview = false;
     bool force_overwrite = false;
+    bool remove_file_if_nothing_written = false;
     std::string midi_output;
     std::string config_file_path;
     std::string marker_file_name;
@@ -98,15 +100,17 @@ int main(int argc, char* argv[])
                         return 1;
                     }
                     midi_output = argv[i];
-                } else if (opt_sv == "o"sv)
+                } else if (opt_sv == "o"sv) {
                     render_to_stdout = true;
-                else if (opt_sv == "-config-help")
+                } else if (opt_sv == "r"sv) {
+                    remove_file_if_nothing_written = true;
+                } else if (opt_sv == "-config-help") {
                     print_config_help = true;
-                else if (opt_sv == "-debug")
+                } else if (opt_sv == "-debug") {
                     should_render_debug_info_in_preview = true;
-                else if (opt_sv == "-help")
+                } else if (opt_sv == "-help") {
                     print_usage_and_exit(Brief::No);
-                else if (opt_sv == "-markers") {
+                } else if (opt_sv == "-markers") {
                     if (++i == argc) {
                         logger::error("--markers requires an argument");
                         return 1;
@@ -326,5 +330,11 @@ int main(int argc, char* argv[])
         }
     }
     write_marker("end");
+
+    if (remove_file_if_nothing_written && player.real_time() && !midi_output.empty() && player.midi_input()->track(0).events().empty()) {
+        logger::info("No events recorded, removing empty file.");
+        std::filesystem::remove(midi_output);
+    }
+
     return 0;
 }
