@@ -87,14 +87,28 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
     auto render_note = [&](float y_start, float y_size, sf::Color color) {
         float real_y_start = (y_start + (player.real_time() ? -static_cast<int64_t>(player.current_tick()) : static_cast<int64_t>(player.current_tick()))) * scale;
         auto black = m_key.is_black();
-        float key_size = black ? 0.5 : 1;
-        RoundedEdgeRectangleShape rs({ key_size * size.x / MIDIPlayer::view_size_x, y_size }, 0.2f);
+        float tile_width = black ? 0.5 : 1;
+        sf::Vector2f tile_size { tile_width, y_size };
+        sf::Vector2f tile_position { m_key.to_piano_position(), real_y_start };
+        sf::RectangleShape rs { size };
+        rs.setPosition(target.mapPixelToCoords({}));
         rs.setFillColor(color);
         auto key_position = m_key.to_piano_position();
-        rs.setPosition(key_position * size.x / MIDIPlayer::view_size_x, real_y_start);
         auto& shader = player.note_shader();
-        shader.setUniform("uKeySize", sf::Vector2f { key_size * target.getSize().x / MIDIPlayer::view_size_x, y_size * (target.getSize().y / size.y) });
-        shader.setUniform("uKeyPos", sf::Vector2f { key_position * target.getSize().x / MIDIPlayer::view_size_x, y_start * (target.getSize().y / size.y) });
+
+        constexpr float TileSpacing = 2;
+    
+        auto physical_tile_position = target.mapCoordsToPixel(tile_position);
+        physical_tile_position.x += TileSpacing;
+        physical_tile_position.y += TileSpacing;
+        auto physical_tile_end_position = target.mapCoordsToPixel(tile_position + tile_size);
+        physical_tile_end_position.x -= TileSpacing;
+        physical_tile_end_position.y -= TileSpacing;
+
+        sf::Vector2f physical_tile_size { physical_tile_end_position - physical_tile_position };
+
+        shader.setUniform("uKeySize", physical_tile_size);
+        shader.setUniform("uKeyPos", sf::Vector2f { static_cast<float>(physical_tile_position.x), static_cast<float>(target.getSize().y - physical_tile_position.y - physical_tile_size.y) });
         shader.setUniform("uIsBlack", black);
         target.draw(rs, sf::RenderStates { &shader });
     };
