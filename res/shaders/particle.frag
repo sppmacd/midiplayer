@@ -17,7 +17,7 @@ void main()
         gl_FragColor = vec4(1, 1, 1, vColor.a);
     else
     {
-        float gradient = sqrt(sqrt(dst) / (uRadius - kernRadius));
-        gl_FragColor = vec4(1, 1, 1, max(0.0, 0.8-gradient)*vColor.a);
+        float gradient = pow(sqrt(dst) / (uRadius - kernRadius), 0.5);
+        gl_FragColor = vec4(1, 1, 1, max(0.0, 0.7-gradient)*vColor.a);
     }
 }

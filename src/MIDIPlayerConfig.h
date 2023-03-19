@@ -55,8 +55,8 @@ private:
         Config::AnimatableProperty<sf::Color> background_color { sf::Color(10, 10, 10) };
         sf::Color overlay_color { 5, 5, 5 };
         int particle_count = 5;
-        float particle_radius = 0.5;
-        float particle_glow_size = 0.1;
+        float particle_radius = 1;
+        float particle_glow_size = 0.03;
         size_t max_events_per_track = 4096;
         Config::AnimatableProperty<double> scale { 0.05 };
         int label_font_size = 50;

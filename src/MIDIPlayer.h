@@ -17,8 +17,7 @@ struct Particle {
     sf::Vector2f position;
     sf::Vector2f motion;
     sf::Color color;
-    int lifetime;
-    int start_lifetime;
+    float temperature;
 };
 
 template<>

@@ -19,6 +19,8 @@
 
 using namespace std::literals;
 
+constexpr float ParticleTemperatureMean = 120;
+
 static MIDIPlayer* s_the = nullptr;
 
 MIDIPlayer::MIDIPlayer()
@@ -310,20 +312,21 @@ void MIDIPlayer::update()
 
     for (auto& particle : m_particles) {
         particle.position += { particle.motion.x, particle.motion.y };
-        particle.motion.x /= 1.05f;
-        particle.motion.y /= 1.01f;
+        particle.motion.x /= 1.01f;
+        particle.motion.y -= particle.temperature / 25000;
+        particle.motion.y += 0.0015;
         for (auto const& wind : m_winds) {
             float dstx = particle.position.x - wind.pos.x;
             float dsty = particle.position.y - wind.pos.y;
             particle.motion.x -= std::min(0.00225, std::max(-0.00225, wind.speed / dsty / dsty));
         }
-        particle.lifetime--;
+        particle.temperature *= 0.98;
     }
 
     for (auto& label : m_labels)
         label.remaining_duration--;
 
-    std::erase_if(m_particles, [](auto const& particle) { return particle.lifetime <= 0; });
+    std::erase_if(m_particles, [](auto const& particle) { return particle.temperature <= 1; });
     std::erase_if(m_winds, [](auto const& wind) { return wind.time <= 0; });
     std::erase_if(m_labels, [](auto const& label) { return label.remaining_duration <= 0; });
 
@@ -344,7 +347,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
     size_t counter = 0;
     for (auto const& particle : m_particles) {
         auto color = particle.color;
-        color.a = particle.lifetime * 255 / particle.start_lifetime;
+        color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255, 0.f, 255.f);
 
         float size = config().particle_radius();
         float tex_size = m_render_resources->particle_texture.getSize().x;
@@ -568,7 +571,7 @@ void MIDIPlayer::spawn_random_particles(sf::RenderTarget& target, MIDIKey key, s
         float rand_x_speed = (std::binomial_distribution<int>(100, 0.5)(engine) - 50) / 250.0;
         float rand_y_speed = -std::binomial_distribution<int>(100, 0.1)(engine) / 500.0 - velocity_factor;
         float offset = std::uniform_real_distribution<float>(-0.2, 0.2)(engine);
-        int lifetime = std::gamma_distribution<double>(120, 0.9)(engine);
+        float temperature = std::gamma_distribution<double>(ParticleTemperatureMean, 0.9)(engine);
         spawn_particle(Particle {
             { key.to_piano_position() * size.x / MIDIPlayer::view_size_x + (key.is_black() ? 0.25f : 0.5f) + offset, 0 },
             { rand_x_speed, rand_y_speed },
@@ -576,7 +579,7 @@ void MIDIPlayer::spawn_random_particles(sf::RenderTarget& target, MIDIKey key, s
                 std::min(255, color.r + 50),
                 std::min(255, color.g + 50),
                 std::min(255, color.b + 50)),
-            lifetime, lifetime });
+            temperature });
     }
 };
 
