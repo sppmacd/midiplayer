@@ -312,15 +312,16 @@ void MIDIPlayer::update()
 
     for (auto& particle : m_particles) {
         particle.position += { particle.motion.x, particle.motion.y };
-        particle.motion.x /= 1.01f;
-        particle.motion.y -= particle.temperature / 25000;
-        particle.motion.y += 0.0015;
+        particle.motion.x /= m_config.particle_x_drag();
+        particle.motion.y -= particle.temperature * m_config.particle_temperature_multiplier();
+        particle.motion.y += m_config.particle_gravity();
         for (auto const& wind : m_winds) {
             float dstx = particle.position.x - wind.pos.x;
             float dsty = particle.position.y - wind.pos.y;
-            particle.motion.x -= std::min(0.00225, std::max(-0.00225, wind.speed / dsty / dsty));
+            particle.motion.x -= std::min((double)m_config.particle_max_wind(),
+                std::max((double)-m_config.particle_max_wind(), wind.speed / dsty / dsty));
         }
-        particle.temperature *= 0.98;
+        particle.temperature *= m_config.particle_temperature_decay();
     }
 
     for (auto& label : m_labels)

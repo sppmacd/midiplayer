@@ -35,6 +35,11 @@ public:
     int particle_count() const { return m_properties.particle_count; }
     float particle_radius() const { return m_properties.particle_radius; }
     float particle_glow_size() const { return m_properties.particle_glow_size; }
+    float particle_x_drag() const { return m_properties.particle_x_drag; }
+    float particle_temperature_multiplier() const { return m_properties.particle_temperature_multiplier; }
+    float particle_gravity() const { return m_properties.particle_gravity; }
+    float particle_max_wind() const { return m_properties.particle_max_wind; }
+    float particle_temperature_decay() const { return m_properties.particle_temperature_decay; }
     size_t max_events_per_track() const { return m_properties.max_events_per_track; }
     double scale() const { return m_properties.scale; }
     int label_font_size() const { return m_properties.label_font_size; }
@@ -57,6 +62,11 @@ private:
         int particle_count = 5;
         float particle_radius = 1;
         float particle_glow_size = 0.03;
+        float particle_x_drag = 1.01;
+        float particle_temperature_multiplier = 1.0 / 25000;
+        float particle_gravity = 0.0015;
+        float particle_max_wind = 0.00225;
+        float particle_temperature_decay = 0.98;
         size_t max_events_per_track = 4096;
         Config::AnimatableProperty<double> scale { 0.05 };
         int label_font_size = 50;

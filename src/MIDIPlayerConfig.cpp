@@ -74,6 +74,41 @@ MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
             m_properties.particle_glow_size = arglist[0].as_float();
             return true;
         });
+    m_info.register_property("particle_x_drag",
+        "How much particles are slowed down in X axis",
+        { { Config::PropertyType::Float, "value" } },
+        [&](Config::ArgumentList const& arglist, double) -> bool {
+            m_properties.particle_x_drag = arglist[0].as_float();
+            return true;
+        });
+    m_info.register_property("particle_temperature_multiplier",
+        "How fast particles go up due to temperature",
+        { { Config::PropertyType::Float, "value" } },
+        [&](Config::ArgumentList const& arglist, double) -> bool {
+            m_properties.particle_temperature_multiplier = arglist[0].as_float();
+            return true;
+        });
+    m_info.register_property("particle_gravity",
+        "How fast particles fall",
+        { { Config::PropertyType::Float, "value" } },
+        [&](Config::ArgumentList const& arglist, double) -> bool {
+            m_properties.particle_gravity = arglist[0].as_float();
+            return true;
+        });
+    m_info.register_property("particle_max_wind",
+        "Max force that can be applied to particle due to wind",
+        { { Config::PropertyType::Float, "value" } },
+        [&](Config::ArgumentList const& arglist, double) -> bool {
+            m_properties.particle_max_wind = arglist[0].as_float();
+            return true;
+        });
+    m_info.register_property("particle_temperature_decay",
+        "How much temperature is left every tick",
+        { { Config::PropertyType::Float, "value" } },
+        [&](Config::ArgumentList const& arglist, double) -> bool {
+            m_properties.particle_temperature_decay = arglist[0].as_float();
+            return true;
+        });
     m_info.register_property("max_events_per_track",
         "Maximum events that are stored in track. Applicable only for realtime mode.",
         { { Config::PropertyType::Int, "count" } },

@@ -75,8 +75,23 @@ Count of particles that are spawned every tick.
 ### `particle_glow_size <radius: float>`
 Particle glow size (in keys).
 
+### `particle_gravity <value: float>`
+How fast particles fall
+
+### `particle_max_wind <value: float>`
+Max force that can be applied to particle due to wind
+
 ### `particle_radius <radius: float>`
 Particle radius (in keys).
+
+### `particle_temperature_decay <value: float>`
+How much temperature is left every tick
+
+### `particle_temperature_multiplier <value: float>`
+How fast particles go up due to temperature
+
+### `particle_x_drag <value: float>`
+How much particles are slowed down in X axis
 
 ### `scale <value: float>`
 Y scale (tile falling speed).
