@@ -174,6 +174,7 @@ bool MIDIPlayer::reload_config_file()
 
     if (!m_headless) {
         generate_particle_texture();
+        generate_minimap_texture();
 
         if (m_config.display_font().empty()) {
             logger::warning("No display font is specified. Using debug font.");
@@ -214,6 +215,34 @@ void MIDIPlayer::generate_particle_texture()
     // NOTE: SFML doesn't use move semantics, so we need to COPY the texture :(
     m_render_resources->particle_texture = target.getTexture();
     m_render_resources->particle_texture.setSmooth(true);
+}
+
+void MIDIPlayer::generate_minimap_texture()
+{
+    sf::RenderTexture target;
+    target.create(1024, progress_bar_size({}).y);
+
+    if (m_real_time) {
+        return;
+    }
+
+    auto& input = *static_cast<MIDIFileInput*>(m_midi_input.get());
+    sf::VertexArray varr(sf::Points);
+    input.for_each_track([&](Track const& track) {
+        for (auto const& event : track.events()) {
+            if (auto note_event = dynamic_cast<NoteEvent*>(event.second.get())) {
+                float position_x = (float)event.first / *input.end_tick() * target.getSize().x;
+                float position_y = (note_event->key().to_piano_position() - view_offset_x) / view_size_x * target.getSize().y;
+                varr.append(sf::Vertex({ position_x, position_y }, sf::Color{255, 255, 255, 200}));
+            }
+        }
+    });
+    target.draw(varr);
+
+    target.display();
+
+    // NOTE: SFML doesn't use move semantics, so we need to COPY the texture :(
+    m_render_resources->minimap_texture = target.getTexture();
 }
 
 void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing, sf::Color color)
@@ -517,21 +546,24 @@ void MIDIPlayer::render_progress_bar(sf::RenderTarget& target) const
 
     auto end_tick = m_midi_input->end_tick();
     if (end_tick) {
-        constexpr float height = 12.f;
-        const float width = target_size.x * 1.f / 3;
-
+        auto size = progress_bar_size(sf::Vector2f(target.getSize()));
         float current_time = (double)current_tick() / m_midi_input->ticks_per_second(*this);
         float total_time = m_midi_input->end_tick().value() / m_midi_input->ticks_per_second(*this);
 
-        RoundedEdgeRectangleShape rect { { width, height }, height / 2 };
-        rect.setPosition({ target_size.x / 2.f - width / 2, 25 - height / 2 });
+        RoundedEdgeRectangleShape rect { size, size.y / 2 };
+        rect.setPosition({ target_size.x / 2.f - size.x / 2, 25 - size.y / 2 });
         rect.setFillColor(sf::Color { 100, 100, 100, 150 });
         target.draw(rect);
+
+        rect.setFillColor(sf::Color::White);
+        rect.setTexture(&m_render_resources->minimap_texture);
+        target.draw(rect);
+        rect.setTexture(nullptr);
 
         rect.setFillColor(sf::Color { 0, 160, 0, 150 });
         {
             auto old_view = target.getView();
-            auto new_view = sf::View { { { rect.getPosition().x, 0 }, { width * current_time / total_time, target_size.y } } };
+            auto new_view = sf::View { { { rect.getPosition().x, 0 }, { size.x * current_time / total_time, target_size.y } } };
             new_view.setViewport({ 1 / 3.f, 0, current_time / total_time / 3.f, 1 });
             target.setView(new_view);
             target.draw(rect);
@@ -539,12 +571,12 @@ void MIDIPlayer::render_progress_bar(sf::RenderTarget& target) const
         }
 
         sf::Text text_left { pretty_time(current_time), m_render_resources->display_font, 14 };
-        text_left.setPosition(std::floor(target_size.x / 2.f - width / 2.f - text_left.getLocalBounds().width - 10 - text_left.getLocalBounds().left),
+        text_left.setPosition(std::floor(target_size.x / 2.f - size.x / 2.f - text_left.getLocalBounds().width - 10 - text_left.getLocalBounds().left),
             std::floor(25 - text_left.getLocalBounds().height / 2.f - text_left.getLocalBounds().top));
         target.draw(text_left);
 
         sf::Text text_right { pretty_time(total_time), m_render_resources->display_font, 14 };
-        text_right.setPosition(std::floor(target_size.x / 2.f + width / 2.f + 10),
+        text_right.setPosition(std::floor(target_size.x / 2.f + size.x / 2.f + 10),
             std::floor(25 - text_right.getLocalBounds().height / 2.f - text_left.getLocalBounds().top));
         target.draw(text_right);
     } else {

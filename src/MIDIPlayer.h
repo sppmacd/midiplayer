@@ -6,6 +6,8 @@
 #include "MIDIOutput.h"
 #include "MIDIPlayerConfig.h"
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
@@ -125,6 +127,7 @@ public:
 
 private:
     void generate_particle_texture();
+    void generate_minimap_texture();
     size_t calculate_current_tick() const;
 
     void render_particles(sf::RenderTarget& target) const;
@@ -132,8 +135,16 @@ private:
     void render_background(sf::RenderTarget& target) const;
     void render_debug_info(sf::RenderTarget& target, DebugInfo const& debug_info) const;
     void render_progress_bar(sf::RenderTarget& target) const;
+    void render_minimap(sf::RenderTarget& target) const;
 
     bool reload_config_file();
+
+    sf::Vector2f progress_bar_size(sf::Vector2f window_size) const
+    {
+        constexpr float height = 12.f;
+        const float width = window_size.x * 1.f / 3;
+        return { width, height };
+    }
 
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
     unsigned m_fps { 60 };
@@ -183,6 +194,7 @@ private:
         sf::Font display_font;
         sf::Font debug_font;
         sf::Texture particle_texture;
+        sf::Texture minimap_texture;
         std::map<std::string, sf::Texture> background_textures;
     };
 
