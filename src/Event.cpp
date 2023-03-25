@@ -90,8 +90,9 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         float tile_width = black ? 0.5 : 1;
         sf::Vector2f tile_size { tile_width, y_size };
         sf::Vector2f tile_position { m_key.to_piano_position(), real_y_start };
-        sf::RectangleShape rs { size };
-        rs.setPosition(target.mapPixelToCoords({}));
+        sf::Vector2f extent { 50.f, 50.f };
+        sf::RectangleShape rs { tile_size + extent };
+        rs.setPosition(tile_position - extent / 2.f);
         rs.setFillColor(color);
         auto key_position = m_key.to_piano_position();
         auto& shader = player.note_shader();
