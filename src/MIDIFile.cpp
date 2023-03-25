@@ -285,7 +285,7 @@ void MIDIFileInput::move_forward(bool to_next_event)
         }
         m_tick = tick - 10;
     } else {
-        m_tick += 10;
+        m_tick += 50;
     }
 }
 
