@@ -9,6 +9,9 @@
 
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/CircleShape.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/RenderStates.hpp>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -79,6 +82,7 @@ void MIDIPlayer::setup()
         if (
             m_render_resources->gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
             && m_render_resources->note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
+            && m_render_resources->notelight_shader.loadFromFile(resource_path + "/shaders/notelight.vert", resource_path + "/shaders/notelight.frag")
             && m_render_resources->particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag")) {
             logger::info("Shaders loaded");
         } else {
@@ -446,6 +450,27 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
             rs.setPosition(key.to_piano_position() - 0.15f, -0.1f);
             rs.setFillColor(m_notes[key].is_played ? m_notes[key].color * sf::Color(200, 200, 200) : sf::Color(50, 50, 50));
             target.draw(rs);
+        }
+    }
+    for (size_t s = 21; s <= 108; s++) {
+        MIDIKey key { static_cast<uint8_t>(s) };
+        if (m_notes[key].is_played) {
+            sf::Vector2f size { key.is_black() ? 0.7f : 1.f, 0.5f };
+            sf::Vector2f outlined_size { 8.f, 5.f };
+            size += outlined_size;
+            sf::RectangleShape rs { size };
+            rs.setPosition(key.to_piano_position() - (key.is_black() ? 0.15f : 0.f), -0.4f);
+            rs.move(-outlined_size / 2.f);
+            rs.setFillColor(sf::Color::White);
+            m_render_resources->notelight_shader.setUniform("uSize", size);
+            m_render_resources->notelight_shader.setUniform("uColor", sf::Glsl::Vec4(m_notes[key].color));
+            m_render_resources->notelight_shader.setUniform("uCenter", rs.getPosition() + size / 2.f);
+            sf::RenderStates states(&m_render_resources->notelight_shader);
+            states.blendMode = {
+                sf::BlendMode::SrcAlpha, sf::BlendMode::DstAlpha, sf::BlendMode::Add,
+                sf::BlendMode::One, sf::BlendMode::DstAlpha, sf::BlendMode::Add
+            };
+            target.draw(rs, states);
         }
     }
 }

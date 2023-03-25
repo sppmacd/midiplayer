@@ -178,6 +178,7 @@ private:
     struct RenderResources {
         mutable sf::Shader gradient_shader;
         mutable sf::Shader note_shader;
+        mutable sf::Shader notelight_shader;
         mutable sf::Shader particle_shader;
         sf::Font display_font;
         sf::Font debug_font;
