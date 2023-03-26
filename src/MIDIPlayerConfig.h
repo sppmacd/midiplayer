@@ -50,6 +50,8 @@ public:
 
     void dump_stats(std::ostream&) const;
 
+    auto const& info() const { return m_info; }
+
 private:
     Config::Info m_info;
     Config::Reader m_reader;

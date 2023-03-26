@@ -6,9 +6,9 @@ uniform vec2 uCenter;
 uniform vec4 uColor;
 
 float grad(float f) {
-    const float FAC = 15.0;
-    const float SCALE = 1.001;
-    const float EXP = 2.0;
+    const float FAC = 1.0;
+    const float SCALE = 1.01;
+    const float EXP = 1.5;
     return pow(EXP, FAC * (SCALE - f) - FAC);
 }
 
@@ -74,5 +74,5 @@ void main()
 
     HSL color_hsl = rgb_to_hsl(uColor.rgb);
     color_hsl.l = min(1.0, max(0.0, gradient));
-    gl_FragColor = vec4(hsl_to_rgb(color_hsl), 1.0);
+    gl_FragColor = vec4(hsl_to_rgb(color_hsl), gradient);
 }

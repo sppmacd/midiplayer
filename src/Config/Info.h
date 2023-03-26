@@ -18,6 +18,8 @@ public:
     void set_property(std::string const& name, ArgumentList const& args, double transition_factor) const;
     std::span<PropertyFormalParameter const> property_formal_parameters(std::string const& name) const;
 
+    auto const& properties() const { return m_properties; }
+
 private:
     struct Property {
         std::string description;

@@ -2,6 +2,7 @@
 #include "MIDIDevice.h"
 #include "MIDIFile.h"
 #include "MIDIPlayer.h"
+#include "Resources.h"
 
 #include <cstring>
 #include <filesystem>
@@ -249,8 +250,12 @@ int main(int argc, char* argv[])
             window->setFramerateLimit(60);
         window->setMouseCursorVisible(false);
     };
-    if (!player.is_headless())
+    if (!player.is_headless()) {
         create_windowed();
+        sf::Image icon;
+        icon.loadFromFile(find_resource_path() + "/icon32.png");
+        window->setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+    }
 
     sf::Clock fps_clock;
     sf::Clock periodic_stats_clock;

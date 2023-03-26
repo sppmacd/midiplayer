@@ -9,6 +9,7 @@
 
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/BlendMode.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
@@ -233,7 +234,7 @@ void MIDIPlayer::generate_minimap_texture()
             if (auto note_event = dynamic_cast<NoteEvent*>(event.second.get())) {
                 float position_x = (float)event.first / *input.end_tick() * target.getSize().x;
                 float position_y = (note_event->key().to_piano_position() - view_offset_x) / view_size_x * target.getSize().y;
-                varr.append(sf::Vertex({ position_x, position_y }, sf::Color{255, 255, 255, 200}));
+                varr.append(sf::Vertex({ position_x, position_y }, sf::Color { 255, 255, 255, 200 }));
             }
         }
     });
@@ -457,6 +458,30 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         target.setView(old_view);
     }
 
+    // Light (background layer)
+    auto render_light_with_blend_mode = [&](MIDIKey key, sf::BlendMode mode) {
+        sf::Vector2f size { key.is_black() ? 0.7f : 1.f, 0.5f };
+        sf::Vector2f extent { 5.f, 5.f };
+        size += extent;
+        sf::RectangleShape rs { size };
+        rs.setPosition(key.to_piano_position() - (key.is_black() ? 0.15f : 0.f), -0.4f);
+        rs.move(-extent / 2.f);
+        rs.setFillColor(sf::Color::White);
+        m_render_resources->notelight_shader.setUniform("uSize", size);
+        m_render_resources->notelight_shader.setUniform("uColor", sf::Glsl::Vec4(m_notes[key].color));
+        m_render_resources->notelight_shader.setUniform("uCenter", rs.getPosition() + size / 2.f);
+        sf::RenderStates states(&m_render_resources->notelight_shader);
+        states.blendMode = mode;
+        target.draw(rs, states);
+    };
+
+    for (size_t s = 21; s <= 108; s++) {
+        MIDIKey key { static_cast<uint8_t>(s) };
+        if (m_notes[key].is_played) {
+            render_light_with_blend_mode(key, sf::BlendAdd);
+        }
+    }
+
     // Piano
     auto upper_y_to_view_pos = target.mapPixelToCoords({ 0, static_cast<int>(target.getSize().y - piano_size_px) }).y;
     auto lower_y_to_view_pos = target.mapPixelToCoords({ 0, static_cast<int>(target.getSize().y) }).y;
@@ -481,25 +506,14 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
             target.draw(rs);
         }
     }
+
+    // Light (on piano layer)
     for (size_t s = 21; s <= 108; s++) {
         MIDIKey key { static_cast<uint8_t>(s) };
         if (m_notes[key].is_played) {
-            sf::Vector2f size { key.is_black() ? 0.7f : 1.f, 0.5f };
-            sf::Vector2f outlined_size { 8.f, 5.f };
-            size += outlined_size;
-            sf::RectangleShape rs { size };
-            rs.setPosition(key.to_piano_position() - (key.is_black() ? 0.15f : 0.f), -0.4f);
-            rs.move(-outlined_size / 2.f);
-            rs.setFillColor(sf::Color::White);
-            m_render_resources->notelight_shader.setUniform("uSize", size);
-            m_render_resources->notelight_shader.setUniform("uColor", sf::Glsl::Vec4(m_notes[key].color));
-            m_render_resources->notelight_shader.setUniform("uCenter", rs.getPosition() + size / 2.f);
-            sf::RenderStates states(&m_render_resources->notelight_shader);
-            states.blendMode = {
-                sf::BlendMode::SrcAlpha, sf::BlendMode::DstAlpha, sf::BlendMode::Add,
-                sf::BlendMode::One, sf::BlendMode::DstAlpha, sf::BlendMode::Add
-            };
-            target.draw(rs, states);
+            render_light_with_blend_mode(key,
+                sf::BlendMode(sf::BlendMode::DstColor, sf::BlendMode::One, sf::BlendMode::Add,
+                    sf::BlendMode::One, sf::BlendMode::OneMinusSrcAlpha, sf::BlendMode::Add));
         }
     }
 }
