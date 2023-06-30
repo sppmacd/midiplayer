@@ -19,6 +19,7 @@
 #include <fstream>
 #include <iomanip>
 #include <random>
+#include <signal.h>
 #include <sstream>
 
 using namespace std::literals;
@@ -51,6 +52,135 @@ MIDIPlayer& MIDIPlayer::the()
 {
     assert(s_the);
     return *s_the;
+}
+
+void MIDIPlayer::run(Args const& args)
+{
+    std::unique_ptr<sf::RenderTexture> render_texture = [&]() -> std::unique_ptr<sf::RenderTexture> {
+        if (!is_headless() && args.render_to_stdout) {
+            if (isatty(STDOUT_FILENO)) {
+                logger::error("stdout is a terminal, refusing to print binary data");
+                return nullptr;
+            }
+
+            auto texture = std::make_unique<sf::RenderTexture>();
+            // TODO: Support custom resolution/FPS/format/...
+            if (!texture->create(1920, 1080)) {
+                logger::error("Failed to create render texture, ignoring");
+                return nullptr;
+            }
+            logger::info("Rendering to stdout (RGBA24 1920x1080 60fps)");
+            if (args.mode == Args::Mode::Realtime)
+                logger::warning("Realtime mode is not recommended for rendering, consider recording it to MIDI file first and playing");
+            return texture;
+        }
+        return nullptr;
+    }();
+
+    bool is_fullscreen = false;
+    bool should_render_debug_info_in_preview = args.should_render_debug_info_in_preview;
+    std::optional<sf::RenderWindow> window;
+
+    auto create_windowed = [&]() {
+        is_fullscreen = false;
+        window.emplace(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings { 0, 0, 1 });
+        if (!render_texture)
+            window->setFramerateLimit(60);
+        window->setMouseCursorVisible(true);
+    };
+    auto create_fullscreen = [&]() {
+        is_fullscreen = true;
+        window.emplace(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Fullscreen, sf::ContextSettings { 0, 0, 1 });
+        if (!render_texture)
+            window->setFramerateLimit(60);
+        window->setMouseCursorVisible(false);
+    };
+    if (!is_headless()) {
+        create_windowed();
+        sf::Image icon;
+        icon.loadFromFile(find_resource_path() + "/icon32.png");
+        window->setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+    }
+
+    sf::Clock fps_clock;
+    sf::Clock periodic_stats_clock;
+    sf::Time last_fps_time;
+
+    std::ofstream marker_file { args.marker_file_name, std::ios::app };
+    if (!args.marker_file_name.empty() && marker_file.fail())
+        logger::warning("Failed to open marker file '{}'. Markers will not be saved.", args.marker_file_name);
+    marker_file << "# markers " << time(nullptr) << std::endl;
+    auto write_marker = [&](std::string name) {
+        if (args.marker_file_name.empty())
+            return;
+        logger::info("Adding marker {} at {} to {}", name, current_tick(), args.marker_file_name);
+        marker_file << name << ": " << current_tick() << std::endl;
+    };
+
+    signal(SIGINT, [](int) {
+        MIDIPlayer::the().set_playing(false);
+    });
+    signal(SIGTERM, [](int) {
+        MIDIPlayer::the().set_playing(false);
+    });
+
+    start_timer();
+
+    while (playing()) {
+        if (!is_headless()) {
+            sf::Event event;
+            while (window->pollEvent(event)) {
+                if (event.type == sf::Event::Closed)
+                    set_playing(false);
+                else if (event.type == sf::Event::KeyPressed) {
+                    if (event.key.code == sf::Keyboard::F11) {
+                        if (is_fullscreen)
+                            create_windowed();
+                        else
+                            create_fullscreen();
+                    } else if (event.key.code == sf::Keyboard::F3) {
+                        should_render_debug_info_in_preview = !should_render_debug_info_in_preview;
+                    } else if (event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9) {
+                        write_marker(std::to_string(event.key.code - sf::Keyboard::Num0));
+                    } else if (event.key.code >= sf::Keyboard::Numpad0 && event.key.code <= sf::Keyboard::Numpad9) {
+                        write_marker(std::to_string(event.key.code - sf::Keyboard::Numpad0));
+                    } else if (event.key.code == sf::Keyboard::Right) {
+                        auto input = dynamic_cast<MIDIFileInput*>(midi_input());
+                        if (input) {
+                            input->move_forward(event.key.control);
+                        }
+                    } else if (event.key.code == sf::Keyboard::Space) {
+                        set_paused(!is_paused());
+                    }
+                }
+            }
+        }
+
+        update();
+        if (!is_headless()) {
+            // FIXME: Last FPS should be stored in MIDIPlayer somehow!
+            render(*window, { .full_info = should_render_debug_info_in_preview, .last_fps_time = last_fps_time });
+            window->display();
+
+            if (render_texture) {
+                render(*render_texture, { .full_info = false, .last_fps_time = last_fps_time });
+                render_texture->display();
+                auto image = render_texture->getTexture().copyToImage();
+
+                // NOTE: RGBA only!
+                fwrite(image.getPixelsPtr(), 4, image.getSize().x * image.getSize().y, stdout);
+            }
+        } else {
+            sf::sleep(sf::seconds(1.f / fps()) - fps_clock.getElapsedTime());
+        }
+        last_fps_time = fps_clock.restart();
+
+        if (periodic_stats_clock.getElapsedTime() > sf::seconds(1) && isatty(STDOUT_FILENO)) {
+            periodic_stats_clock.restart();
+            std::cout << get_stats_string(true) << std::endl;
+        }
+    }
+    write_marker("end");
 }
 
 bool MIDIPlayer::initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output)

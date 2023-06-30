@@ -47,6 +47,23 @@ public:
 
     static MIDIPlayer& the();
 
+    struct Args {
+        enum class Mode {
+            Realtime,
+            Play
+        };
+        Mode mode {};
+        bool print_config_help = false;
+        bool render_to_stdout = false;
+        bool should_render_debug_info_in_preview = false;
+        bool force_overwrite = false;
+        bool remove_file_if_nothing_written = false;
+        std::string midi_output;
+        std::string config_file_path;
+        std::string marker_file_name;
+    };
+    void run(Args const& args);
+
     // Initialize the MIDIPlayer object: open MIDI devices/files.
     bool initialize(RealTime real_time, std::unique_ptr<MIDIInput>&& input, std::unique_ptr<MIDIOutput>&& output);
 
