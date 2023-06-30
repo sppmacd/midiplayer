@@ -58,7 +58,7 @@ private:
 
     struct Properties {
         std::string display_font;
-        sf::Color default_color { 255, 100, 100 };
+        sf::Color default_color { 0x36, 0x96, 0xC8 };
         Config::AnimatableProperty<sf::Color> background_color { sf::Color(10, 10, 10) };
         sf::Color overlay_color { 5, 5, 5 };
         int particle_count = 5;
