@@ -11,6 +11,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/BlendMode.hpp>
 #include <SFML/Graphics/CircleShape.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <cassert>
@@ -222,6 +223,12 @@ void MIDIPlayer::setup()
 
         if (m_render_resources->debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
             logger::info("Font loaded");
+
+        if (m_render_resources->pedals_texture.loadFromFile(resource_path + "/pedals.png")) {
+            logger::info("Textures loaded");
+        } else {
+            exit(1);
+        }
     }
 
     // Don't add bloat to MIDI files. These events are sent by device output anyway.
@@ -738,6 +745,39 @@ void MIDIPlayer::render_progress_bar(sf::RenderTarget& target) const
     }
 }
 
+void MIDIPlayer::render_pedals(sf::RenderTarget& target) const
+{
+    auto const PEDAL_TEXTURE_SIZE = m_render_resources->pedals_texture.getSize();
+    sf::Vector2i const POSITION { static_cast<int>(target.getSize().x - PEDAL_TEXTURE_SIZE.x - 20), 10 };
+
+    int const SIDE_PEDAL_WIDTH = PEDAL_TEXTURE_SIZE.x * 45 / 128;
+    int const MIDDLE_PEDAL_WIDTH = PEDAL_TEXTURE_SIZE.x * 38 / 128;
+    int const PEDAL_HEIGHT = PEDAL_TEXTURE_SIZE.y / 2;
+
+    sf::IntRect SOFT_OFF_RECT { 0, 0, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+    sf::IntRect SOFT_ON_RECT { 0, PEDAL_HEIGHT, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+
+    sf::IntRect SOSTENUTO_OFF_RECT { SIDE_PEDAL_WIDTH, 0, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+    sf::IntRect SOSTENUTO_ON_RECT { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+
+    sf::IntRect SUSTAIN_OFF_RECT { SIDE_PEDAL_WIDTH + MIDDLE_PEDAL_WIDTH, 0, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+    sf::IntRect SUSTAIN_ON_RECT { SIDE_PEDAL_WIDTH + MIDDLE_PEDAL_WIDTH, PEDAL_HEIGHT, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+
+    sf::Sprite sprite(m_render_resources->pedals_texture);
+
+    sprite.setPosition(sf::Vector2f(POSITION));
+    sprite.setTextureRect(m_pedals.soft() ? SOFT_ON_RECT : SOFT_OFF_RECT);
+    target.draw(sprite);
+
+    sprite.setPosition(sf::Vector2f(POSITION) + sf::Vector2f(SIDE_PEDAL_WIDTH, 0));
+    sprite.setTextureRect(m_pedals.sostenuto() ? SOSTENUTO_ON_RECT : SOSTENUTO_OFF_RECT);
+    target.draw(sprite);
+
+    sprite.setPosition(sf::Vector2f(POSITION) + sf::Vector2f(SIDE_PEDAL_WIDTH + MIDDLE_PEDAL_WIDTH, 0));
+    sprite.setTextureRect(m_pedals.sustain() ? SUSTAIN_ON_RECT : SUSTAIN_OFF_RECT);
+    target.draw(sprite);
+}
+
 std::string MIDIPlayer::get_stats_string(bool) const
 {
     auto tick = current_tick();
@@ -815,6 +855,7 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     } else {
         render_progress_bar(target);
     }
+    render_pedals(target);
 }
 
 void MIDIPlayer::print_config_help() const

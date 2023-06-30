@@ -298,9 +298,7 @@ public:
         std::cerr << tick() << ": Control Change Event channel=" << (int)m_channel << ", number=" << std::hex << (int)m_number << std::dec << ", value=" << (int)m_value << std::endl;
     }
 
-    virtual void execute(MIDIPlayer&) override
-    { /* TODO */
-    }
+    virtual void execute(MIDIPlayer&) override;
 
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override

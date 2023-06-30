@@ -98,7 +98,7 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
         auto& shader = player.note_shader();
 
         constexpr float TileSpacing = 2;
-    
+
         auto physical_tile_position = target.mapCoordsToPixel(tile_position);
         physical_tile_position.x += TileSpacing;
         physical_tile_position.y += TileSpacing;
@@ -156,4 +156,59 @@ void NoteEvent::render(MIDIPlayer& player, sf::RenderTarget& target)
 void NoteEvent::execute(MIDIPlayer& player)
 {
     player.set_sound_playing(m_key, m_velocity, m_type == Type::On ? true : false, player.resolve_color(*this));
+}
+
+void ControlChangeEvent::execute(MIDIPlayer& player)
+{
+    switch (m_number) {
+        case Number::DamperPedal:
+            player.pedals().set_sustain(m_value > 0);
+            break;
+        case Number::Portamento:
+            break;
+        case Number::Sostenuto:
+            player.pedals().set_sostenuto(m_value > 0);
+            break;
+        case Number::SoftPedal:
+            player.pedals().set_soft(m_value > 0);
+            break;
+        case Number::LegatoFootswitch:
+        case Number::Hold2:
+        case Number::SoundController1:
+        case Number::SoundController2:
+        case Number::SoundController3:
+        case Number::SoundController4:
+        case Number::SoundController5:
+        case Number::SoundController6:
+        case Number::SoundController7:
+        case Number::SoundController8:
+        case Number::SoundController9:
+        case Number::SoundController10:
+        case Number::GeneralPurposeController5:
+        case Number::GeneralPurposeController6:
+        case Number::GeneralPurposeController7:
+        case Number::GeneralPurposeController8:
+        case Number::PortamentoControl:
+        case Number::Effects1Depth:
+        case Number::Effects2Depth:
+        case Number::Effects3Depth:
+        case Number::Effects4Depth:
+        case Number::Effects5Depth:
+        case Number::DataEntryPlus1:
+        case Number::DataEntryMinus1:
+        case Number::NonRegisteredParameterNumberLSB:
+        case Number::NonRegisteredParameterNumberMSB:
+        case Number::RegisteredParameterNumberLSB:
+        case Number::RegisteredParameterNumberMSB:
+        case Number::AllSoundOff:
+        case Number::ResetAllControllers:
+        case Number::LocalControlOnOff:
+        case Number::AllNotesOff:
+        case Number::OmniModeOff:
+        case Number::OmniModeOn:
+        case Number::PolyModeOn:
+        case Number::PolyModeOnInclMono:
+        case Number::Count:
+            break;
+    }
 }

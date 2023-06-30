@@ -5,6 +5,7 @@
 #include "FileWatcher.h"
 #include "MIDIOutput.h"
 #include "MIDIPlayerConfig.h"
+#include "Pedals.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -141,6 +142,8 @@ public:
     std::string get_stats_string(bool full) const;
 
     void did_read_events(size_t count) { m_events_read += count; }
+    auto& pedals() { return m_pedals; }
+    auto& pedals() const { return m_pedals; }
 
 private:
     void generate_particle_texture();
@@ -152,7 +155,7 @@ private:
     void render_background(sf::RenderTarget& target) const;
     void render_debug_info(sf::RenderTarget& target, DebugInfo const& debug_info) const;
     void render_progress_bar(sf::RenderTarget& target) const;
-    void render_minimap(sf::RenderTarget& target) const;
+    void render_pedals(sf::RenderTarget& target) const;
 
     bool reload_config_file();
 
@@ -172,6 +175,7 @@ private:
     bool m_initialized { false };
     bool m_in_loop { false };
     bool m_headless { false };
+    Pedals m_pedals;
 
     struct Wind {
         double speed = 0;
@@ -212,6 +216,7 @@ private:
         sf::Font debug_font;
         sf::Texture particle_texture;
         sf::Texture minimap_texture;
+        sf::Texture pedals_texture;
         std::map<std::string, sf::Texture> background_textures;
     };
 
