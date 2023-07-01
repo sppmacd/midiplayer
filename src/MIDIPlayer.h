@@ -54,7 +54,6 @@ public:
             Play
         };
         Mode mode {};
-        bool print_config_help = false;
         bool render_to_stdout = false;
         bool should_render_debug_info_in_preview = false;
         bool force_overwrite = false;
