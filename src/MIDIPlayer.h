@@ -17,6 +17,10 @@
 
 class MIDIInput;
 struct Particle {
+    enum class Type {
+        Dust,
+        Smoke
+    };
     sf::Vector2f position;
     sf::Vector2f motion;
     sf::Color color;
@@ -101,7 +105,7 @@ public:
     auto microseconds_per_quarter_note() const { return m_microseconds_per_quarter_note; }
     bool is_in_loop() const { return m_in_loop; }
 
-    void spawn_particle(Particle&& p) { m_particles.push_back(std::move(p)); }
+    void spawn_particle(Particle::Type, Particle&&);
     void spawn_random_particles(sf::RenderTarget& target, MIDIKey key, sf::Color color, int velocity);
 
     enum class LabelType {
@@ -145,7 +149,7 @@ public:
     auto& pedals() const { return m_pedals; }
 
 private:
-    void generate_particle_texture();
+    void generate_dust_texture();
     void generate_minimap_texture();
     size_t calculate_current_tick() const;
 
@@ -192,7 +196,8 @@ private:
     std::array<Note, 128> m_notes;
     std::list<Wind> m_winds;
     bool m_real_time { false };
-    std::list<Particle> m_particles;
+    std::list<Particle> m_dust_particles;
+    std::list<Particle> m_smoke_particles;
     std::vector<std::pair<Config::SelectorList, sf::Color>> m_static_tile_colors;
 
     struct Label {
@@ -213,9 +218,10 @@ private:
         mutable sf::Shader particle_shader;
         sf::Font display_font;
         sf::Font debug_font;
-        sf::Texture particle_texture;
+        sf::Texture dust_texture;
         sf::Texture minimap_texture;
         sf::Texture pedals_texture;
+        sf::Texture smoke_texture;
         std::map<std::string, sf::Texture> background_textures;
     };
 

@@ -20,6 +20,7 @@
 #include <fstream>
 #include <iomanip>
 #include <random>
+#include <ranges>
 #include <signal.h>
 #include <sstream>
 
@@ -224,7 +225,8 @@ void MIDIPlayer::setup()
         if (m_render_resources->debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
             logger::info("Font loaded");
 
-        if (m_render_resources->pedals_texture.loadFromFile(resource_path + "/pedals.png")) {
+        if (m_render_resources->pedals_texture.loadFromFile(resource_path + "/pedals.png")
+            && m_render_resources->smoke_texture.loadFromFile(resource_path + "/smoke.png")) {
             logger::info("Textures loaded");
         } else {
             exit(1);
@@ -311,7 +313,7 @@ bool MIDIPlayer::reload_config_file()
     bool success = m_config.reload(m_config_file_path);
 
     if (!m_headless) {
-        generate_particle_texture();
+        generate_dust_texture();
         generate_minimap_texture();
 
         if (m_config.display_font().empty()) {
@@ -335,7 +337,7 @@ bool MIDIPlayer::reload_config_file()
     return true;
 }
 
-void MIDIPlayer::generate_particle_texture()
+void MIDIPlayer::generate_dust_texture()
 {
     sf::RenderTexture target;
     target.create(config().particle_radius() * 256, config().particle_radius() * 256);
@@ -351,8 +353,8 @@ void MIDIPlayer::generate_particle_texture()
     target.display();
 
     // NOTE: SFML doesn't use move semantics, so we need to COPY the texture :(
-    m_render_resources->particle_texture = target.getTexture();
-    m_render_resources->particle_texture.setSmooth(true);
+    m_render_resources->dust_texture = target.getTexture();
+    m_render_resources->dust_texture.setSmooth(true);
 }
 
 void MIDIPlayer::generate_minimap_texture()
@@ -481,7 +483,8 @@ void MIDIPlayer::update()
         wind.time--;
     }
 
-    for (auto& particle : m_particles) {
+    auto all_particles = { std::views::all(m_dust_particles), std::views::all(m_smoke_particles) };
+    for (auto& particle : std::views::join(all_particles)) {
         particle.position += { particle.motion.x, particle.motion.y };
         particle.motion.x /= m_config.particle_x_drag();
         particle.motion.y -= particle.temperature * m_config.particle_temperature_multiplier();
@@ -498,7 +501,8 @@ void MIDIPlayer::update()
     for (auto& label : m_labels)
         label.remaining_duration--;
 
-    std::erase_if(m_particles, [](auto const& particle) { return particle.temperature <= 1; });
+    std::erase_if(m_dust_particles, [](auto const& particle) { return particle.temperature <= 1; });
+    std::erase_if(m_smoke_particles, [](auto const& particle) { return particle.temperature <= 1; });
     std::erase_if(m_winds, [](auto const& wind) { return wind.time <= 0; });
     std::erase_if(m_labels, [](auto const& label) { return label.remaining_duration <= 0; });
 
@@ -511,45 +515,79 @@ void MIDIPlayer::update()
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
-    if (m_particles.empty())
-        return;
+    if (!m_smoke_particles.empty()) {
+        // TODO: This probably can be further optimized
+        sf::VertexArray varr(sf::Triangles, m_smoke_particles.size() * 6);
+        size_t counter = 0;
+        for (auto const& particle : m_smoke_particles) {
+            auto color = particle.color;
+            // TODO: Configurable alpha mul
+            color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255, 0.f, 255.f) * 0.05;
 
-    // TODO: This probably can be further optimized
-    sf::VertexArray varr(sf::Triangles, m_particles.size() * 6);
-    size_t counter = 0;
-    for (auto const& particle : m_particles) {
-        auto color = particle.color;
-        color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255, 0.f, 255.f);
+            float size = std::clamp<float>(1 - particle.temperature / ParticleTemperatureMean, 0.25, 1) * 4; // TODO: Configurable size
+            float tex_size = m_render_resources->smoke_texture.getSize().x;
 
-        float size = config().particle_radius();
-        float tex_size = m_render_resources->particle_texture.getSize().x;
-
-        varr[counter * 6 + 0] = sf::Vertex(
-            { particle.position.x - size, particle.position.y - size },
-            color, { 0, 0 });
-        varr[counter * 6 + 1] = sf::Vertex(
-            { particle.position.x - size, particle.position.y + size },
-            color, { 0, tex_size });
-        varr[counter * 6 + 2] = sf::Vertex(
-            { particle.position.x + size, particle.position.y - size },
-            color, { tex_size, 0 });
-        varr[counter * 6 + 3] = sf::Vertex(
-            { particle.position.x - size, particle.position.y + size },
-            color, { 0, tex_size });
-        varr[counter * 6 + 4] = sf::Vertex(
-            { particle.position.x + size, particle.position.y + size },
-            color, { tex_size, tex_size });
-        varr[counter * 6 + 5] = sf::Vertex(
-            { particle.position.x + size, particle.position.y - size },
-            color, { tex_size, 0 });
-        counter++;
+            varr[counter * 6 + 0] = sf::Vertex(
+                { particle.position.x - size, particle.position.y - size },
+                color, { 0, 0 });
+            varr[counter * 6 + 1] = sf::Vertex(
+                { particle.position.x - size, particle.position.y + size },
+                color, { 0, tex_size });
+            varr[counter * 6 + 2] = sf::Vertex(
+                { particle.position.x + size, particle.position.y - size },
+                color, { tex_size, 0 });
+            varr[counter * 6 + 3] = sf::Vertex(
+                { particle.position.x - size, particle.position.y + size },
+                color, { 0, tex_size });
+            varr[counter * 6 + 4] = sf::Vertex(
+                { particle.position.x + size, particle.position.y + size },
+                color, { tex_size, tex_size });
+            varr[counter * 6 + 5] = sf::Vertex(
+                { particle.position.x + size, particle.position.y - size },
+                color, { tex_size, 0 });
+            counter++;
+        }
+        sf::RenderStates states { &m_render_resources->smoke_texture };
+        target.draw(varr, states);
     }
-    sf::RenderStates states { &m_render_resources->particle_texture };
-    states.blendMode = {
-        sf::BlendMode::SrcAlpha, sf::BlendMode::DstAlpha, sf::BlendMode::Add,
-        sf::BlendMode::One, sf::BlendMode::DstAlpha, sf::BlendMode::Add
-    };
-    target.draw(varr, states);
+    if (!m_dust_particles.empty()) {
+        // TODO: This probably can be further optimized
+        sf::VertexArray varr(sf::Triangles, m_dust_particles.size() * 6);
+        size_t counter = 0;
+        for (auto const& particle : m_dust_particles) {
+            auto color = particle.color;
+            color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255, 0.f, 255.f);
+
+            float size = config().particle_radius();
+            float tex_size = m_render_resources->dust_texture.getSize().x;
+
+            varr[counter * 6 + 0] = sf::Vertex(
+                { particle.position.x - size, particle.position.y - size },
+                color, { 0, 0 });
+            varr[counter * 6 + 1] = sf::Vertex(
+                { particle.position.x - size, particle.position.y + size },
+                color, { 0, tex_size });
+            varr[counter * 6 + 2] = sf::Vertex(
+                { particle.position.x + size, particle.position.y - size },
+                color, { tex_size, 0 });
+            varr[counter * 6 + 3] = sf::Vertex(
+                { particle.position.x - size, particle.position.y + size },
+                color, { 0, tex_size });
+            varr[counter * 6 + 4] = sf::Vertex(
+                { particle.position.x + size, particle.position.y + size },
+                color, { tex_size, tex_size });
+            varr[counter * 6 + 5] = sf::Vertex(
+                { particle.position.x + size, particle.position.y - size },
+                color, { tex_size, 0 });
+            counter++;
+        }
+        sf::RenderStates states { &m_render_resources->dust_texture };
+        states.blendMode = {
+            sf::BlendMode::SrcAlpha, sf::BlendMode::DstAlpha, sf::BlendMode::Add,
+            sf::BlendMode::One, sf::BlendMode::DstAlpha, sf::BlendMode::Add
+        };
+        target.draw(varr, states);
+    }
 }
 
 void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
@@ -664,7 +702,7 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     oss << get_stats_string(true);
     oss << "\n\n";
     oss << std::to_string(1.f / debug_info.last_fps_time.asSeconds()) + " fps\n";
-    oss << m_particles.size() << " particles" << std::endl;
+    oss << "Particles: dust=" << m_dust_particles.size() << " smoke=" << m_smoke_particles.size() << std::endl;
     oss << "StaticTileColors: " << m_static_tile_colors.size() << std::endl;
     m_config.dump_stats(oss);
 
@@ -808,22 +846,37 @@ void MIDIPlayer::spawn_random_particles(sf::RenderTarget& target, MIDIKey key, s
 {
     auto size = target.getView().getSize();
     static std::default_random_engine engine;
-    for (int i = 0; i < particle_count(); i++) {
+
+    auto spawn_particle_of_type = [&](Particle::Type type) {
         float velocity_factor = (velocity - 64) / 800.f + 0.03f;
         float rand_x_speed = (std::binomial_distribution<int>(100, 0.5)(engine) - 50) / 250.0;
         float rand_y_speed = -std::binomial_distribution<int>(100, 0.1)(engine) / 500.0 - velocity_factor;
         float offset = std::uniform_real_distribution<float>(-0.2, 0.2)(engine);
         float temperature = std::gamma_distribution<double>(ParticleTemperatureMean, 0.9)(engine);
-        spawn_particle(Particle {
-            { key.to_piano_position() * size.x / MIDIPlayer::view_size_x + (key.is_black() ? 0.25f : 0.5f) + offset, 0 },
-            { rand_x_speed, rand_y_speed },
-            sf::Color(
-                std::min(255, color.r + 50),
-                std::min(255, color.g + 50),
-                std::min(255, color.b + 50)),
-            temperature });
+        spawn_particle(type, Particle {
+                                 .position = { key.to_piano_position() * size.x / MIDIPlayer::view_size_x + (key.is_black() ? 0.25f : 0.5f) + offset, 0 },
+                                 .motion = { rand_x_speed, rand_y_speed },
+                                 .color = sf::Color(std::min(255, color.r + 50), std::min(255, color.g + 50), std::min(255, color.b + 50)),
+                                 .temperature = temperature,
+                             });
+    };
+    for (size_t s = 0; s < m_config.particle_count(); s++) {
+        spawn_particle_of_type(Particle::Type::Dust);
     }
+    spawn_particle_of_type(Particle::Type::Smoke);
 };
+
+void MIDIPlayer::spawn_particle(Particle::Type type, Particle&& part)
+{
+    switch (type) {
+        case Particle::Type::Dust:
+            m_dust_particles.push_back(std::move(part));
+            break;
+        case Particle::Type::Smoke:
+            m_smoke_particles.push_back(std::move(part));
+            break;
+    }
+}
 
 void MIDIPlayer::display_label(LabelType label, std::string text, int duration)
 {
