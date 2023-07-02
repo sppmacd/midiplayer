@@ -59,18 +59,18 @@ private:
     struct Properties {
         std::string display_font;
         sf::Color default_color { 0x36, 0x96, 0xC8 };
-        Config::AnimatableProperty<sf::Color> background_color { sf::Color(10, 10, 10) };
-        sf::Color overlay_color { 5, 5, 5 };
+        Config::AnimatableProperty<sf::Color> background_color { sf::Color(4, 6, 8) };
+        sf::Color overlay_color { 2, 3, 4 };
         int particle_count = 5;
         float particle_radius = 1;
         float particle_glow_size = 0.03;
         float particle_x_drag = 1.01;
-        float particle_temperature_multiplier = 1.0 / 25000;
-        float particle_gravity = 0.0015;
-        float particle_max_wind = 0.00225;
-        float particle_temperature_decay = 0.98;
+        float particle_temperature_multiplier = 0.000024;
+        float particle_gravity = 0.0008;
+        float particle_max_wind = 0.00125;
+        float particle_temperature_decay = 0.97;
         size_t max_events_per_track = 4096;
-        Config::AnimatableProperty<double> scale { 0.05 };
+        Config::AnimatableProperty<double> scale { 0.02 };
         int label_font_size = 50;
         int label_fade_time = 30;
         Config::AnimatableProperty<AnimatableBackground> background_image;

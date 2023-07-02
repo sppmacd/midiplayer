@@ -848,7 +848,7 @@ void MIDIPlayer::spawn_random_particles(sf::RenderTarget& target, MIDIKey key, s
     static std::default_random_engine engine;
 
     auto spawn_particle_of_type = [&](Particle::Type type) {
-        float velocity_factor = (velocity - 64) / 800.f + 0.03f;
+        float velocity_factor = (velocity - 64) / 2500.f + 0.03f;
         float rand_x_speed = (std::binomial_distribution<int>(100, 0.5)(engine) - 50) / 250.0;
         float rand_y_speed = -std::binomial_distribution<int>(100, 0.1)(engine) / 500.0 - velocity_factor;
         float offset = std::uniform_real_distribution<float>(-0.2, 0.2)(engine);
