@@ -151,7 +151,6 @@ void MIDIPlayer::run(Args const& args)
                         if (input) {
                             input->move_forward(event.key.control);
                         }
-                        m_seeked_in_previous_frame = true;
                     } else if (event.key.code == sf::Keyboard::Space) {
                         set_paused(!is_paused());
                     }
