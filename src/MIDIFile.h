@@ -26,6 +26,7 @@ public:
     void dump() const;
 
     void move_forward(bool to_next_note);
+    void seek(size_t tick);
 
 private:
     bool m_valid { false };

@@ -289,6 +289,11 @@ void MIDIFileInput::move_forward(bool to_next_event)
     }
 }
 
+void MIDIFileInput::seek(size_t tick)
+{
+    m_tick = tick;
+}
+
 ////////////
 // OUTPUT //
 ////////////

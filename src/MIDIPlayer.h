@@ -162,15 +162,18 @@ private:
 
     bool reload_config_file();
 
-    sf::Vector2f progress_bar_size(sf::Vector2f window_size) const
+    sf::FloatRect progress_bar_rect(sf::Vector2f window_size) const
     {
         constexpr float height = 12.f;
         const float width = window_size.x * 1.f / 3;
-        return { width, height };
+        sf::Vector2f size { width, height };
+        sf::Vector2f position { window_size.x / 2.f - size.x / 2, 25 - size.y / 2 };
+        return { position, size };
     }
 
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
     unsigned m_fps { 60 };
+    bool m_seeked_in_previous_frame = false;
     size_t m_current_tick { 0 };
     size_t m_current_frame { 0 };
     std::atomic<bool> m_playing { true };

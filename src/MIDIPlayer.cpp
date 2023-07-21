@@ -151,8 +151,23 @@ void MIDIPlayer::run(Args const& args)
                         if (input) {
                             input->move_forward(event.key.control);
                         }
+                        m_seeked_in_previous_frame = true;
                     } else if (event.key.code == sf::Keyboard::Space) {
                         set_paused(!is_paused());
+                    }
+                } else if (event.type == sf::Event::MouseButtonPressed) {
+                    sf::Vector2f mouse_pos { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
+                    auto rect = progress_bar_rect(sf::Vector2f(window->getSize()));
+                    if (rect.contains(mouse_pos)) {
+                        float fac = (mouse_pos.x - rect.left) / rect.width;
+                        assert(fac >= 0 && fac <= 1);
+                        auto input = dynamic_cast<MIDIFileInput*>(midi_input());
+                        if (input) {
+                            auto end_tick = input->end_tick();
+                            assert(end_tick);
+                            input->seek(fac * *end_tick);
+                            m_seeked_in_previous_frame = true;
+                        }
                     }
                 }
             }
@@ -360,7 +375,7 @@ void MIDIPlayer::generate_dust_texture()
 void MIDIPlayer::generate_minimap_texture()
 {
     sf::RenderTexture target;
-    target.create(1024, progress_bar_size({}).y);
+    target.create(1024, progress_bar_rect({}).height);
 
     if (m_real_time) {
         return;
@@ -460,13 +475,16 @@ void MIDIPlayer::update()
 
         m_events_executed += events.size();
 
-        for (auto const& it : events) {
-            it->execute(*this);
-            if (m_midi_output) {
-                m_events_written++;
-                m_midi_output->write_event(*it);
+        if (!m_seeked_in_previous_frame) {
+            for (auto const& it : events) {
+                it->execute(*this);
+                if (m_midi_output) {
+                    m_events_written++;
+                    m_midi_output->write_event(*it);
+                }
             }
         }
+        m_seeked_in_previous_frame = false;
     } else {
         m_current_tick = calculate_current_tick();
     }
@@ -527,9 +545,9 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
         for (auto const& particle : m_smoke_particles) {
             auto color = particle.color;
             // TODO: Configurable alpha mul
-            color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255, 0.f, 255.f) * 0.05;
+            color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255 + 100, 0.f, 255.f) * 0.02;
 
-            float size = std::clamp<float>(1 - particle.temperature / ParticleTemperatureMean, 0.25, 1) * 4; // TODO: Configurable size
+            float size = std::clamp<float>(1 - particle.temperature / ParticleTemperatureMean, 0.25, 1) * 3; // TODO: Configurable size
             float tex_size = m_render_resources->smoke_texture.getSize().x;
 
             varr[counter * 6 + 0] = sf::Vertex(
@@ -740,27 +758,29 @@ void MIDIPlayer::render_progress_bar(sf::RenderTarget& target) const
 
     auto end_tick = m_midi_input->end_tick();
     if (end_tick) {
-        auto size = progress_bar_size(sf::Vector2f(target.getSize()));
+        auto rect = progress_bar_rect(sf::Vector2f(target.getSize()));
+        sf::Vector2f size { rect.width, rect.height };
+        sf::Vector2f position { rect.left, rect.top };
         float current_time = (double)current_tick() / m_midi_input->ticks_per_second(*this);
         float total_time = m_midi_input->end_tick().value() / m_midi_input->ticks_per_second(*this);
 
-        RoundedEdgeRectangleShape rect { size, size.y / 2 };
-        rect.setPosition({ target_size.x / 2.f - size.x / 2, 25 - size.y / 2 });
-        rect.setFillColor(sf::Color { 100, 100, 100, 150 });
-        target.draw(rect);
+        RoundedEdgeRectangleShape rect_drawable { { rect.width, rect.height }, size.y / 2 };
+        rect_drawable.setPosition(position);
+        rect_drawable.setFillColor(sf::Color { 100, 100, 100, 150 });
+        target.draw(rect_drawable);
 
-        rect.setFillColor(sf::Color::White);
-        rect.setTexture(&m_render_resources->minimap_texture);
-        target.draw(rect);
-        rect.setTexture(nullptr);
+        rect_drawable.setFillColor(sf::Color::White);
+        rect_drawable.setTexture(&m_render_resources->minimap_texture);
+        target.draw(rect_drawable);
+        rect_drawable.setTexture(nullptr);
 
-        rect.setFillColor(sf::Color { 0, 160, 0, 150 });
+        rect_drawable.setFillColor(sf::Color { 0, 160, 0, 150 });
         {
             auto old_view = target.getView();
-            auto new_view = sf::View { { { rect.getPosition().x, 0 }, { size.x * current_time / total_time, target_size.y } } };
+            auto new_view = sf::View { { { rect_drawable.getPosition().x, 0 }, { size.x * current_time / total_time, target_size.y } } };
             new_view.setViewport({ 1 / 3.f, 0, current_time / total_time / 3.f, 1 });
             target.setView(new_view);
-            target.draw(rect);
+            target.draw(rect_drawable);
             target.setView(old_view);
         }
 
