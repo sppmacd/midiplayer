@@ -475,7 +475,20 @@ void MIDIPlayer::update()
 
         m_events_executed += events.size();
 
-        if (!m_seeked_in_previous_frame) {
+        if (m_seeked_in_previous_frame) {
+            // FIXME: We may want to move this to some reset_midi() function
+            for (int i = 0; i < 16; i++) {
+                // Silence all sounds
+                m_midi_output->write_event(ControlChangeEvent(i, ControlChangeEvent::Number::AllSoundOff, 0));
+                // Clear pedal state etc.
+                m_midi_output->write_event(ControlChangeEvent(i, ControlChangeEvent::Number::ResetAllControllers, 0));
+            }
+            m_pedals = Pedals();
+            for (auto& note : m_notes) {
+                note.is_played = false;
+            }
+            m_seeked_in_previous_frame = false;
+        } else {
             for (auto const& it : events) {
                 it->execute(*this);
                 if (m_midi_output) {
@@ -484,7 +497,6 @@ void MIDIPlayer::update()
                 }
             }
         }
-        m_seeked_in_previous_frame = false;
     } else {
         m_current_tick = calculate_current_tick();
     }
