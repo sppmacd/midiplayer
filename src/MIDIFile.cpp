@@ -38,11 +38,11 @@ bool MIDIFileInput::read_midi(std::istream& in)
     return true;
 }
 
-#define ERROR(msg)                                         \
-    do {                                                   \
-        logger::error("Failed to {}", msg);                \
-        logger::error_note("at offset {:#x}", in.tellg()); \
-        return {};                                         \
+#define ERROR(msg)                                                \
+    do {                                                          \
+        logger::error("Failed to {}", msg);                       \
+        logger::error_note("at offset {:x}", (size_t)in.tellg()); \
+        return {};                                                \
     } while (false)
 
 // 1.3 - Chunks
