@@ -459,6 +459,19 @@ size_t MIDIPlayer::frame_count_for_time(Config::Time time, size_t offset_in_fram
     return 0;
 }
 
+void MIDIPlayer::reset_midi()
+{
+    if (!m_midi_output || m_real_time) {
+        return;
+    }
+    for (int i = 0; i < 16; i++) {
+        // Silence all sounds
+        m_midi_output->write_event(ControlChangeEvent(i, ControlChangeEvent::Number::AllSoundOff, 0));
+        // Clear pedal state etc.
+        m_midi_output->write_event(ControlChangeEvent(i, ControlChangeEvent::Number::ResetAllControllers, 0));
+    }
+}
+
 void MIDIPlayer::update()
 {
     if (!is_paused()) {
@@ -475,13 +488,7 @@ void MIDIPlayer::update()
         m_events_executed += events.size();
 
         if (m_seeked_in_previous_frame) {
-            // FIXME: We may want to move this to some reset_midi() function
-            for (int i = 0; i < 16; i++) {
-                // Silence all sounds
-                m_midi_output->write_event(ControlChangeEvent(i, ControlChangeEvent::Number::AllSoundOff, 0));
-                // Clear pedal state etc.
-                m_midi_output->write_event(ControlChangeEvent(i, ControlChangeEvent::Number::ResetAllControllers, 0));
-            }
+            reset_midi();
             m_pedals = Pedals();
             for (auto& note : m_notes) {
                 note.is_played = false;

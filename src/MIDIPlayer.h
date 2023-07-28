@@ -161,6 +161,7 @@ private:
     void render_pedals(sf::RenderTarget& target) const;
 
     bool reload_config_file();
+    void reset_midi();
 
     sf::FloatRect progress_bar_rect(sf::Vector2f window_size) const
     {
