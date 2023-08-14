@@ -12,16 +12,6 @@ float grad(float f) {
 
 float GAMMA = 2.2;
 
-vec3 gamma_to_linear(vec3 c) {
-    // return c;
-    return vec3(pow(c.r, 1.0/GAMMA), pow(c.g, 1.0/GAMMA), pow(c.b, 1.0/GAMMA));
-}
-
-vec3 linear_to_gamma(vec3 c) {
-    // return c;
-    return vec3(pow(c.r, GAMMA), pow(c.g, GAMMA), pow(c.b, GAMMA));
-}
-
 void main()
 {
     vec4 pos = gl_ModelViewMatrix*vFragPos;
@@ -29,6 +19,6 @@ void main()
     float dsty = (uCenter.y - pos.y) / (uSize.y / 2.0);
     float dst = (dstx * dstx + dsty * dsty);
 
-    float gradient = grad(dst) - grad(1.0);
-    gl_FragColor = vec4(linear_to_gamma(gamma_to_linear(uColor.rgb) * gradient), gradient);
+    float gradient = max(0.0, grad(dst) - grad(1.0));
+    gl_FragColor = vec4(uColor.rgb, pow(gradient*gradient, GAMMA));
 }
