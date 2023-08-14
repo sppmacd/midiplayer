@@ -563,9 +563,9 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
         for (auto const& particle : m_smoke_particles) {
             auto color = particle.color;
             // TODO: Configurable alpha mul
-            color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255 + 100, 0.f, 255.f) * 0.02;
+            color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255 + 100, 0.f, 255.f) * m_config.smoke_alpha_mul();
 
-            float size = std::clamp<float>(1 - particle.temperature / ParticleTemperatureMean, 0.25, 1) * 3; // TODO: Configurable size
+            float size = std::clamp<float>(1 - particle.temperature / ParticleTemperatureMean, 0.25, 1) * m_config.smoke_size_mul();
             float tex_size = m_render_resources->smoke_texture.getSize().x;
 
             varr[counter * 6 + 0] = sf::Vertex(
@@ -677,17 +677,18 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
     // Light (background layer)
     auto render_light_with_blend_mode = [&](MIDIKey key, sf::BlendMode mode) {
         sf::Vector2f size { key.is_black() ? 0.7f : 1.f, 0.5f };
-        sf::Vector2f extent { 5.f, 5.f };
+        constexpr float extend_v = 5.f;
+        sf::Vector2f extent { extend_v, extend_v };
         size += extent;
         sf::RectangleShape rs { size };
         rs.setPosition(key.to_piano_position() - (key.is_black() ? 0.15f : 0.f), -0.4f);
         rs.move(-extent / 2.f);
         rs.setFillColor(sf::Color::White);
         m_render_resources->notelight_shader.setUniform("uSize", size);
-        m_render_resources->notelight_shader.setUniform("uColor", sf::Glsl::Vec4(m_notes[key].color));
+        m_render_resources->notelight_shader.setUniform("uColor", sf::Glsl::Vec4(sf::Color::White));
         m_render_resources->notelight_shader.setUniform("uCenter", rs.getPosition() + size / 2.f);
         sf::RenderStates states(&m_render_resources->notelight_shader);
-        states.blendMode = mode;
+        // states.blendMode = mode;
         target.draw(rs, states);
     };
 

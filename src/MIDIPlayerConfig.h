@@ -40,6 +40,8 @@ public:
     float particle_gravity() const { return m_properties.particle_gravity; }
     float particle_max_wind() const { return m_properties.particle_max_wind; }
     float particle_temperature_decay() const { return m_properties.particle_temperature_decay; }
+    float smoke_alpha_mul() const { return m_properties.m_smoke_alpha_mul; }
+    float smoke_size_mul() const { return m_properties.m_smoke_size_mul; }
     size_t max_events_per_track() const { return m_properties.max_events_per_track; }
     double scale() const { return m_properties.scale; }
     int label_font_size() const { return m_properties.label_font_size; }
@@ -69,6 +71,8 @@ private:
         float particle_gravity = 0.0008;
         float particle_max_wind = 0.00125;
         float particle_temperature_decay = 0.97;
+        float m_smoke_alpha_mul = 0.01;
+        float m_smoke_size_mul = 3;
         size_t max_events_per_track = 4096;
         Config::AnimatableProperty<double> scale { 0.02 };
         int label_font_size = 50;
