@@ -1,8 +1,8 @@
 #include "Track.h"
 
-void Track::add_event(std::unique_ptr<Event>&& data)
+void Track::add_event(std::unique_ptr<Event>&& event)
 {
-    m_events.insert({ data->tick(), std::move(data) });
+    m_events.insert({ event->tick(), std::move(event) });
 
     if (m_max_events > 0 && m_events.size() > m_max_events)
         m_events.erase(m_events.begin());
