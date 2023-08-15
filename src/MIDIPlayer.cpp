@@ -910,7 +910,7 @@ void MIDIPlayer::spawn_random_particles(sf::RenderTarget& target, MIDIKey key, s
         float velocity_factor = (velocity - 64) / 2500.f + 0.03f;
         float rand_x_speed = (std::binomial_distribution<int>(100, 0.5)(engine) - 50) / 250.0;
         float rand_y_speed = -std::binomial_distribution<int>(100, 0.1)(engine) / 500.0 - velocity_factor;
-        float offset = std::uniform_real_distribution<float>(-0.2, 0.2)(engine);
+        float offset = std::uniform_real_distribution<float>(-0.5, 0.5)(engine);
         float temperature = std::gamma_distribution<double>(ParticleTemperatureMean, 0.9)(engine);
         spawn_particle(type, Particle {
                                  .position = { key.to_piano_position() * size.x / MIDIPlayer::view_size_x + (key.is_black() ? 0.25f : 0.5f) + offset, 0 },
