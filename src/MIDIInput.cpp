@@ -99,15 +99,6 @@ std::vector<Event*> MIDIInput::find_events_in_range(size_t start_tick, size_t en
 
     // Ensure that events will be played in the correct time order
     std::stable_sort(out.begin(), out.end(), [](Event* l, Event* r) {
-        if (l->tick() == r->tick()) {
-            // Special-case: Sort Note On always after Note Off
-            if (auto l_note = dynamic_cast<NoteEvent*>(l); l_note) {
-                if (auto r_note = dynamic_cast<NoteEvent*>(r); r_note) {
-                    if (l_note->type() == NoteEvent::Type::Off && r_note->type() == NoteEvent::Type::On)
-                        return true;
-                }
-            }
-        }
         return l->tick() < r->tick();
     });
 
