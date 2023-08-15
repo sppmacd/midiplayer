@@ -50,7 +50,7 @@ void TileWorld::render(sf::RenderTarget& target, MIDIPlayer const& player) const
 
     auto render_tile = [&](Tile const& tile) {
         float y_start = tile.start_tick;
-        float y_end = tile.end_tick.value_or(offset);
+        float y_end = tile.end_tick.value_or(offset + 10);
         if (player.real_time()) {
             y_start = y_start - offset;
             y_end = y_end - offset;
