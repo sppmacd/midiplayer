@@ -54,6 +54,33 @@ public:
     }
 
     template<class Callback>
+    void for_each_event_in_time_order(Callback callback) const
+    {
+        size_t current_tick = 0;
+        while (true) {
+            size_t min_tick = 0;
+            bool found = false;
+            for (auto& track : m_tracks) {
+                auto it = track.events().lower_bound(current_tick);
+                if (it != track.events().end() && (!found || it->first < min_tick)) {
+                    min_tick = it->first;
+                    found = true;
+                }
+            }
+            if (!found) {
+                return;
+            }
+            for (auto& track : m_tracks) {
+                auto events = track.events().equal_range(min_tick);
+                for (auto it = events.first; it != events.second; it++) {
+                    callback(*it->second);
+                }
+            }
+            current_tick = min_tick + 1;
+        }
+    }
+
+    template<class Callback>
     void for_each_track(Callback callback)
     {
         for (auto& track : m_tracks)
