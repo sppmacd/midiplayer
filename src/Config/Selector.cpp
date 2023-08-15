@@ -11,7 +11,7 @@ using namespace std::literals;
 
 namespace Config {
 
-bool AttributeSelector::matches(NoteEvent::TransitionUnit transition_unit, NoteEvent const* event) const
+bool AttributeSelector::matches(NoteEvent::TransitionUnit transition_unit, Tile const* event) const
 {
     switch (m_attribute) {
         case Attribute::Channel:
@@ -27,7 +27,7 @@ bool AttributeSelector::matches(NoteEvent::TransitionUnit transition_unit, NoteE
                 // TODO: Warn the user if he uses nonanimatable property in animate_property
                 //       instead of silently failing.
                 return false;
-            return m_value.matches(event->tick());
+            return m_value.matches(event->start_tick);
     }
     abort();
 }

@@ -35,6 +35,7 @@ add_executable(midiplayer
     src/MIDIPlayerConfig.cpp
     src/Resources.cpp
     src/RoundedEdgeRectangleShape.cpp
+    src/TileWorld.cpp
     src/Track.cpp
     src/main.cpp
 )

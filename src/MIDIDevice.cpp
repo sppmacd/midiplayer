@@ -17,6 +17,7 @@ MIDIDeviceInput::MIDIDeviceInput(int port)
     m_tracks.resize(1);
 
     m_input.setClientName("MIDIPlayer");
+    m_input.setPortName("MIDIPlayer Input");
     m_input.setCallback([](double, std::vector<uint8_t>* data, void* user_data) {
             assert(user_data);
             assert(data);
@@ -82,6 +83,7 @@ size_t MIDIDeviceInput::current_tick(MIDIPlayer const& player) const
 MIDIDeviceOutput::MIDIDeviceOutput(int out)
 {
     m_output.setClientName("MIDIPlayer");
+    m_output.setPortName("MIDIPlayer Output");
     m_output.openPort(out);
     m_valid = true;
 }

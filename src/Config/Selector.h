@@ -4,7 +4,7 @@
 #include <memory>
 #include <variant>
 
-#include "../Event.h"
+#include "../TileWorld.hpp"
 #include "AttributeValue.h"
 
 class MIDIPlayer;
@@ -19,7 +19,7 @@ public:
     Selector& operator=(Selector const&) = delete;
     virtual ~Selector() = default;
 
-    virtual bool matches(NoteEvent::TransitionUnit, NoteEvent const*) const = 0;
+    virtual bool matches(NoteEvent::TransitionUnit, Tile const*) const = 0;
 
     static std::unique_ptr<Selector> read(std::istream&);
 };
@@ -40,7 +40,7 @@ public:
     {
     }
 
-    virtual bool matches(NoteEvent::TransitionUnit, NoteEvent const*) const override;
+    virtual bool matches(NoteEvent::TransitionUnit, Tile const*) const override;
 
 private:
     Attribute m_attribute {};

@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include "MIDIDevice.h"
 #include "MIDIFile.h"
+#include "MIDIKey.h"
 #include "Resources.h"
 #include "RoundedEdgeRectangleShape.hpp"
 
@@ -247,6 +248,14 @@ void MIDIPlayer::setup()
         }
     }
 
+    if (!real_time()) {
+        m_midi_input->for_each_event_in_time_order([&](auto const& event) {
+            if (dynamic_cast<NoteEvent const*>(&event)) {
+                m_tile_world.push_note_event(static_cast<NoteEvent const&>(event));
+            }
+        });
+    }
+
     // Don't add bloat to MIDI files. These events are sent by device output anyway.
     if (!m_midi_output || !dynamic_cast<MIDIDeviceOutput*>(m_midi_output.get()))
         return;
@@ -262,16 +271,16 @@ void MIDIPlayer::start_timer()
     m_in_loop = true;
 }
 
-sf::Color MIDIPlayer::resolve_color(NoteEvent& event)
+sf::Color MIDIPlayer::resolve_color(Tile const& event) const
 {
     for (auto const& selector_list : m_static_tile_colors) {
         for (auto const& selector : selector_list.first) {
-            if (selector->matches(event.transition_unit(), &event))
+            if (selector->matches(event.transition_unit, &event))
                 return selector_list.second;
         }
     }
 
-    auto maybe_pending_transition = m_note_transitions.find(event.transition_unit());
+    auto maybe_pending_transition = m_note_transitions.find(event.transition_unit);
     if (maybe_pending_transition != m_note_transitions.end())
         return maybe_pending_transition->second;
 
@@ -402,6 +411,7 @@ void MIDIPlayer::generate_minimap_texture()
 void MIDIPlayer::set_sound_playing(int index, int velocity, bool playing, sf::Color color)
 {
     m_notes[index].is_played = playing;
+    m_notes[index].velocity = velocity;
     m_notes[index].color = color;
 }
 
@@ -495,11 +505,11 @@ void MIDIPlayer::update()
             }
             m_seeked_in_previous_frame = false;
         } else {
-            for (auto const& it : events) {
-                it->execute(*this);
+            for (auto const& event : events) {
+                event->execute(*this);
                 if (m_midi_output) {
                     m_events_written++;
-                    m_midi_output->write_event(*it);
+                    m_midi_output->write_event(*event);
                 }
             }
         }
@@ -552,6 +562,11 @@ void MIDIPlayer::update()
     auto end_tick = m_midi_input->end_tick();
     if (end_tick.has_value() && current_tick() > end_tick.value())
         set_playing(false);
+}
+
+void MIDIPlayer::render_notes(sf::RenderTarget& target) const
+{
+    m_tile_world.render(target, *this);
 }
 
 void MIDIPlayer::render_particles(sf::RenderTarget& target) const
@@ -936,15 +951,15 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
     auto view = sf::View { sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect) };
     target.setView(view);
-    if (m_real_time) {
-        for (auto& it : m_ended_notes)
-            it.reset();
-        m_midi_input->for_first_events_starting_from_backwards(current_tick(), 4096, [&](Event& event) { event.render(*this, target); });
-    } else {
-        for (auto& it : m_started_notes)
-            it.reset();
-        m_midi_input->for_first_events_starting_from(current_tick() < 4096 ? 0 : current_tick() - 4096, 8192, [&](Event& event) { event.render(*this, target); });
+
+    for (int i = 0; i < m_notes.size(); i++) {
+        auto note = m_notes[i];
+        if (note.is_played) {
+            spawn_random_particles(target, MIDIKey(i), note.color, note.velocity);
+        }
     }
+
+    render_notes(target);
     render_particles(target);
     render_overlay(target);
     if (debug_info.full_info) {

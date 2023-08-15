@@ -19,7 +19,6 @@ public:
     size_t tick() const { return m_tick; }
 
     virtual void dump() const = 0;
-    virtual void render(MIDIPlayer&, sf::RenderTarget&) { }
     virtual void execute(MIDIPlayer&) = 0;
 
     virtual bool is_serializable() const { return false; }
@@ -38,7 +37,6 @@ private:
 class EndOfTrackEvent : public Event {
 public:
     virtual void dump() const override { std::cerr << tick() << ": End Of Track Event" << std::endl; }
-    virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
     virtual void execute(MIDIPlayer&) override { }
 
     virtual bool is_serializable() const override { return true; }
@@ -196,7 +194,6 @@ public:
                   << ", key=" << (int)m_key << ", velocity=" << (int)m_velocity << std::endl;
     }
 
-    virtual void render(MIDIPlayer& player, sf::RenderTarget&) override;
     virtual void execute(MIDIPlayer&) override;
 
     MIDIChannel channel() const { return m_channel; }
@@ -229,7 +226,7 @@ template<>
 struct std::hash<NoteEvent::TransitionUnit> {
     size_t operator()(NoteEvent::TransitionUnit const& tu) const
     {
-        return (tu.channel << 8) | tu.key.code();
+        return (static_cast<size_t>(tu.channel) << 8) | tu.key.code();
     }
 };
 

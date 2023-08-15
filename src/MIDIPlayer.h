@@ -6,6 +6,7 @@
 #include "MIDIOutput.h"
 #include "MIDIPlayerConfig.h"
 #include "Pedals.hpp"
+#include "TileWorld.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -123,16 +124,12 @@ public:
     sf::Shader& note_shader() const { return m_render_resources->note_shader; }
     sf::Shader& particle_shader() const { return m_render_resources->particle_shader; }
 
-    using StartedNote = NoteEvent;
-    std::array<std::optional<StartedNote>, 128>& started_notes() { return m_started_notes; }
-    using EndedNote = std::optional<NoteEvent>;
-    std::array<std::optional<EndedNote>, 128>& ended_notes() { return m_ended_notes; }
-
     int particle_count() const { return m_config.particle_count(); }
     double scale() const { return m_config.scale(); }
-    sf::Color resolve_color(NoteEvent& event);
+    sf::Color resolve_color(Tile const&) const;
     void update_note_transitions(Config::SelectorList const& selectors, sf::Color color, double transition);
     void add_static_tile_color(Config::SelectorList const& selectors, sf::Color color);
+    TileWorld& tile_world() { return m_tile_world; }
 
     bool load_config_file(std::string const& path);
     void print_config_help() const;
@@ -153,6 +150,7 @@ private:
     void generate_minimap_texture();
     size_t calculate_current_tick() const;
 
+    void render_notes(sf::RenderTarget& target) const;
     void render_particles(sf::RenderTarget& target) const;
     void render_overlay(sf::RenderTarget& target) const;
     void render_background(sf::RenderTarget& target) const;
@@ -194,10 +192,12 @@ private:
 
     struct Note {
         bool is_played { false };
+        uint8_t velocity;
         sf::Color color;
     };
 
     std::array<Note, 128> m_notes;
+    TileWorld m_tile_world;
     std::list<Wind> m_winds;
     bool m_real_time { false };
     std::list<Particle> m_dust_particles;
@@ -234,9 +234,6 @@ private:
     MIDIPlayerConfig m_config { *this };
     std::string m_config_file_path;
     FileWatcher m_config_file_watcher;
-
-    std::array<std::optional<StartedNote>, 128> m_started_notes;
-    std::array<std::optional<EndedNote>, 128> m_ended_notes;
 
     std::unordered_map<NoteEvent::TransitionUnit, Config::AnimatableProperty<sf::Color>> m_note_transitions;
 
