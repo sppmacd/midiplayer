@@ -10,11 +10,6 @@
 
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
-#include <SFML/Graphics/BlendMode.hpp>
-#include <SFML/Graphics/CircleShape.hpp>
-#include <SFML/Graphics/Rect.hpp>
-#include <SFML/Graphics/RectangleShape.hpp>
-#include <SFML/Graphics/RenderStates.hpp>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -231,7 +226,8 @@ void MIDIPlayer::setup()
             m_render_resources->gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
             && m_render_resources->note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
             && m_render_resources->notelight_shader.loadFromFile(resource_path + "/shaders/notelight.vert", resource_path + "/shaders/notelight.frag")
-            && m_render_resources->particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag")) {
+            && m_render_resources->particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag")
+            && m_render_resources->postprocessing_shader.loadFromFile(resource_path + "/shaders/post.vert", resource_path + "/shaders/post.frag")) {
             logger::info("Shaders loaded");
         } else {
             exit(1);
@@ -578,7 +574,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
         for (auto const& particle : m_smoke_particles) {
             auto color = particle.color;
             // TODO: Configurable alpha mul
-            color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255 + 100, 0.f, 255.f) * m_config.smoke_alpha_mul();
+            color.a = std::clamp<float>(particle.temperature / ParticleTemperatureMean * 255, 0.f, 255.f) * m_config.smoke_alpha_mul();
 
             float size = std::clamp<float>(1 - particle.temperature / ParticleTemperatureMean, 0.25, 1) * m_config.smoke_size_mul();
             float tex_size = m_render_resources->smoke_texture.getSize().x;
@@ -638,10 +634,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
             counter++;
         }
         sf::RenderStates states { &m_render_resources->dust_texture };
-        states.blendMode = {
-            sf::BlendMode::SrcAlpha, sf::BlendMode::DstAlpha, sf::BlendMode::Add,
-            sf::BlendMode::One, sf::BlendMode::DstAlpha, sf::BlendMode::Add
-        };
+        states.blendMode = sf::BlendAdd;
         target.draw(varr, states);
     }
 }
@@ -692,7 +685,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
     // Light (background layer)
     auto render_light_with_blend_mode = [&](MIDIKey key, sf::BlendMode mode) {
         sf::Vector2f size { key.is_black() ? 0.7f : 1.f, 0.5f };
-        constexpr float extend_v = 5.f;
+        constexpr float extend_v = 8.f;
         sf::Vector2f extent { extend_v, extend_v };
         size += extent;
         sf::RectangleShape rs { size };
@@ -949,18 +942,34 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
 
     float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
     const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
-    auto view = sf::View { sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect) };
-    target.setView(view);
+    auto piano_view = sf::View { sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect) };
 
-    for (int i = 0; i < m_notes.size(); i++) {
-        auto note = m_notes[i];
-        if (note.is_played) {
-            spawn_random_particles(target, MIDIKey(i), note.color, note.velocity);
+    {
+        sf::RenderTexture tmp_buffer;
+        tmp_buffer.create(target.getSize().x, target.getSize().y);
+        tmp_buffer.setView(piano_view);
+
+        for (int i = 0; i < m_notes.size(); i++) {
+            auto note = m_notes[i];
+            if (note.is_played) {
+                spawn_random_particles(tmp_buffer, MIDIKey(i), note.color, note.velocity);
+            }
         }
+
+        render_notes(tmp_buffer);
+        render_particles(tmp_buffer);
+
+        target.setView(sf::View({ 0, 0,
+            static_cast<float>(target.getSize().x), static_cast<float>(target.getSize().y) }));
+        sf::Sprite s(tmp_buffer.getTexture());
+        // s.setPosition(sf::Vector2f(0, s.getTexture()->getSize().y));
+        // s.setScale(1, -1);
+        m_render_resources->postprocessing_shader.setUniform("uInput", sf::Shader::CurrentTexture);
+        m_render_resources->postprocessing_shader.setUniform("uInputSize", sf::Vector2f(tmp_buffer.getSize()));
+        target.draw(s, { &m_render_resources->postprocessing_shader });
     }
 
-    render_notes(target);
-    render_particles(target);
+    target.setView(piano_view);
     render_overlay(target);
     if (debug_info.full_info) {
         render_debug_info(target, debug_info);

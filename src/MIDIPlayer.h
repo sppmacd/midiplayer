@@ -220,6 +220,7 @@ private:
         mutable sf::Shader note_shader;
         mutable sf::Shader notelight_shader;
         mutable sf::Shader particle_shader;
+        mutable sf::Shader postprocessing_shader;
         sf::Font display_font;
         sf::Font debug_font;
         sf::Texture dust_texture;
