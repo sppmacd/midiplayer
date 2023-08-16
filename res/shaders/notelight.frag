@@ -6,7 +6,7 @@ uniform vec2 uCenter;
 uniform vec4 uColor;
 
 float grad(float f) {
-    const float FAC = 0.7;
+    const float FAC = 0.65;
     return FAC * (1.0 - f);
 }
 

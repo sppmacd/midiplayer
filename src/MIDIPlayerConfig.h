@@ -70,8 +70,8 @@ private:
         float particle_temperature_multiplier = 0.000024;
         float particle_gravity = 0.0008;
         float particle_max_wind = 0.00125;
-        float particle_temperature_decay = 0.97;
-        float m_smoke_alpha_mul = 0.01;
+        float particle_temperature_decay = 0.975;
+        float m_smoke_alpha_mul = 0.07;
         float m_smoke_size_mul = 3;
         size_t max_events_per_track = 4096;
         Config::AnimatableProperty<double> scale { 0.02 };
