@@ -14,7 +14,6 @@ void Tile::dump() const
 
 void TileWorld::push_note_event(NoteEvent const& event)
 {
-    event.dump();
     auto transition_unit = event.transition_unit();
     switch (event.type()) {
         case NoteEvent::Type::On: {
@@ -30,7 +29,6 @@ void TileWorld::push_note_event(NoteEvent const& event)
                 return;
             }
             tiles.back()->end_tick = event.tick();
-            tiles.back()->dump();
             tiles.pop_back();
         } break;
     }
