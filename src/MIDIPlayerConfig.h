@@ -32,7 +32,6 @@ public:
         float x_drag;
         float temperature_multiplier;
         float gravity;
-        float max_wind;
         float temperature_decay;
     };
 
@@ -68,15 +67,14 @@ private:
         sf::Color default_color { 0x36, 0x96, 0xC8 };
         Config::AnimatableProperty<sf::Color> background_color { sf::Color(4, 6, 8) };
         sf::Color overlay_color { 2, 3, 4 };
-        int particle_count = 3;
+        int particle_count = 2;
         float particle_radius = 0.75;
         float particle_glow_size = 0.04;
         ParticlePhysics dust_physics = {
             .x_drag = 1.01,
-            .temperature_multiplier = 0.000012,
-            .gravity = 0.0004,
-            .max_wind = 0.00125,
-            .temperature_decay = 0.964,
+            .temperature_multiplier = 0.0000004,
+            .gravity = 0.00004,
+            .temperature_decay = 0.98,
         };
         float smoke_alpha_mul = 0.02;
         float smoke_size_mul = 6;
@@ -84,8 +82,7 @@ private:
             .x_drag = 1.01,
             .temperature_multiplier = 0.0000008,
             .gravity = 0.00004,
-            .max_wind = 0.00125,
-            .temperature_decay = 0.999,
+            .temperature_decay = 0.99,
         };
         size_t max_events_per_track = 4096;
         Config::AnimatableProperty<double> scale { 0.02 };

@@ -7,6 +7,7 @@
 #include "MIDIPlayerConfig.h"
 #include "Pedals.hpp"
 #include "TileWorld.hpp"
+#include "Utils/PerlinNoise.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -170,6 +171,8 @@ private:
         return { position, size };
     }
 
+    Util::Vector2f get_turbulence_at(Util::Point2f) const;
+
     uint32_t m_microseconds_per_quarter_note { 500000 }; // 120 BPM
     unsigned m_fps { 60 };
     bool m_seeked_in_previous_frame = false;
@@ -182,14 +185,6 @@ private:
     bool m_headless { false };
     Pedals m_pedals;
 
-    struct Wind {
-        double speed = 0;
-        double target_speed = 0;
-        sf::Vector2f pos;
-        int time = 0;
-        int start_time = 0;
-    };
-
     struct Note {
         bool is_played { false };
         uint8_t velocity;
@@ -198,7 +193,6 @@ private:
 
     std::array<Note, 128> m_notes;
     TileWorld m_tile_world;
-    std::list<Wind> m_winds;
     bool m_real_time { false };
     std::list<Particle> m_dust_particles;
     std::list<Particle> m_smoke_particles;
@@ -245,4 +239,6 @@ private:
     size_t m_events_executed = 0;
     size_t m_events_read = 0;
     size_t m_events_written = 0;
+
+    Util::PerlinNoise m_wind_noise { 2137 };
 };

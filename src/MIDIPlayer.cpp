@@ -23,7 +23,7 @@
 
 using namespace std::literals;
 
-constexpr float ParticleTemperatureMean = 120;
+constexpr float ParticleTemperatureMean = 80;
 
 static MIDIPlayer* s_the = nullptr;
 
@@ -514,23 +514,6 @@ void MIDIPlayer::update()
         m_current_tick = calculate_current_tick();
     }
 
-    static std::default_random_engine engine;
-    if (rand() % 20 == 0) {
-        float rand_speed = std::uniform_real_distribution<float>(-2, 2)(engine);
-        float rand_pos_x = std::uniform_real_distribution<float>(0, 128)(engine);
-        float rand_pos_y = std::uniform_real_distribution<float>(-128, 0)(engine);
-        int rand_time = std::uniform_int_distribution<int>(30, 45)(engine);
-        m_winds.push_back({ 0, rand_speed, { rand_pos_x, rand_pos_y }, rand_time, rand_time });
-    }
-    for (auto& wind : m_winds) {
-        double change_factor = wind.target_speed / (wind.start_time / 2.f);
-        if (wind.time > wind.start_time / 2)
-            wind.speed += change_factor;
-        else
-            wind.speed -= change_factor;
-        wind.time--;
-    }
-
     auto all_particles = { std::views::all(m_dust_particles), std::views::all(m_smoke_particles) };
     for (auto& particle : std::views::join(all_particles)) {
         particle.position += { particle.motion.x, particle.motion.y };
@@ -542,12 +525,8 @@ void MIDIPlayer::update()
             particle.motion.y += physics.gravity;
             particle.motion.y -= particle.temperature * physics.temperature_multiplier;
             particle.temperature *= physics.temperature_decay;
-            for (auto const& wind : m_winds) {
-                float dstx = particle.position.x - wind.pos.x;
-                float dsty = particle.position.y - wind.pos.y;
-                particle.motion.x -= std::min((double)physics.max_wind,
-                    std::max((double)-physics.max_wind, wind.speed / dsty / dsty));
-            }
+            auto turbulence = get_turbulence_at({ particle.position.x, particle.position.y });
+            particle.motion += sf::Vector2f(turbulence.x(), turbulence.y());
         }
     };
     apply_physics(m_dust_particles, m_config.dust_physics());
@@ -558,7 +537,6 @@ void MIDIPlayer::update()
 
     std::erase_if(m_dust_particles, [](auto const& particle) { return particle.temperature <= 1; });
     std::erase_if(m_smoke_particles, [](auto const& particle) { return particle.temperature <= 1; });
-    std::erase_if(m_winds, [](auto const& wind) { return wind.time <= 0; });
     std::erase_if(m_labels, [](auto const& label) { return label.remaining_duration <= 0; });
 
     m_current_frame++;
@@ -566,6 +544,14 @@ void MIDIPlayer::update()
     auto end_tick = m_midi_input->end_tick();
     if (end_tick.has_value() && current_tick() > end_tick.value())
         set_playing(false);
+}
+
+Util::Vector2f MIDIPlayer::get_turbulence_at(Util::Point2f point) const
+{
+    Util::Vector2f offset { m_current_tick, m_current_tick };
+    auto base = m_wind_noise.sample_gradient(point + offset * 0.003f);
+    auto up_factor = Util::Vector2f(0, -0.6);
+    return (base + up_factor).normalized() * 0.002;
 }
 
 void MIDIPlayer::render_notes(sf::RenderTarget& target) const
@@ -649,6 +635,21 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 
 void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
 {
+    // Turbulence debug
+    // {
+    //     int const Bounds = 75;
+    //     sf::VertexArray varr(sf::Lines, Bounds * Bounds * 2);
+    //     for (int x = 0; x < Bounds; x++) {
+    //         for (int y = 0; y < Bounds; y++) {
+    //             sf::Vector2f pos { static_cast<float>(x), static_cast<float>(y - Bounds) };
+    //             varr[2 * (x * Bounds + y) + 0] = sf::Vertex(pos);
+    //             auto turb = get_turbulence_at({ pos.x, pos.y });
+    //             varr[2 * (x * Bounds + y) + 1] = sf::Vertex(pos + sf::Vector2f { turb.x(), turb.y() } * 1000.f, sf::Color::Black);
+    //         }
+    //     }
+    //     target.draw(varr);
+    // }
+
     // Screen view things
     {
         auto target_size = target.getSize();
@@ -763,12 +764,6 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     oss << "Particles: dust=" << m_dust_particles.size() << " smoke=" << m_smoke_particles.size() << std::endl;
     oss << "StaticTileColors: " << m_static_tile_colors.size() << std::endl;
     m_config.dump_stats(oss);
-
-    if (!m_winds.empty()) {
-        oss << "WIND:\n";
-        for (auto const& wind : m_winds)
-            oss << "    [" << wind.pos.x << "," << wind.pos.y << "] " << wind.speed << " " << wind.time << "\n";
-    }
 
     sf::Text text { oss.str(), m_render_resources->debug_font, 10 };
     text.setPosition(5, 5);

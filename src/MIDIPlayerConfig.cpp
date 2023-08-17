@@ -97,13 +97,6 @@ MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
                 physics.gravity = arglist[0].as_float();
                 return true;
             });
-        m_info.register_property(prefix + "_max_wind",
-            "Max force that can be applied to particle due to wind",
-            { { Config::PropertyType::Float, "value" } },
-            [&](Config::ArgumentList const& arglist, double) -> bool {
-                physics.max_wind = arglist[0].as_float();
-                return true;
-            });
         m_info.register_property(prefix + "_temperature_decay",
             "How much temperature is left every tick",
             { { Config::PropertyType::Float, "value" } },
