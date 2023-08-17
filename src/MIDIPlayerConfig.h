@@ -28,6 +28,14 @@ public:
     void display_help() const;
     void update();
 
+    struct ParticlePhysics {
+        float x_drag;
+        float temperature_multiplier;
+        float gravity;
+        float max_wind;
+        float temperature_decay;
+    };
+
     std::string display_font() const { return m_properties.display_font; }
     sf::Color default_color() const { return m_properties.default_color; }
     sf::Color background_color() const { return m_properties.background_color; }
@@ -35,13 +43,10 @@ public:
     int particle_count() const { return m_properties.particle_count; }
     float particle_radius() const { return m_properties.particle_radius; }
     float particle_glow_size() const { return m_properties.particle_glow_size; }
-    float particle_x_drag() const { return m_properties.particle_x_drag; }
-    float particle_temperature_multiplier() const { return m_properties.particle_temperature_multiplier; }
-    float particle_gravity() const { return m_properties.particle_gravity; }
-    float particle_max_wind() const { return m_properties.particle_max_wind; }
-    float particle_temperature_decay() const { return m_properties.particle_temperature_decay; }
-    float smoke_alpha_mul() const { return m_properties.m_smoke_alpha_mul; }
-    float smoke_size_mul() const { return m_properties.m_smoke_size_mul; }
+    auto dust_physics() const { return m_properties.dust_physics; }
+    float smoke_alpha_mul() const { return m_properties.smoke_alpha_mul; }
+    float smoke_size_mul() const { return m_properties.smoke_size_mul; }
+    auto smoke_physics() const { return m_properties.smoke_physics; }
     size_t max_events_per_track() const { return m_properties.max_events_per_track; }
     double scale() const { return m_properties.scale; }
     int label_font_size() const { return m_properties.label_font_size; }
@@ -63,16 +68,25 @@ private:
         sf::Color default_color { 0x36, 0x96, 0xC8 };
         Config::AnimatableProperty<sf::Color> background_color { sf::Color(4, 6, 8) };
         sf::Color overlay_color { 2, 3, 4 };
-        int particle_count = 5;
-        float particle_radius = 1;
-        float particle_glow_size = 0.03;
-        float particle_x_drag = 1.01;
-        float particle_temperature_multiplier = 0.000024;
-        float particle_gravity = 0.0008;
-        float particle_max_wind = 0.00125;
-        float particle_temperature_decay = 0.975;
-        float m_smoke_alpha_mul = 0.07;
-        float m_smoke_size_mul = 3;
+        int particle_count = 3;
+        float particle_radius = 0.75;
+        float particle_glow_size = 0.04;
+        ParticlePhysics dust_physics = {
+            .x_drag = 1.01,
+            .temperature_multiplier = 0.000012,
+            .gravity = 0.0004,
+            .max_wind = 0.00125,
+            .temperature_decay = 0.964,
+        };
+        float smoke_alpha_mul = 0.02;
+        float smoke_size_mul = 6;
+        ParticlePhysics smoke_physics = {
+            .x_drag = 1.01,
+            .temperature_multiplier = 0.0000008,
+            .gravity = 0.00004,
+            .max_wind = 0.00125,
+            .temperature_decay = 0.999,
+        };
         size_t max_events_per_track = 4096;
         Config::AnimatableProperty<double> scale { 0.02 };
         int label_font_size = 50;

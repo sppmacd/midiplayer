@@ -5,6 +5,7 @@
 #include "MIDIDevice.h"
 #include "MIDIFile.h"
 #include "MIDIKey.h"
+#include "MIDIPlayerConfig.h"
 #include "Resources.h"
 #include "RoundedEdgeRectangleShape.hpp"
 
@@ -533,17 +534,24 @@ void MIDIPlayer::update()
     auto all_particles = { std::views::all(m_dust_particles), std::views::all(m_smoke_particles) };
     for (auto& particle : std::views::join(all_particles)) {
         particle.position += { particle.motion.x, particle.motion.y };
-        particle.motion.x /= m_config.particle_x_drag();
-        particle.motion.y -= particle.temperature * m_config.particle_temperature_multiplier();
-        particle.motion.y += m_config.particle_gravity();
-        for (auto const& wind : m_winds) {
-            float dstx = particle.position.x - wind.pos.x;
-            float dsty = particle.position.y - wind.pos.y;
-            particle.motion.x -= std::min((double)m_config.particle_max_wind(),
-                std::max((double)-m_config.particle_max_wind(), wind.speed / dsty / dsty));
-        }
-        particle.temperature *= m_config.particle_temperature_decay();
     }
+
+    auto apply_physics = [&](std::list<Particle>& list, MIDIPlayerConfig::ParticlePhysics const& physics) {
+        for (auto& particle : list) {
+            particle.motion.x /= physics.x_drag;
+            particle.motion.y += physics.gravity;
+            particle.motion.y -= particle.temperature * physics.temperature_multiplier;
+            particle.temperature *= physics.temperature_decay;
+            for (auto const& wind : m_winds) {
+                float dstx = particle.position.x - wind.pos.x;
+                float dsty = particle.position.y - wind.pos.y;
+                particle.motion.x -= std::min((double)physics.max_wind,
+                    std::max((double)-physics.max_wind, wind.speed / dsty / dsty));
+            }
+        }
+    };
+    apply_physics(m_dust_particles, m_config.dust_physics());
+    apply_physics(m_smoke_particles, m_config.smoke_physics());
 
     for (auto& label : m_labels)
         label.remaining_duration--;
