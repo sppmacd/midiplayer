@@ -46,6 +46,18 @@ void TileWorld::render(sf::RenderTarget& target, MIDIPlayer const& player) const
 {
     float offset = player.current_tick();
 
+    // Account for effects (bloom, blur etc)
+    constexpr int CutoffMarginPx = 100;
+    float screen_top_offset = target.mapPixelToCoords({ 0, -CutoffMarginPx }).y;
+    float screen_bottom_offset = target.mapPixelToCoords({ 0, static_cast<int>(target.getSize().y) + CutoffMarginPx }).y;
+    if (screen_top_offset > screen_bottom_offset) {
+        std::swap(screen_top_offset, screen_bottom_offset);
+    }
+
+    auto tile_is_visible = [&](float tile_start, float tile_end) {
+        return tile_end > screen_top_offset && tile_start < screen_bottom_offset;
+    };
+
     auto render_tile = [&](Tile const& tile) {
         float y_start = tile.start_tick;
         float y_end = tile.end_tick.value_or(offset + 10);
@@ -62,8 +74,11 @@ void TileWorld::render(sf::RenderTarget& target, MIDIPlayer const& player) const
         }
         y_start *= player.scale();
         y_end *= player.scale();
-        auto color = player.resolve_color(tile);
+        if (!tile_is_visible(y_start, y_end)) {
+            return;
+        }
 
+        auto color = player.resolve_color(tile);
         float x_position = tile.transition_unit.key.to_piano_position();
 
         sf::Vector2f const extent { 1, 1 };
