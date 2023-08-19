@@ -2,8 +2,8 @@
 
 **MIDI Player** (probably needs some better name) is a "beautiful" MIDI renderer. It's free and open source (BSD 2-Clause license).
 
-![MIDI Player in recording session, with yellow tiles](/docs/screenshots/2023-01-08-01.png)
-![MIDI Player in playing mode, with orange and blue tiles showcasing selective styling support](/docs/screenshots/2023-01-08-02.png)
+![MIDI Player in playing mode, with yellow tiles](docs/screenshots/2023-08-19-01.png)
+![MIDI Player in recording session, showcase styling support](docs/screenshots/2023-08-19-02.png)
 
 The app is still in development. It probably contains many dumb bugs and is definitely not fully functional.
 
