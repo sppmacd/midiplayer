@@ -940,9 +940,6 @@ void MIDIPlayer::display_label(LabelType label, std::string text, int duration)
 
 void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
 {
-    target.clear(config().background_color());
-    render_background(target);
-
     float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
     const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
     auto piano_view = sf::View { sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect) };
@@ -950,6 +947,8 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     {
         sf::RenderTexture tmp_buffer;
         tmp_buffer.create(target.getSize().x, target.getSize().y);
+        tmp_buffer.clear(config().background_color());
+        render_background(tmp_buffer);
         tmp_buffer.setView(piano_view);
 
         for (int i = 0; i < m_notes.size(); i++) {
