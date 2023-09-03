@@ -75,6 +75,19 @@ MIDIPlayerConfig::MIDIPlayerConfig(MIDIPlayer& player)
             return true;
         });
 
+    m_info.register_property("smoke_alpha_mul", "Smoke alpha multiplier / max value (0..1)",
+        { { Config::PropertyType::Float, "alpha" } },
+        [&](Config::ArgumentList const& arglist, double) {
+            m_properties.smoke_alpha_mul = arglist[0].as_float();
+            return true;
+        });
+    m_info.register_property("smoke_size_mul", "Smoke size multiplier",
+        { { Config::PropertyType::Float, "size" } },
+        [&](Config::ArgumentList const& arglist, double) {
+            m_properties.smoke_size_mul = arglist[0].as_float();
+            return true;
+        });
+
     auto register_physics_config = [&](std::string const& prefix, ParticlePhysics& physics) {
         m_info.register_property(prefix + "_x_drag",
             "How much particles are slowed down in X axis",
