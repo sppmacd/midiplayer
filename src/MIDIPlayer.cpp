@@ -525,12 +525,15 @@ void MIDIPlayer::update()
             particle.motion.y += physics.gravity;
             particle.motion.y -= particle.temperature * physics.temperature_multiplier;
             particle.temperature *= physics.temperature_decay;
-            auto turbulence = get_turbulence_at({ particle.position.x, particle.position.y });
-            particle.motion += sf::Vector2f(turbulence.x(), turbulence.y());
         }
     };
     apply_physics(m_dust_particles, m_config.dust_physics());
     apply_physics(m_smoke_particles, m_config.smoke_physics());
+
+    for (auto& particle : m_dust_particles) {
+        auto turbulence = get_turbulence_at({ particle.position.x, particle.position.y });
+        particle.motion += sf::Vector2f(turbulence.x(), turbulence.y());
+    }
 
     for (auto& label : m_labels)
         label.remaining_duration--;
