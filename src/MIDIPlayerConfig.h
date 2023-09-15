@@ -64,8 +64,8 @@ private:
 
     struct Properties {
         std::string display_font;
-        sf::Color default_color { 0x36, 0x96, 0xC8 };
-        Config::AnimatableProperty<sf::Color> background_color { sf::Color(4, 6, 8) };
+        sf::Color default_color { 111, 198, 114 };
+        Config::AnimatableProperty<sf::Color> background_color { sf::Color(7,5,15) };
         sf::Color overlay_color { 2, 3, 4 };
         int particle_count = 2;
         float particle_radius = 0.75;
@@ -76,8 +76,8 @@ private:
             .gravity = 0.00004,
             .temperature_decay = 0.98,
         };
-        float smoke_alpha_mul = 0.02;
-        float smoke_size_mul = 6;
+        float smoke_alpha_mul = 0.01;
+        float smoke_size_mul = 3;
         ParticlePhysics smoke_physics = {
             .x_drag = 1.01,
             .temperature_multiplier = 0.0000008,
