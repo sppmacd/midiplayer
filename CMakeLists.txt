@@ -10,7 +10,13 @@ if(MIDIPLAYER_PORTABLE_INSTALL)
     set(CMAKE_INSTALL_PREFIX root)
 endif()
 
-find_package(fmt 8.0.0 REQUIRED)
+include(FetchContent)
+FetchContent_Declare(fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 10.2.1
+)
+FetchContent_MakeAvailable(fmt)
+
 find_package(SFML 2.5.1 COMPONENTS graphics audio REQUIRED)
 
 add_executable(midiplayer
