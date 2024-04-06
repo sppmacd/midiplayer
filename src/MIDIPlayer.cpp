@@ -97,8 +97,9 @@ void MIDIPlayer::run(Args const& args)
     if (!is_headless()) {
         create_windowed();
         sf::Image icon;
-        icon.loadFromFile(find_resource_path() + "/icon32.png");
-        window->setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+        if (icon.loadFromFile(find_resource_path() + "/icon32.png")) {
+            window->setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+        }
     }
 
     sf::Clock fps_clock;
