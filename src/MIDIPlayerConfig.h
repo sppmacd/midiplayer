@@ -14,10 +14,10 @@
 
 inline sf::Color operator*(sf::Color const& left, double right)
 {
-    return { static_cast<sf::Uint8>(left.r * right),
-        static_cast<sf::Uint8>(left.g * right),
-        static_cast<sf::Uint8>(left.b * right),
-        static_cast<sf::Uint8>(left.a * right) };
+    return { static_cast<std::uint8_t>(left.r * right),
+        static_cast<std::uint8_t>(left.g * right),
+        static_cast<std::uint8_t>(left.b * right),
+        static_cast<std::uint8_t>(left.a * right) };
 }
 
 class MIDIPlayerConfig {

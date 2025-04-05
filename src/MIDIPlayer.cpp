@@ -1,5 +1,6 @@
 #include "MIDIPlayer.h"
 
+#include "Config.h"
 #include "Event.h"
 #include "Logger.h"
 #include "MIDIDevice.h"
@@ -11,6 +12,7 @@
 
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/PrimitiveType.hpp>
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -64,7 +66,7 @@ void MIDIPlayer::run(Args const& args)
 
             auto texture = std::make_unique<sf::RenderTexture>();
             // TODO: Support custom resolution/FPS/format/...
-            if (!texture->create(1920, 1080)) {
+            if (!texture->resize({ 1920, 1080 })) {
                 logger::error("Failed to create render texture, ignoring");
                 return nullptr;
             }
@@ -82,14 +84,14 @@ void MIDIPlayer::run(Args const& args)
 
     auto create_windowed = [&]() {
         is_fullscreen = false;
-        window.emplace(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::ContextSettings { 0, 0, 1 });
+        window.emplace(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Default, sf::State::Windowed, sf::ContextSettings { 0, 0, 1 });
         if (!render_texture)
             window->setFramerateLimit(60);
         window->setMouseCursorVisible(true);
     };
     auto create_fullscreen = [&]() {
         is_fullscreen = true;
-        window.emplace(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::Style::Fullscreen, sf::ContextSettings { 0, 0, 1 });
+        window.emplace(sf::VideoMode::getDesktopMode(), "MIDI Player", sf::State::Fullscreen, sf::ContextSettings { 0, 0, 1 });
         if (!render_texture)
             window->setFramerateLimit(60);
         window->setMouseCursorVisible(false);
@@ -98,7 +100,7 @@ void MIDIPlayer::run(Args const& args)
         create_windowed();
         sf::Image icon;
         if (icon.loadFromFile(find_resource_path() + "/icon32.png")) {
-            window->setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+            window->setIcon(icon);
         }
     }
 
@@ -128,45 +130,55 @@ void MIDIPlayer::run(Args const& args)
 
     while (playing()) {
         if (!is_headless()) {
-            sf::Event event;
-            while (window->pollEvent(event)) {
-                if (event.type == sf::Event::Closed)
-                    set_playing(false);
-                else if (event.type == sf::Event::KeyPressed) {
-                    if (event.key.code == sf::Keyboard::F11) {
-                        if (is_fullscreen)
-                            create_windowed();
-                        else
-                            create_fullscreen();
-                    } else if (event.key.code == sf::Keyboard::F3) {
-                        should_render_debug_info_in_preview = !should_render_debug_info_in_preview;
-                    } else if (event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9) {
-                        write_marker(std::to_string(event.key.code - sf::Keyboard::Num0));
-                    } else if (event.key.code >= sf::Keyboard::Numpad0 && event.key.code <= sf::Keyboard::Numpad9) {
-                        write_marker(std::to_string(event.key.code - sf::Keyboard::Numpad0));
-                    } else if (event.key.code == sf::Keyboard::Right) {
-                        auto input = dynamic_cast<MIDIFileInput*>(midi_input());
-                        if (input) {
-                            input->move_forward(event.key.control);
-                        }
-                    } else if (event.key.code == sf::Keyboard::Space) {
-                        set_paused(!is_paused());
-                    }
-                } else if (event.type == sf::Event::MouseButtonPressed) {
-                    sf::Vector2f mouse_pos { static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y) };
-                    auto rect = progress_bar_rect(sf::Vector2f(window->getSize()));
-                    if (rect.contains(mouse_pos)) {
-                        float fac = (mouse_pos.x - rect.left) / rect.width;
-                        assert(fac >= 0 && fac <= 1);
-                        auto input = dynamic_cast<MIDIFileInput*>(midi_input());
-                        if (input) {
-                            auto end_tick = input->end_tick();
-                            assert(end_tick);
-                            input->seek(fac * *end_tick);
-                            m_seeked_in_previous_frame = true;
-                        }
-                    }
+            while (true) {
+                auto maybe_event = window->pollEvent();
+                if (!maybe_event) {
+                    break;
                 }
+                auto event = *maybe_event;
+                sf::Keyboard::Key k;
+                event.visit(
+                    Util::Overloaded {
+                        [&](sf::Event::Closed) {
+                            set_playing(false);
+                        },
+                        [&](sf::Event::KeyPressed const& key) {
+                            if (key.code == sf::Keyboard::Key::F11) {
+                                if (is_fullscreen)
+                                    create_windowed();
+                                else
+                                    create_fullscreen();
+                            } else if (key.code == sf::Keyboard::Key::F3) {
+                                should_render_debug_info_in_preview = !should_render_debug_info_in_preview;
+                            } else if (key.code >= sf::Keyboard::Key::Num0 && key.code <= sf::Keyboard::Key::Num9) {
+                                write_marker(std::to_string((int)key.code - (int)sf::Keyboard::Key::Num0));
+                            } else if (key.code >= sf::Keyboard::Key::Numpad0 && key.code <= sf::Keyboard::Key::Numpad9) {
+                                write_marker(std::to_string((int)key.code - (int)sf::Keyboard::Key::Numpad0));
+                            } else if (key.code == sf::Keyboard::Key::Right) {
+                                auto input = dynamic_cast<MIDIFileInput*>(midi_input());
+                                if (input) {
+                                    input->move_forward(key.control);
+                                }
+                            } else if (key.code == sf::Keyboard::Key::Space) {
+                                set_paused(!is_paused());
+                            }
+                        },
+                        [&](sf::Event::MouseButtonPressed const& mouseButton) {
+                            auto rect = progress_bar_rect(sf::Vector2f(window->getSize()));
+                            if (rect.contains(sf::Vector2f { mouseButton.position })) {
+                                float fac = (mouseButton.position.x - rect.position.x) / rect.size.x;
+                                assert(fac >= 0 && fac <= 1);
+                                auto input = dynamic_cast<MIDIFileInput*>(midi_input());
+                                if (input) {
+                                    auto end_tick = input->end_tick();
+                                    assert(end_tick);
+                                    input->seek(fac * *end_tick);
+                                    m_seeked_in_previous_frame = true;
+                                }
+                            }
+                        },
+                        [](auto&) {},
+                    });
             }
         }
 
@@ -235,7 +247,7 @@ void MIDIPlayer::setup()
             exit(1);
         }
 
-        if (m_render_resources->debug_font.loadFromFile(resource_path + "/dejavu-sans-mono.ttf"))
+        if (m_render_resources->debug_font.openFromFile(resource_path + "/dejavu-sans-mono.ttf"))
             logger::info("Font loaded");
 
         if (m_render_resources->pedals_texture.loadFromFile(resource_path + "/pedals.png")
@@ -342,7 +354,7 @@ bool MIDIPlayer::reload_config_file()
             m_render_resources->display_font = m_render_resources->debug_font;
         } else {
             logger::info("Loading display font: {}", m_config.display_font());
-            if (!m_render_resources->display_font.loadFromFile(m_config.display_font())) {
+            if (!m_render_resources->display_font.openFromFile(m_config.display_font())) {
                 logger::error("Failed to load display font from {}.", m_config.display_font());
                 success = false;
             }
@@ -361,7 +373,10 @@ bool MIDIPlayer::reload_config_file()
 void MIDIPlayer::generate_dust_texture()
 {
     sf::RenderTexture target;
-    target.create(config().particle_radius() * 256, config().particle_radius() * 256);
+    if (!target.resize({ (unsigned)(config().particle_radius() * 256), (unsigned)(config().particle_radius() * 256) })) {
+        logger::error("Failed to create dust texture");
+        return;
+    }
     target.setView(sf::View { {}, sf::Vector2f { target.getSize() } / 128.f });
 
     auto& shader = particle_shader();
@@ -373,7 +388,6 @@ void MIDIPlayer::generate_dust_texture()
     target.draw(rs, &shader);
     target.display();
 
-    // NOTE: SFML doesn't use move semantics, so we need to COPY the texture :(
     m_render_resources->dust_texture = target.getTexture();
     m_render_resources->dust_texture.setSmooth(true);
 }
@@ -381,14 +395,17 @@ void MIDIPlayer::generate_dust_texture()
 void MIDIPlayer::generate_minimap_texture()
 {
     sf::RenderTexture target;
-    target.create(1024, progress_bar_rect({}).height);
+    if (!target.resize({ 1024, static_cast<unsigned int>(progress_bar_rect({}).size.y) })) {
+        logger::error("Failed to create minimap texture");
+        return;
+    }
 
     if (m_real_time) {
         return;
     }
 
     auto& input = *static_cast<MIDIFileInput*>(m_midi_input.get());
-    sf::VertexArray varr(sf::Points);
+    sf::VertexArray varr(sf::PrimitiveType::Points);
     input.for_each_track([&](Track const& track) {
         for (auto const& event : track.events()) {
             if (auto note_event = dynamic_cast<NoteEvent*>(event.second.get())) {
@@ -567,7 +584,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
 {
     if (!m_smoke_particles.empty()) {
         // TODO: This probably can be further optimized
-        sf::VertexArray varr(sf::Triangles, m_smoke_particles.size() * 6);
+        sf::VertexArray varr(sf::PrimitiveType::Triangles, m_smoke_particles.size() * 6);
         size_t counter = 0;
         for (auto const& particle : m_smoke_particles) {
             auto color = particle.color;
@@ -602,7 +619,7 @@ void MIDIPlayer::render_particles(sf::RenderTarget& target) const
     }
     if (!m_dust_particles.empty()) {
         // TODO: This probably can be further optimized
-        sf::VertexArray varr(sf::Triangles, m_dust_particles.size() * 6);
+        sf::VertexArray varr(sf::PrimitiveType::Triangles, m_dust_particles.size() * 6);
         size_t counter = 0;
         for (auto const& particle : m_dust_particles) {
             auto color = particle.color;
@@ -658,7 +675,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
     {
         auto target_size = target.getSize();
         sf::View old_view = target.getView();
-        target.setView(sf::View { sf::FloatRect(0, 0, target_size.x, target_size.y) });
+        target.setView(sf::View { sf::FloatRect({ 0, 0 }, { (float)target_size.x, (float)target_size.y }) });
 
         // Gradient / Overlay
         sf::RectangleShape rs { sf::Vector2f { target_size } };
@@ -667,11 +684,11 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
 
         // Labels
         for (auto const& label : m_labels) {
-            sf::Text text(label.text, m_render_resources->display_font, config().label_font_size());
+            sf::Text text(m_render_resources->display_font, label.text, config().label_font_size());
             auto bounds = text.getLocalBounds();
             float padding_left_right = config().label_font_size() * 100.f / 45.f;
             float padding_top_bottom = config().label_font_size() * 40.f / 45.f;
-            RoundedEdgeRectangleShape rs { { bounds.width + padding_left_right, bounds.height + padding_top_bottom }, 10.f };
+            RoundedEdgeRectangleShape rs { bounds.size + sf::Vector2f { padding_left_right, padding_top_bottom }, 10.f };
             rs.setPosition({ target_size.x / 2.f, target_size.y / 2.f + config().label_font_size() / 4.6f });
             rs.setOrigin(rs.getSize() / 2.f);
             auto calculate_alpha = [&](uint8_t max_alpha) -> uint8_t {
@@ -687,7 +704,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
             rs.setFillColor(bgcolor);
             target.draw(rs);
             text.setPosition(sf::Vector2f(target_size) / 2.f);
-            text.setOrigin({ bounds.width / 2.f, bounds.height / 2.f });
+            text.setOrigin(bounds.size / 2.f);
             text.setFillColor(sf::Color(255, 255, 255, calculate_alpha(255)));
             target.draw(text);
         }
@@ -702,7 +719,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         sf::Vector2f extent { extend_v, extend_v };
         size += extent;
         sf::RectangleShape rs { size };
-        rs.setPosition(key.to_piano_position() - (key.is_black() ? 0.15f : 0.f), -0.4f);
+        rs.setPosition({ key.to_piano_position() - (key.is_black() ? 0.15f : 0.f), -0.4f });
         rs.move(-extent / 2.f);
         rs.setFillColor(sf::Color::White);
         m_render_resources->notelight_shader.setUniform("uSize", size);
@@ -728,7 +745,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         MIDIKey key { static_cast<uint8_t>(s) };
         if (!key.is_black()) {
             sf::RectangleShape rs { { 1.f, (lower_y_to_view_pos - upper_y_to_view_pos) } };
-            rs.setPosition(key.to_piano_position(), 0.f);
+            rs.setPosition({ key.to_piano_position(), 0.f });
             rs.setFillColor(m_notes[key].is_played ? m_notes[key].color : sf::Color(230, 230, 230));
             rs.setOutlineColor(sf::Color(150, 150, 150));
             rs.setOutlineThickness(0.1f);
@@ -739,7 +756,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         MIDIKey key { static_cast<uint8_t>(s) };
         if (key.is_black()) {
             sf::RectangleShape rs { { 0.7f, (lower_y_to_view_pos - upper_y_to_view_pos) * 3 / 5.f } };
-            rs.setPosition(key.to_piano_position() - 0.15f, -0.1f);
+            rs.setPosition({ key.to_piano_position() - 0.15f, -0.1f });
             rs.setFillColor(m_notes[key].is_played ? m_notes[key].color * sf::Color(200, 200, 200) : sf::Color(50, 50, 50));
             target.draw(rs);
         }
@@ -750,8 +767,8 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         MIDIKey key { static_cast<uint8_t>(s) };
         if (m_notes[key].is_played) {
             render_light_with_blend_mode(key,
-                sf::BlendMode(sf::BlendMode::DstColor, sf::BlendMode::One, sf::BlendMode::Add,
-                    sf::BlendMode::One, sf::BlendMode::OneMinusSrcAlpha, sf::BlendMode::Add));
+                sf::BlendMode(sf::BlendMode::Factor::DstColor, sf::BlendMode::Factor::One, sf::BlendMode::Equation::Add,
+                    sf::BlendMode::Factor::One, sf::BlendMode::Factor::OneMinusSrcAlpha, sf::BlendMode::Equation::Add));
         }
     }
 }
@@ -759,7 +776,7 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
 void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& debug_info) const
 {
     sf::Vector2f target_size { target.getSize() };
-    target.setView(sf::View({ 0, 0, target_size.x, target_size.y }));
+    target.setView(sf::View({ 0, 0 }, { target_size.x, target_size.y }));
 
     std::ostringstream oss;
     oss << get_stats_string(true);
@@ -769,8 +786,8 @@ void MIDIPlayer::render_debug_info(sf::RenderTarget& target, DebugInfo const& de
     oss << "StaticTileColors: " << m_static_tile_colors.size() << std::endl;
     m_config.dump_stats(oss);
 
-    sf::Text text { oss.str(), m_render_resources->debug_font, 10 };
-    text.setPosition(5, 5);
+    sf::Text text { m_render_resources->debug_font, oss.str(), 10 };
+    text.setPosition({ 5, 5 });
     target.draw(text);
 }
 
@@ -788,17 +805,17 @@ static std::string pretty_time(uint64_t seconds)
 void MIDIPlayer::render_progress_bar(sf::RenderTarget& target) const
 {
     sf::Vector2f target_size { target.getSize() };
-    target.setView(sf::View({ 0, 0, target_size.x, target_size.y }));
+    target.setView(sf::View(sf::FloatRect { { 0, 0 }, { target_size.x, target_size.y } }));
 
     auto end_tick = m_midi_input->end_tick();
     if (end_tick) {
         auto rect = progress_bar_rect(sf::Vector2f(target.getSize()));
-        sf::Vector2f size { rect.width, rect.height };
-        sf::Vector2f position { rect.left, rect.top };
+        sf::Vector2f size = rect.size;
+        sf::Vector2f position = rect.position;
         float current_time = (double)current_tick() / m_midi_input->ticks_per_second(*this);
         float total_time = m_midi_input->end_tick().value() / m_midi_input->ticks_per_second(*this);
 
-        RoundedEdgeRectangleShape rect_drawable { { rect.width, rect.height }, size.y / 2 };
+        RoundedEdgeRectangleShape rect_drawable { rect.size, size.y / 2 };
         rect_drawable.setPosition(position);
         rect_drawable.setFillColor(sf::Color { 100, 100, 100, 150 });
         target.draw(rect_drawable);
@@ -812,30 +829,33 @@ void MIDIPlayer::render_progress_bar(sf::RenderTarget& target) const
         {
             auto old_view = target.getView();
             auto new_view = sf::View { { { rect_drawable.getPosition().x, 0 }, { size.x * current_time / total_time, target_size.y } } };
-            new_view.setViewport({ 1 / 3.f, 0, current_time / total_time / 3.f, 1 });
+            new_view.setViewport({ { 1 / 3.f, 0 }, { current_time / total_time / 3.f, 1 } });
             target.setView(new_view);
             target.draw(rect_drawable);
             target.setView(old_view);
         }
 
-        sf::Text text_left { pretty_time(current_time), m_render_resources->display_font, 14 };
-        text_left.setPosition(std::floor(target_size.x / 2.f - size.x / 2.f - text_left.getLocalBounds().width - 10 - text_left.getLocalBounds().left),
-            std::floor(25 - text_left.getLocalBounds().height / 2.f - text_left.getLocalBounds().top));
+        sf::Text text_left { m_render_resources->display_font, pretty_time(current_time), 14 };
+        text_left.setPosition({
+            std::floor(target_size.x / 2.f - size.x / 2.f - text_left.getLocalBounds().size.x - 10 - text_left.getLocalBounds().position.x),
+            std::floor(25 - text_left.getLocalBounds().size.y / 2.f - text_left.getLocalBounds().position.y),
+        });
         target.draw(text_left);
 
-        sf::Text text_right { pretty_time(total_time), m_render_resources->display_font, 14 };
-        text_right.setPosition(std::floor(target_size.x / 2.f + size.x / 2.f + 10),
-            std::floor(25 - text_right.getLocalBounds().height / 2.f - text_left.getLocalBounds().top));
+        sf::Text text_right { m_render_resources->display_font, pretty_time(total_time), 14 };
+        text_right.setPosition({
+            std::floor(target_size.x / 2.f + size.x / 2.f + 10),
+            std::floor(25 - text_right.getLocalBounds().size.y / 2.f - text_left.getLocalBounds().position.y),
+        });
         target.draw(text_right);
     } else {
-        sf::Text text { pretty_time((double)current_tick() / m_midi_input->ticks_per_second(*this)),
-            m_render_resources->display_font, 14 };
-        text.setPosition(std::floor(target_size.x / 2.f - text.getLocalBounds().width / 2.f), 10);
+        sf::Text text { m_render_resources->display_font, pretty_time((double)current_tick() / m_midi_input->ticks_per_second(*this)), 14 };
+        text.setPosition({ std::floor(target_size.x / 2.f - text.getLocalBounds().size.x / 2.f), 10 });
         target.draw(text);
 
         if (m_real_time && m_midi_output) {
             sf::CircleShape recording_circle { 6 };
-            recording_circle.setPosition(10, 10);
+            recording_circle.setPosition({ 10, 10 });
             recording_circle.setFillColor(sf::Color::Red);
             target.draw(recording_circle);
         }
@@ -851,14 +871,14 @@ void MIDIPlayer::render_pedals(sf::RenderTarget& target) const
     int const MIDDLE_PEDAL_WIDTH = PEDAL_TEXTURE_SIZE.x * 38 / 128;
     int const PEDAL_HEIGHT = PEDAL_TEXTURE_SIZE.y / 2;
 
-    sf::IntRect SOFT_OFF_RECT { 0, 0, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
-    sf::IntRect SOFT_ON_RECT { 0, PEDAL_HEIGHT, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+    sf::IntRect SOFT_OFF_RECT { { 0, 0 }, { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT } };
+    sf::IntRect SOFT_ON_RECT { { 0, PEDAL_HEIGHT }, { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT } };
 
-    sf::IntRect SOSTENUTO_OFF_RECT { SIDE_PEDAL_WIDTH, 0, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
-    sf::IntRect SOSTENUTO_ON_RECT { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+    sf::IntRect SOSTENUTO_OFF_RECT { { SIDE_PEDAL_WIDTH, 0 }, { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT } };
+    sf::IntRect SOSTENUTO_ON_RECT { { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT }, { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT } };
 
-    sf::IntRect SUSTAIN_OFF_RECT { SIDE_PEDAL_WIDTH + MIDDLE_PEDAL_WIDTH, 0, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
-    sf::IntRect SUSTAIN_ON_RECT { SIDE_PEDAL_WIDTH + MIDDLE_PEDAL_WIDTH, PEDAL_HEIGHT, SIDE_PEDAL_WIDTH, PEDAL_HEIGHT };
+    sf::IntRect SUSTAIN_OFF_RECT { { SIDE_PEDAL_WIDTH + MIDDLE_PEDAL_WIDTH, 0 }, { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT } };
+    sf::IntRect SUSTAIN_ON_RECT { { SIDE_PEDAL_WIDTH + MIDDLE_PEDAL_WIDTH, PEDAL_HEIGHT }, { SIDE_PEDAL_WIDTH, PEDAL_HEIGHT } };
 
     sf::Sprite sprite(m_render_resources->pedals_texture);
 
@@ -946,11 +966,13 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
 {
     float aspect = static_cast<float>(target.getSize().x) / target.getSize().y;
     const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
-    auto piano_view = sf::View { sf::FloatRect(MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size, MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect) };
+    auto piano_view = sf::View { sf::FloatRect({ MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size }, { MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect }) };
 
-    {
+    do {
         sf::RenderTexture tmp_buffer;
-        tmp_buffer.create(target.getSize().x, target.getSize().y);
+        if (!tmp_buffer.resize({ target.getSize().x, target.getSize().y })) {
+            break;
+        }
         tmp_buffer.clear(config().background_color());
         render_background(tmp_buffer);
         tmp_buffer.setView(piano_view);
@@ -965,15 +987,17 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
         render_notes(tmp_buffer);
         render_particles(tmp_buffer);
 
-        target.setView(sf::View({ 0, 0,
-            static_cast<float>(target.getSize().x), static_cast<float>(target.getSize().y) }));
+        target.setView(sf::View { sf::FloatRect {
+            { 0, 0 },
+            { static_cast<float>(target.getSize().x), static_cast<float>(target.getSize().y) },
+        } });
         sf::Sprite s(tmp_buffer.getTexture());
         // s.setPosition(sf::Vector2f(0, s.getTexture()->getSize().y));
         // s.setScale(1, -1);
         m_render_resources->postprocessing_shader.setUniform("uInput", sf::Shader::CurrentTexture);
         m_render_resources->postprocessing_shader.setUniform("uInputSize", sf::Vector2f(tmp_buffer.getSize()));
         target.draw(s, { &m_render_resources->postprocessing_shader });
-    }
+    } while (false);
 
     target.setView(piano_view);
     render_overlay(target);

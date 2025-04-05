@@ -17,7 +17,7 @@ FetchContent_Declare(fmt
 )
 FetchContent_MakeAvailable(fmt)
 
-find_package(SFML 2.5.1 COMPONENTS graphics audio REQUIRED)
+find_package(SFML 3.0.0 COMPONENTS Graphics Audio REQUIRED)
 
 add_executable(midiplayer
     src/Config/Action.cpp
@@ -46,7 +46,7 @@ add_executable(midiplayer
     src/main.cpp
 )
 target_compile_options(midiplayer PUBLIC -Werror -Wnon-virtual-dtor -fdiagnostics-color=always)
-target_link_libraries(midiplayer pthread sfml-graphics sfml-audio fmt rtmidi)
+target_link_libraries(midiplayer pthread SFML::Graphics SFML::Audio fmt rtmidi)
 target_include_directories(midiplayer PUBLIC ${CMAKE_BINARY_DIR}/src)
 install(TARGETS midiplayer DESTINATION bin)
 if(MIDIPLAYER_PORTABLE_INSTALL)

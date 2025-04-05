@@ -8,7 +8,7 @@ namespace Config {
 
 inline sf::Color operator*(sf::Color const& lhs, double rhs)
 {
-    return { static_cast<sf::Uint8>(lhs.r * rhs), static_cast<sf::Uint8>(lhs.g * rhs), static_cast<sf::Uint8>(lhs.b * rhs), lhs.a };
+    return { static_cast<std::uint8_t>(lhs.r * rhs), static_cast<std::uint8_t>(lhs.g * rhs), static_cast<std::uint8_t>(lhs.b * rhs), lhs.a };
 }
 
 template<class T>
