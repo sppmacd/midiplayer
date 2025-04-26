@@ -409,13 +409,18 @@ void MIDIPlayer::generate_minimap_texture()
     }
 
     auto& input = *static_cast<MIDIFileInput*>(m_midi_input.get());
-    sf::VertexArray varr(sf::PrimitiveType::Points);
+    sf::VertexArray varr(sf::PrimitiveType::Lines);
     input.for_each_track([&](Track const& track) {
         for (auto const& event : track.events()) {
             if (auto note_event = dynamic_cast<NoteEvent*>(event.second.get())) {
-                float position_x = (float)event.first / *input.end_tick() * target.getSize().x;
-                float position_y = (note_event->key().to_piano_position() - view_offset_x) / view_size_x * target.getSize().y;
-                varr.append(sf::Vertex({ position_x, position_y }, sf::Color { 255, 255, 255, 200 }));
+                auto tick_to_position = [&](size_t tick) {
+                    float position_x = (float)tick / *input.end_tick() * target.getSize().x;
+                    float position_y = (note_event->key().to_piano_position() - view_offset_x) / view_size_x * target.getSize().y;
+                    return sf::Vector2f { position_x, position_y };
+                };
+
+                auto pos = tick_to_position(event.first);
+                varr.append(sf::Vertex(pos, sf::Color { 255, 255, 255, 200 }));
             }
         }
     });
