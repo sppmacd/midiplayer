@@ -161,6 +161,7 @@ private:
 
     bool reload_config_file();
     void reset_midi();
+    void seek(size_t tick);
 
     sf::FloatRect progress_bar_rect(sf::Vector2f window_size) const
     {

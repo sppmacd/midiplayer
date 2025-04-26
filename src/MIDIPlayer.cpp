@@ -161,6 +161,11 @@ void MIDIPlayer::run(Args const& args)
                                 }
                             } else if (key.code == sf::Keyboard::Key::Space) {
                                 set_paused(!is_paused());
+                            } else if (key.code == sf::Keyboard::Key::Home) {
+                                auto input = dynamic_cast<MIDIFileInput*>(midi_input());
+                                if (input) {
+                                    seek(0);
+                                }
                             }
                         },
                         [&](sf::Event::MouseButtonPressed const& mouseButton) {
@@ -172,8 +177,7 @@ void MIDIPlayer::run(Args const& args)
                                 if (input) {
                                     auto end_tick = input->end_tick();
                                     assert(end_tick);
-                                    input->seek(fac * *end_tick);
-                                    m_seeked_in_previous_frame = true;
+                                    seek(fac * *end_tick);
                                 }
                             }
                         },
@@ -497,6 +501,16 @@ void MIDIPlayer::reset_midi()
     }
 }
 
+void MIDIPlayer::seek(size_t tick)
+{
+    auto input = dynamic_cast<MIDIFileInput*>(midi_input());
+    if (input) {
+        input->seek(tick);
+        m_current_tick = tick;
+        m_seeked_in_previous_frame = true;
+    }
+}
+
 void MIDIPlayer::update()
 {
     if (!is_paused()) {
@@ -519,15 +533,16 @@ void MIDIPlayer::update()
                 note.is_played = false;
             }
             m_seeked_in_previous_frame = false;
-        } else {
-            for (auto const& event : events) {
-                event->execute(*this);
-                if (m_midi_output) {
-                    m_events_written++;
-                    m_midi_output->write_event(*event);
-                }
+        }
+
+        for (auto const& event : events) {
+            event->execute(*this);
+            if (m_midi_output) {
+                m_events_written++;
+                m_midi_output->write_event(*event);
             }
         }
+
     } else {
         m_current_tick = calculate_current_tick();
     }
