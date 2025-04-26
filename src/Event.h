@@ -24,6 +24,8 @@ public:
     virtual bool is_serializable() const { return false; }
     virtual void serialize(std::ostream&) const { }
 
+    virtual bool should_send_to_device() const { return true; }
+
     virtual std::unique_ptr<Event> clone() const = 0;
     virtual Config::NamedFormalParameters formal_parameters() const { return {}; }
     virtual bool read_from_parameters(Config::NamedParameters const&) { return false; }
@@ -47,6 +49,8 @@ public:
         stream.put(0x2f); // End Of Track
         stream.put(0);    // size: vlq 1
     }
+
+    virtual bool should_send_to_device() const override { return false; }
 
     virtual std::unique_ptr<Event> clone() const override { return std::make_unique<EndOfTrackEvent>(*this); }
 };
@@ -87,6 +91,8 @@ public:
 
     virtual void dump() const override { std::cerr << "Text Event " << static_cast<int>(m_type) << ": " << m_text << std::endl; }
     virtual void execute(MIDIPlayer&) override;
+
+    virtual bool should_send_to_device() const override { return false; }
 
     virtual std::unique_ptr<Event> clone() const override { return std::make_unique<TextEvent>(*this); }
     virtual Config::NamedFormalParameters formal_parameters() const override;
@@ -157,6 +163,8 @@ public:
         stream.put(m_32s_in_quarter_note);
     }
 
+    virtual bool should_send_to_device() const override { return false; }
+
     virtual std::unique_ptr<Event> clone() const override { return std::make_unique<TimeSignatureEvent>(*this); }
 
 private:
@@ -205,6 +213,8 @@ public:
     virtual bool is_serializable() const override { return true; }
     virtual void serialize(std::ostream& stream) const override
     {
+        fmt::println("SERIALIZE NOTE {} EVENT FOR CHANNEL {} NOTE {}",
+            m_type == Type::On ? "ON" : "OFF", m_channel, m_key.code());
         if (m_type == Type::On)
             stream << (uint8_t)(0x90 + m_channel);
         else

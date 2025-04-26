@@ -90,6 +90,10 @@ MIDIDeviceOutput::MIDIDeviceOutput(int out)
 
 void MIDIDeviceOutput::write_event(Event const& event)
 {
+    if (!event.should_send_to_device()) {
+        return;
+    }
+
     std::ostringstream oss;
     event.serialize(oss);
     if (oss.str().size() == 0)
@@ -99,6 +103,7 @@ void MIDIDeviceOutput::write_event(Event const& event)
     //        This whole API is weird, but probably would need to patch RtMidi to fix.
     std::vector<uint8_t> data(oss.str().size());
     memcpy(data.data(), oss.str().data(), oss.str().size());
+
     m_output.sendMessage(&data);
 }
 
