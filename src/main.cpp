@@ -5,10 +5,12 @@
 #include "MIDIPlayer.h"
 #include "Resources.h"
 
+#include <algorithm>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <sstream>
 #include <string_view>
 #include <sys/stat.h>
 
@@ -30,17 +32,7 @@ static void print_usage_and_exit(Brief brief = Brief::Yes)
         std::cerr << "    play [file]        Play pre-recorded .mid file. Supports output to MIDI device with -m option." << std::endl;
         std::cerr << "    realtime [port]    Display MIDI device input in realtime. Supports output to .mid file with -m option." << std::endl;
         std::cerr << "Options:" << std::endl;
-        std::cerr << "    -c [path]          Specify alternative config file" << std::endl;
-        std::cerr << "    -d                 Headless mode (don't open a window, works in text mode)" << std::endl;
-        std::cerr << "    -f                 Force overwriting output files" << std::endl;
-        std::cerr << "    -m [file/port]     Specify MIDI output (file in realtime mode, port number in play mode)" << std::endl;
-        std::cerr << "    -o                 Print render to stdout (may be c for rendering with ffmpeg)" << std::endl;
-        std::cerr << "    -r                 Remove empty MIDI file if nothing was written (only for realtime mode)" << std::endl;
-        std::cerr << "    --config-help      Print help for Config Files" << std::endl;
-        std::cerr << "    --debug            Enable debug info rendering" << std::endl;
-        std::cerr << "    --help             Print this message" << std::endl;
-        std::cerr << "    --markers [file]   Enable markers; save them to `file` (add them with number keys)" << std::endl;
-        std::cerr << "    --version          Print MIDIPlayer version" << std::endl;
+        std::cerr << "    (Run with --help for detailed options)" << std::endl;
     } else {
         std::cerr << "Use --help to print available options." << std::endl;
     }
@@ -70,6 +62,7 @@ class ArgParser {
         Handler handler;
         std::string_view name;
         bool is_boolean;
+        std::string help;
     };
 
 public:
@@ -101,27 +94,28 @@ public:
     }
 
     template<class T>
-    void option(std::string_view name, T& target)
+    void option(std::string_view name, T& target, std::string_view help = "")
     {
-        m_options.insert({ name, option_handler(name, target) });
+        auto opt = option_handler(name, target);
+        opt.help = std::string(help);
+        m_options.insert({ name, std::move(opt) });
     }
 
     template<class T>
-    void option(std::string_view name, std::optional<T>& target)
+    void option(std::string_view name, std::optional<T>& target, std::string_view help = "")
     {
-        m_options.insert({
-            name,
-            Option {
-                .handler = [name, &target](std::string_view value) -> Result {
-                    T t;
-                    TRY(option_handler(name, t).handler(value));
-                    target = std::move(t);
-                    return {};
-                },
-                .name = name,
-                .is_boolean = std::is_same_v<T, bool>,
+        auto opt = Option {
+            .handler = [name, &target](std::string_view value) -> Result {
+                T t;
+                TRY(option_handler(name, t).handler(value));
+                target = std::move(t);
+                return {};
             },
-        });
+            .name = name,
+            .is_boolean = std::is_same_v<T, bool>,
+            .help = std::string(help),
+        };
+        m_options.insert({ name, std::move(opt) });
     }
 
     Result parse() const
@@ -167,6 +161,29 @@ public:
             return fmt::format("Missing required parameters: {}", fmt::join(out, ", "));
         }
         return {};
+    }
+
+    std::string options_help() const
+    {
+        std::vector<std::pair<std::string, std::string>> opts;
+        size_t maxlen = 0;
+        for (auto const& [k, v] : m_options) {
+            std::string name = std::string(v.name);
+            if (!v.is_boolean)
+                name += " <arg>";
+            opts.emplace_back(name, v.help);
+            maxlen = std::max(maxlen, name.size());
+        }
+        std::ostringstream oss;
+        for (auto const& p : opts) {
+            oss << "    " << p.first;
+            if (!p.second.empty()) {
+                oss << std::string(std::max<size_t>(1, maxlen + 4 - p.first.size()), ' ');
+                oss << p.second;
+            }
+            oss << '\n';
+        }
+        return oss.str();
     }
 
 private:
@@ -228,6 +245,22 @@ private:
     std::map<std::string_view, Option> m_options;
 };
 
+static void print_usage_and_exit(ArgParser const& parser, Brief brief = Brief::Yes)
+{
+    std::cerr << "Usage: " << g_exec_name << " [options...] [list-midi-devices|<play <MIDI file>|<realtime <MIDI device>>>]" << std::endl;
+    if (brief == Brief::No) {
+        std::cerr << "Modes:" << std::endl;
+        std::cerr << "    list-midi-devices  Print a list of MIDI input/output devices." << std::endl;
+        std::cerr << "    play [file]        Play pre-recorded .mid file. Supports output to MIDI device with -m option." << std::endl;
+        std::cerr << "    realtime [port]    Display MIDI device input in realtime. Supports output to .mid file with -m option." << std::endl;
+        std::cerr << "Options:" << std::endl;
+        std::cerr << parser.options_help();
+    } else {
+        std::cerr << "Use --help to print available options." << std::endl;
+    }
+    exit(1);
+}
+
 int main(int argc, char* argv[])
 {
     g_exec_name = argv[0];
@@ -243,30 +276,30 @@ int main(int argc, char* argv[])
     std::optional<std::string> filename;
     parser.parameter("filename", filename);
 
-    parser.option("-c", args.config_file_path);
+    parser.option("-c", args.config_file_path, "Specify alternative config file");
     bool headless = false;
-    parser.option("-d", headless);
-    parser.option("-f", args.force_overwrite);
-    parser.option("-m", args.midi_output);
-    parser.option("-o", args.render_to_stdout);
-    parser.option("-r", args.remove_file_if_nothing_written);
+    parser.option("-d", headless, "Headless mode (don't open a window, works in text mode)");
+    parser.option("-f", args.force_overwrite, "Force overwriting output files");
+    parser.option("-m", args.midi_output, "Specify MIDI output (file in realtime mode, port number in play mode)");
+    parser.option("-o", args.render_to_stdout, "Print render to stdout (may be c for rendering with ffmpeg)");
+    parser.option("-r", args.remove_file_if_nothing_written, "Remove empty MIDI file if nothing was written (only for realtime mode)");
     bool print_config_help = false;
-    parser.option("--config-help", print_config_help);
-    parser.option("--debug", args.should_render_debug_info_in_preview);
+    parser.option("--config-help", print_config_help, "Print help for Config Files");
+    parser.option("--debug", args.should_render_debug_info_in_preview, "Enable debug info rendering");
     bool help = false;
-    parser.option("--help", help);
-    parser.option("--markers", args.marker_file_name);
+    parser.option("--help", help, "Print this message");
+    parser.option("--markers", args.marker_file_name, "Enable markers; save them to file (add them with number keys)");
     bool version = false;
-    parser.option("--version", version);
+    parser.option("--version", version, "Print MIDIPlayer version");
 
     auto result = parser.parse();
     if (result.is_error()) {
         logger::error("{}", result.release_error());
-        print_usage_and_exit(Brief::Yes);
+        print_usage_and_exit(parser, Brief::Yes);
         return 1;
     }
     if (help) {
-        print_usage_and_exit(Brief::No);
+        print_usage_and_exit(parser, Brief::No);
         return 0;
     }
     if (version) {
@@ -349,7 +382,7 @@ int main(int argc, char* argv[])
         return 0;
     } else {
         logger::error("Unknown mode: {}", mode_string);
-        print_usage_and_exit();
+        print_usage_and_exit(parser);
     }
     player.setup();
 
