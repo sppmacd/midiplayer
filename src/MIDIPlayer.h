@@ -211,7 +211,7 @@ private:
     // This is moved out of MIDIPlayer to shorten startup delay.
     // FIXME: Should be probably moved to separate Renderer class.
     struct RenderResources {
-        mutable sf::Shader gradient_shader;
+        mutable sf::Shader background_shader;
         mutable sf::Shader note_shader;
         mutable sf::Shader notelight_shader;
         mutable sf::Shader particle_shader;

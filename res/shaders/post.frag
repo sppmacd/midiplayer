@@ -20,5 +20,10 @@ vec4 calculate_blur() {
 }
 
 void main() {
-    gl_FragColor = calculate_blur();
+    vec4 color = calculate_blur();
+
+    // Simulate fade out towards the top
+    color *= clamp(1.0 + (gl_ModelViewProjectionMatrix * gl_FragCoord).y, 0.0, 1.0);
+
+    gl_FragColor = color;
 }

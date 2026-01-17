@@ -14,7 +14,6 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
 #include <cassert>
-#include <climits>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -241,7 +240,7 @@ void MIDIPlayer::setup()
         auto resource_path = find_resource_path();
         logger::info("Resource path: {}", resource_path);
         if (
-            m_render_resources->gradient_shader.loadFromFile(resource_path + "/shaders/gradient.vert", resource_path + "/shaders/gradient.frag")
+            m_render_resources->background_shader.loadFromFile(resource_path + "/shaders/background.vert", resource_path + "/shaders/background.frag")
             && m_render_resources->note_shader.loadFromFile(resource_path + "/shaders/note.vert", resource_path + "/shaders/note.frag")
             && m_render_resources->notelight_shader.loadFromFile(resource_path + "/shaders/notelight.vert", resource_path + "/shaders/notelight.frag")
             && m_render_resources->particle_shader.loadFromFile(resource_path + "/shaders/particle.vert", resource_path + "/shaders/particle.frag")
@@ -697,11 +696,6 @@ void MIDIPlayer::render_overlay(sf::RenderTarget& target) const
         sf::View old_view = target.getView();
         target.setView(sf::View { sf::FloatRect({ 0, 0 }, { (float)target_size.x, (float)target_size.y }) });
 
-        // Gradient / Overlay
-        sf::RectangleShape rs { sf::Vector2f { target_size } };
-        m_render_resources->gradient_shader.setUniform("uColor", sf::Glsl::Vec4 { config().overlay_color() });
-        target.draw(rs, sf::RenderStates { &m_render_resources->gradient_shader });
-
         // Labels
         for (auto const& label : m_labels) {
             sf::Text text(m_render_resources->display_font, label.text, config().label_font_size());
@@ -938,6 +932,13 @@ std::string MIDIPlayer::get_stats_string(bool) const
 
 void MIDIPlayer::render_background(sf::RenderTarget& target) const
 {
+    // Solid background + overlay
+    sf::RectangleShape rs { sf::Vector2f { target.getSize() } };
+    m_render_resources->background_shader.setUniform("uColorOverlay", sf::Glsl::Vec4 { config().overlay_color() });
+    m_render_resources->background_shader.setUniform("uColorBackground", sf::Glsl::Vec4 { config().background_color() });
+    target.draw(rs, sf::RenderStates { &m_render_resources->background_shader });
+
+    // Image
     target.draw(m_config.background_image());
 }
 
@@ -988,13 +989,18 @@ void MIDIPlayer::render(sf::RenderTarget& target, DebugInfo const& debug_info)
     const float piano_size = MIDIPlayer::piano_size_px * (MIDIPlayer::view_size_x / aspect) / target.getSize().y;
     auto piano_view = sf::View { sf::FloatRect({ MIDIPlayer::view_offset_x, -MIDIPlayer::view_size_x / aspect + piano_size }, { MIDIPlayer::view_size_x, MIDIPlayer::view_size_x / aspect }) };
 
+    target.clear(sf::Color::Black);
+
     do {
+        // Background
+        render_background(target);
+
         sf::RenderTexture tmp_buffer;
         if (!tmp_buffer.resize({ target.getSize().x, target.getSize().y })) {
             break;
         }
-        tmp_buffer.clear(config().background_color());
-        render_background(tmp_buffer);
+        tmp_buffer.clear(sf::Color::Transparent);
+
         tmp_buffer.setView(piano_view);
 
         for (int i = 0; i < m_notes.size(); i++) {
